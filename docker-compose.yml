@@ -1,0 +1,27 @@
+# Local development stack: backend + built frontend on one port.
+# Run `docker compose up --build`, then open http://localhost:8000
+
+services:
+  rpci-demo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      RPCI_DATABASE_URL: "sqlite:////data/rpci_demo.db"
+      RPCI_AUTO_SEED: "true"
+      RPCI_SEED_FROM_EXCEL_PATH: "/app/RPCI Accounts.xlsx"
+      RPCI_DEMO_PASSWORD: "rpci"
+    volumes:
+      - rpci-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  rpci-data:

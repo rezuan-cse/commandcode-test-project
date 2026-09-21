@@ -1,0 +1,35 @@
+# Keep the Docker build context small and correct.
+#
+# Without this, the host's node_modules and .venv are uploaded on every build.
+# Worse, `COPY frontend/ ./` would overwrite the Linux dependencies installed
+# inside the image with the host's platform-specific ones. Render builds on
+# Linux, so those binaries would not match.
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+backend/.venv/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+**/node_modules/
+frontend/dist/
+
+# Local database and environment
+*.db
+*.sqlite
+*.sqlite3
+.env
+
+# Version control and editors
+.git/
+.gitignore
+.DS_Store
+.idea/
+.vscode/
+
+# Documentation is not needed inside the image
+*.md

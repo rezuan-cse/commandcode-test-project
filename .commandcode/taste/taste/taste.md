@@ -1,0 +1,10 @@
+# Taste
+- Wants a plan shared before any code is written. Asks explicitly: "share me your plan before start coding." Confidence: 0.85
+- Expects the assistant to start by reading project/folder instructions (e.g., README, INSTRUCTIONS files, .commandcode config) before planning. Confidence: 0.7
+- Prefers multi-phase plans delivered one phase at a time: detailed first phase + summarized later phases, with a pause/re-plan between phases after each acceptance gate. Confidence: 0.65
+- Prefers concrete, verifiable acceptance criteria in plans — specific numbers, named outputs, and "this must equal that" checks over vague goals. Confidence: 0.7
+- When real data is on hand (e.g., client workbook), prefers a working demo that runs the real data through real logic over a clickable mock with fake numbers. Confidence: 0.6
+- Prefers the demo/prototype codebase to carry forward into the production build (one codebase, growing in scope) rather than being thrown away and rebuilt. Confidence: 0.6
+- Prefers deploying demos on free-tier / no-cost hosting ("on free tier") rather than paid plans. Confidence: 0.6
+- Wants demos deployed to a shareable public URL so the client can click through it themselves and send back observations/new requirements. Confidence: 0.55
+- Wants visible live progress in the CLI while multi-step work runs — checks repeatedly ("can't I see the progress in CLI?") and loses patience if turns pass without tool calls/output. Prefers continuous tool activity / streamed progress over silent work between turns. Confidence: 0.7

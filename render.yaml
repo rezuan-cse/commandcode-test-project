@@ -1,0 +1,38 @@
+# Render blueprint for the client demo.
+#
+# One Docker web service hosts both the API and the compiled interface, so the
+# client gets a single public HTTPS URL.
+#
+# About the free plan:
+#   * There is no persistent disk, so the SQLite file lives on the container's
+#     own filesystem. It survives while the instance is awake, and is recreated
+#     from the workbook when the instance restarts or wakes from sleep.
+#   * Free instances sleep after about 15 minutes of inactivity. The next visit
+#     takes roughly 30-60 seconds to wake up.
+#
+# That behaviour suits a demo: every visitor starts from the client's own
+# workbook figures, and nobody can permanently break the data. Visitors can also
+# press "Reset demo data" on the Dashboard to restore it immediately.
+#
+# To keep posted data permanently, add a disk and point RPCI_DATABASE_URL at its
+# mount path (a paid plan is required for disks).
+
+services:
+  - type: web
+    name: rpci-demo
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: RPCI_AUTO_SEED
+        value: "true"
+      - key: RPCI_SEED_FROM_EXCEL_PATH
+        value: "/app/RPCI Accounts.xlsx"
+      - key: RPCI_DATABASE_URL
+        value: "sqlite:////data/rpci_demo.db"
+      - key: RPCI_ALLOW_DEMO_RESET
+        value: "true"
+      - key: RPCI_CORS_ORIGINS
+        value: "*"
