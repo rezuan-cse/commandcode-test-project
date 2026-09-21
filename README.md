@@ -239,6 +239,18 @@ cd backend && .venv/bin/python -m pytest tests -q
 | `test_production_posting.py` | Costing, balanced auto-posting, insufficient stock, rollback |
 | `test_sales_posting.py` | Revenue and COGS together, margin, overselling, rollback |
 | `test_role_permissions.py` | Every role's read and write access, enforced over HTTP |
+| `test_demo_reset.py` | The demo can be restored to the workbook state |
+
+The interface has its own tests, because the figures shown on screen must round
+the same way the ledger does:
+
+```bash
+cd frontend && npm test
+```
+
+| File | Covers |
+|---|---|
+| `shared/format.test.ts` | Money, quantity, and percentage formatting, including the rounding cases from the worked example |
 
 ---
 
