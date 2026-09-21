@@ -19,7 +19,7 @@ from app.core.accounting import (
 )
 from app.core.enums import JournalSource, MovementType
 from app.core.exceptions import InsufficientStockError, NotFoundError
-from app.core.money import money, to_decimal, ZERO
+from app.core.money import money, is_zero, to_decimal, ZERO
 from app.core.numbering import next_voucher
 from app.modules.accounts import repository as accounts_repo
 from app.modules.inventory_ledger import service as ledger
@@ -58,6 +58,7 @@ def _price_lines(db: Session, payload: SaleRequest) -> list[SaleLinePreview]:
         unit_cost = position.avg_cost
         revenue = money(qty * to_decimal(line.sale_price))
         cogs = money(qty * unit_cost)
+        margin = money(revenue - cogs)
         priced.append(
             SaleLinePreview(
                 item_code=item.code,
@@ -67,9 +68,12 @@ def _price_lines(db: Session, payload: SaleRequest) -> list[SaleLinePreview]:
                 unit_cost=unit_cost,
                 line_revenue=revenue,
                 line_cogs=cogs,
-                line_margin=money(revenue - cogs),
+                line_margin=margin,
                 on_hand=position.qty,
                 sufficient=position.qty >= qty,
+                # Selling below what the item cost is allowed — a clearance sale
+                # is a real thing — but it must never pass unnoticed.
+                below_cost=margin < 0,
             )
         )
     return priced
@@ -156,6 +160,18 @@ def _assemble(
         for line in lines
         if not line.sufficient
     ]
+    for line in lines:
+        if line.below_cost and is_zero(line.line_revenue):
+            warnings.append(
+                f"{line.item_code} has no sale price: this sale would give the "
+                f"goods away and still record a cost of {line.line_cogs}"
+            )
+        elif line.below_cost:
+            warnings.append(
+                f"{line.item_code} is priced below cost "
+                f"({line.sale_price} against a cost of {line.unit_cost}), "
+                f"a loss of {abs(line.line_margin)} on this line"
+            )
 
     return SalePreview(
         customer=payload.customer,

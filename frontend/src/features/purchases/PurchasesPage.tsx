@@ -35,6 +35,14 @@ export default function PurchasesPage() {
 
   const options = items.data ?? [];
 
+  /**
+   * Default the unit cost to the item's current average cost, so switching item
+   * never leaves a stale price behind from a different product.
+   */
+  function costOf(code: string): string {
+    return (items.data ?? []).find((item) => item.code === code)?.avg_cost ?? "0";
+  }
+
   useEffect(() => {
     if (!lines[0]?.item_code && options.length > 0) {
       setLines([{ item_code: options[0].code, qty: "100", unit_cost: options[0].avg_cost }]);
@@ -172,7 +180,10 @@ export default function PurchasesPage() {
                       <select
                         value={line.item_code}
                         onChange={(event) =>
-                          updateLine(index, { item_code: event.target.value })
+                          updateLine(index, {
+                            item_code: event.target.value,
+                            unit_cost: costOf(event.target.value),
+                          })
                         }
                       >
                         {options.map((option) => (
@@ -222,7 +233,14 @@ export default function PurchasesPage() {
         <div style={{ marginTop: 12 }}>
           <button
             onClick={() =>
-              setLines([...lines, { item_code: options[0]?.code ?? "", qty: "1", unit_cost: "0" }])
+              setLines([
+                ...lines,
+                {
+                  item_code: options[0]?.code ?? "",
+                  qty: "1",
+                  unit_cost: costOf(options[0]?.code ?? ""),
+                },
+              ])
             }
           >
             Add line

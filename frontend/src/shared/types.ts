@@ -240,6 +240,7 @@ export interface SaleLinePreview {
   line_margin: string;
   on_hand: string;
   sufficient: boolean;
+  below_cost: boolean;
 }
 
 export interface SalePreview {

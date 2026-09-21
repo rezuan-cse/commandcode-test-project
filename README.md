@@ -251,6 +251,7 @@ cd frontend && npm test
 | File | Covers |
 |---|---|
 | `shared/format.test.ts` | Money, quantity, and percentage formatting, including the rounding cases from the worked example |
+| `features/sales/SalesPage.test.tsx` | The sale price follows the chosen item, and a typed price is never overwritten |
 
 ---
 

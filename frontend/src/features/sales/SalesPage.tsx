@@ -31,6 +31,15 @@ export default function SalesPage() {
   const sellable = (items.data ?? []).filter((item) => Number(item.qty_on_hand) > 0);
   const options = sellable.length > 0 ? sellable : items.data ?? [];
 
+  /**
+   * Default the asking price to the item's average cost, so switching item
+   * never leaves a stale price behind from a different product. The user then
+   * raises it to their real selling price.
+   */
+  function costOf(code: string): string {
+    return (items.data ?? []).find((item) => item.code === code)?.avg_cost ?? "0";
+  }
+
   useEffect(() => {
     if (!lines[0]?.item_code && options.length > 0) {
       const first = options.find((item) => Number(item.qty_on_hand) > 0) ?? options[0];
@@ -133,14 +142,19 @@ export default function SalesPage() {
               {lines.map((line, index) => {
                 const item = (items.data ?? []).find((row) => row.code === line.item_code);
                 const insufficient = item && Number(line.qty) > Number(item.qty_on_hand);
+                const pricedLine = preview?.lines.find(
+                  (row) => row.item_code === line.item_code,
+                );
                 return (
                   <tr key={index}>
                     <td>
                       <select
+                        aria-label={`Item line ${index + 1}`}
                         value={line.item_code}
-                        onChange={(event) =>
-                          updateLine(index, { item_code: event.target.value })
-                        }
+                        onChange={(event) => {
+                          const code = event.target.value;
+                          updateLine(index, { item_code: code, sale_price: costOf(code) });
+                        }}
                       >
                         {options.map((option) => (
                           <option key={option.code} value={option.code}>
@@ -153,6 +167,7 @@ export default function SalesPage() {
                     <td className="numeric">{item ? fmt(item.avg_cost, 4) : "—"}</td>
                     <td className="numeric">
                       <input
+                        aria-label={`Quantity line ${index + 1}`}
                         className="numeric"
                         inputMode="decimal"
                         style={{ width: 90 }}
@@ -163,6 +178,7 @@ export default function SalesPage() {
                     </td>
                     <td className="numeric">
                       <input
+                        aria-label={`Sale price line ${index + 1}`}
                         className="numeric"
                         inputMode="decimal"
                         style={{ width: 110 }}
@@ -171,6 +187,9 @@ export default function SalesPage() {
                           updateLine(index, { sale_price: event.target.value })
                         }
                       />
+                      {pricedLine && pricedLine.below_cost && (
+                        <Pill tone="negative">below cost</Pill>
+                      )}
                     </td>
                     <td>
                       {lines.length > 1 && (
@@ -188,7 +207,13 @@ export default function SalesPage() {
 
         <div style={{ marginTop: 12 }}>
           <button
-            onClick={() => setLines([...lines, { item_code: options[0]?.code ?? "", qty: "1", sale_price: "0" }])}
+            onClick={() => {
+              const code = options[0]?.code ?? "";
+              setLines([
+                ...lines,
+                { item_code: code, qty: "1", sale_price: costOf(code) },
+              ]);
+            }}
           >
             Add line
           </button>
@@ -211,7 +236,16 @@ export default function SalesPage() {
                     </tr>
                     <tr className="total-row">
                       <td>Gross profit</td>
-                      <td className="numeric">{fmt(preview.gross_profit)}</td>
+                      <td
+                        className="numeric"
+                        style={
+                          Number(preview.gross_profit) < 0
+                            ? { color: "var(--negative)" }
+                            : undefined
+                        }
+                      >
+                        {fmt(preview.gross_profit)}
+                      </td>
                     </tr>
                     <tr>
                       <td>Gross margin</td>
@@ -225,6 +259,14 @@ export default function SalesPage() {
                 <JournalPreview lines={preview.journal_lines} balanced={preview.balanced} />
               </div>
             </div>
+
+            {preview.warnings.length > 0 && (
+              <div className="notice" style={{ marginTop: 16, marginBottom: 0 }}>
+                {preview.warnings.map((warning) => (
+                  <div key={warning}>{warning}</div>
+                ))}
+              </div>
+            )}
 
             <div style={{ marginTop: 18 }}>
               <button className="primary" onClick={post} disabled={!preview.can_post || posting}>

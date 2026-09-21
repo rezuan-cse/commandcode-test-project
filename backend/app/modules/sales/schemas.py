@@ -42,6 +42,7 @@ class SaleLinePreview(BaseModel):
     line_margin: Decimal
     on_hand: Decimal
     sufficient: bool
+    below_cost: bool
 
 
 class SalePreview(BaseModel):

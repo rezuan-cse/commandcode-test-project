@@ -113,6 +113,60 @@ def test_sale_rejects_overselling(db) -> None:
         )
 
 
+def test_selling_below_cost_is_flagged(db) -> None:
+    """A loss-making sale is allowed but must be reported, never silent.
+
+    This reproduces a real report: the price box kept a value from a previously
+    selected item, so goods costing 1,000 were invoiced at 5.
+    """
+    _receive_stock(db)
+    preview = sales.preview(
+        db,
+        SaleRequest(
+            customer="Test Customer",
+            sale_date=POSTING_DATE,
+            lines=[SaleLineIn(item_code="TRD001", qty=Decimal("4"), sale_price=Decimal("5"))],
+        ),
+    )
+    line = preview.lines[0]
+    assert line.below_cost is True
+    assert line.line_revenue == 20
+    assert line.line_cogs == 4000
+    assert preview.gross_profit == -3980
+    assert any("below cost" in warning for warning in preview.warnings)
+
+
+def test_selling_at_cost_is_not_flagged(db) -> None:
+    """A sale at exactly cost is not a loss, so no warning is raised."""
+    _receive_stock(db)
+    preview = sales.preview(
+        db,
+        SaleRequest(
+            customer="Test Customer",
+            sale_date=POSTING_DATE,
+            lines=[SaleLineIn(item_code="TRD001", qty=Decimal("2"), sale_price=Decimal("1000"))],
+        ),
+    )
+    assert preview.lines[0].below_cost is False
+    assert preview.gross_profit == 0
+    assert preview.warnings == []
+
+
+def test_a_zero_price_sale_is_flagged_clearly(db) -> None:
+    """A missing price is reported in plain language rather than as a percentage."""
+    _receive_stock(db)
+    preview = sales.preview(
+        db,
+        SaleRequest(
+            customer="Test Customer",
+            sale_date=POSTING_DATE,
+            lines=[SaleLineIn(item_code="TRD001", qty=Decimal("1"), sale_price=Decimal("0"))],
+        ),
+    )
+    assert preview.lines[0].below_cost is True
+    assert any("no sale price" in warning for warning in preview.warnings)
+
+
 def test_failed_sale_leaves_no_partial_rows(db) -> None:
     """A failure mid-transaction rolls back stock and journal together."""
     _receive_stock(db)

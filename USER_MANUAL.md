@@ -436,13 +436,31 @@ Use this screen when you sell goods.
 
 Choose the item, the quantity, and the sale price you charged.
 
+When you pick an item, the sale price box fills in with that item's average cost
+— what it cost you. Change it to the price you are actually charging. This way
+you are never left with a price from a different product.
+
 The screen shows you, for each line:
 - How much you have on hand
 - The average cost of the item
 - A red **short** badge if you are selling more than you have
+- A red **below cost** badge if your price is lower than the cost
 
 You cannot sell stock you do not have. The Post button is disabled if any line is
 short.
+
+**If you price something below cost**
+
+The software will not stop you. Selling at a loss is sometimes the right thing to
+do — clearing old stock, for example. But it will tell you plainly, in a yellow
+box under the form:
+
+> TRD-018 is priced below cost (5 against a cost of 336.86047000), a loss of
+> 1327.4419 on this line
+
+Check your price before posting when you see this. If the loss is not what you
+intended, the price box usually still holds a value from the item you selected
+before.
 
 **The two boxes at the bottom:**
 
