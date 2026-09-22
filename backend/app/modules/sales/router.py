@@ -7,7 +7,13 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.modules.sales import service
-from app.modules.sales.schemas import SalePostResult, SalePreview, SaleRequest, SaleOut
+from app.modules.sales.schemas import (
+    SaleDetailOut,
+    SalePostResult,
+    SalePreview,
+    SaleRequest,
+    SaleOut,
+)
 from app.modules.users_roles.service import require
 
 router = APIRouter(prefix="/sales", tags=["sales"])
@@ -20,6 +26,12 @@ CAN_WRITE = Depends(require("sales_purchase", write=True))
 def list_orders(db: Session = Depends(get_db)) -> list[SaleOut]:
     """List posted sales orders."""
     return service.list_orders(db)
+
+
+@router.get("/{order_id}", response_model=SaleDetailOut, dependencies=[CAN_READ])
+def get_order(order_id: int, db: Session = Depends(get_db)) -> SaleDetailOut:
+    """Fetch one posted sale with its lines, for the receipt."""
+    return service.get_order(db, order_id)
 
 
 @router.post("/preview", response_model=SalePreview, dependencies=[CAN_WRITE])

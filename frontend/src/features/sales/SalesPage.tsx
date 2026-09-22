@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
@@ -313,6 +314,7 @@ export default function SalesPage() {
                   <th className="numeric">Revenue</th>
                   <th className="numeric">COGS</th>
                   <th className="numeric">Gross profit</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -324,6 +326,11 @@ export default function SalesPage() {
                     <td className="numeric">{fmt(sale.revenue)}</td>
                     <td className="numeric">{fmt(sale.cogs)}</td>
                     <td className="numeric">{fmt(Number(sale.revenue) - Number(sale.cogs))}</td>
+                    <td>
+                      <Link to={`/sales/${sale.id}/receipt`}>
+                        <button>Receipt</button>
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

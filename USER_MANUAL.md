@@ -525,6 +525,24 @@ sales side and the cost side — in one balanced entry.
 
 **Who can use it:** Admin and Sales staff.
 
+**Printing a receipt**
+
+Every posted sale has a **Receipt** button in the list at the bottom of this
+screen. It opens a printable document showing the company name, the receipt
+number and date, the customer, and each item with its quantity, rate and amount.
+
+Press **Print** to print it or save it as a PDF. The document is built from what
+was actually posted, so it can never disagree with the accounts.
+
+This is a plain sales receipt, not a VAT tax invoice, and it says so at the
+bottom. If the client needs a VAT-compliant invoice — which has a prescribed
+format and must carry the VAT registration number — that is a separate piece of
+work.
+
+The company name, address, phone number and VAT registration number printed at
+the top come from **Configuration**. They are placeholders until the client
+provides their real details, so the address currently reads "to be confirmed".
+
 ---
 
 ### 6.8 Trial Balance
@@ -983,6 +1001,7 @@ button.
 | Buy materials | Purchase Entry | Admin, Sales Staff |
 | Make goods | Production Entry | Admin, Store/Production Staff |
 | Sell goods | Sales Entry | Admin, Sales Staff |
+| Print a receipt for a sale | Sales Entry → Receipt | Admin, Sales Staff |
 | Check the books add up | Reports → Trial Balance | Everyone |
 | See account detail | Reports → General Ledger | Everyone |
 | See the company position | Reports → Balance Sheet | Everyone |

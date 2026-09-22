@@ -161,9 +161,13 @@ represented by working stubs and deployment configuration.
   factor with single-use recovery codes
 - The full permission matrix is enforced server-side against the role in the
   token; every cell is tested
+- Menus a role cannot read are hidden, and screens it may read but not change
+  open read-only rather than presenting a form that cannot be submitted
+- Sales receipts: a printable document per posted sale, read from the stored
+  lines so it cannot disagree with the ledger
 - VAT and payroll rules live in a configuration table, flagged pending client
   confirmation, so no unconfirmed rule is hardcoded
-- *Still to build:* VAT computation on transactions, payroll, and receipts
+- *Still to build:* VAT computation on transactions, and payroll
 
 **Phase 5 — Deployment (configuration in place)**
 - Dockerfile, docker-compose, and a Render blueprint for a public HTTPS URL
@@ -299,7 +303,8 @@ cd frontend && npm test
 | File | Covers |
 |---|---|
 | `shared/format.test.ts` | Money, quantity, and percentage formatting, including the rounding cases from the worked example |
-| `features/sales/SalesPage.test.tsx` | The sale price follows the chosen item, and a typed price is never overwritten |
+| `features/sales/SalesPage.test.tsx` | The sale price follows the chosen item, a typed price is never overwritten, and a view-only role sees no form |
+| `features/sales/ReceiptPage.test.tsx` | The receipt itemises the posted lines and totals and does not claim to be a VAT invoice |
 
 ---
 

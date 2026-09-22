@@ -14,6 +14,12 @@ from app.modules.settings.schemas import SettingUpdate
 # Defaults for every rule the client has not yet confirmed. Each is flagged so
 # the UI can show a "pending client confirmation" badge.
 DEFAULT_SETTINGS: list[tuple[str, object, str]] = [
+    # Company details printed on customer documents. Placeholders until the
+    # client supplies their registration particulars.
+    ("company.name", "RPCI", "Registered company name on documents."),
+    ("company.address", "", "Address printed on receipts. TBD (client)."),
+    ("company.vat_reg_no", "", "VAT registration number. TBD (client)."),
+    ("company.phone", "", "Contact number printed on receipts. TBD (client)."),
     ("vat.standard_rate_pct", 15, "Standard VAT rate. TBD (client)."),
     ("vat.input_account", "1130", "Input VAT tracking account."),
     ("vat.output_account", "2200", "Output VAT tracking account."),

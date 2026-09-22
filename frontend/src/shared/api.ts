@@ -23,6 +23,7 @@ import type {
   Purchase,
   RoleMatrix,
   Sale,
+  SaleDetail,
   SalePostResult,
   SalePreview,
   SessionResponse,
@@ -156,6 +157,8 @@ export const api = {
     }),
 
   sales: () => request<Sale[]>("/sales"),
+
+  sale: (id: number | string) => request<SaleDetail>(`/sales/${id}`),
 
   previewSale: (payload: unknown) =>
     request<SalePreview>("/sales/preview", { method: "POST", body: JSON.stringify(payload) }),

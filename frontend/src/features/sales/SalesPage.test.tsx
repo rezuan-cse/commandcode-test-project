@@ -8,6 +8,7 @@
  */
 
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../shared/api", () => ({
@@ -83,10 +84,13 @@ const mocked = api as unknown as {
 };
 
 function renderPage() {
+  // MemoryRouter because the posted-sales table links to each receipt.
   return render(
-    <DemoProvider>
-      <SalesPage />
-    </DemoProvider>,
+    <MemoryRouter>
+      <DemoProvider>
+        <SalesPage />
+      </DemoProvider>
+    </MemoryRouter>,
   );
 }
 

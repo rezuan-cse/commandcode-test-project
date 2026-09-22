@@ -75,6 +75,23 @@ class SaleOut(BaseModel):
     posted_by: str
 
 
+class SaleLineOut(BaseModel):
+    """One line of a posted sale, for documents that itemise it."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    item_code: str
+    qty: Decimal
+    sale_price: Decimal
+    line_revenue: Decimal
+
+
+class SaleDetailOut(SaleOut):
+    """A posted sale with its lines, for the receipt."""
+
+    lines: list[SaleLineOut]
+
+
 class SalePostResult(BaseModel):
     """Result of posting a sale."""
 

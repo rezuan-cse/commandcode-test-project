@@ -8,6 +8,7 @@ import JournalPage from "./features/journal/JournalPage";
 import InventoryPage from "./features/inventory/InventoryPage";
 import ProductionPage from "./features/production/ProductionPage";
 import SalesPage from "./features/sales/SalesPage";
+import ReceiptPage from "./features/sales/ReceiptPage";
 import PurchasesPage from "./features/purchases/PurchasesPage";
 import TrialBalancePage from "./features/reports/TrialBalancePage";
 import GeneralLedgerPage from "./features/reports/GeneralLedgerPage";
@@ -169,6 +170,7 @@ export default function App() {
             <Route path="/purchases" element={<PurchasesPage />} />
             <Route path="/production" element={<ProductionPage />} />
             <Route path="/sales" element={<SalesPage />} />
+            <Route path="/sales/:id/receipt" element={<ReceiptPage />} />
             <Route path="/reports/trial-balance" element={<TrialBalancePage />} />
             <Route path="/reports/general-ledger" element={<GeneralLedgerPage />} />
             <Route path="/reports/balance-sheet" element={<BalanceSheetPage />} />

@@ -273,6 +273,19 @@ export interface SalePostResult {
   message: string;
 }
 
+/** One line of a posted sale, as printed on the receipt. */
+export interface SaleLine {
+  item_code: string;
+  qty: string;
+  sale_price: string;
+  line_revenue: string;
+}
+
+/** A posted sale with its lines. */
+export interface SaleDetail extends Sale {
+  lines: SaleLine[];
+}
+
 export interface JournalLine {
   account_code: string;
   segment: Segment;

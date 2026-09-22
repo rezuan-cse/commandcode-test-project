@@ -285,3 +285,11 @@ def post(db: Session, payload: SaleRequest) -> SalePostResult:
 def list_orders(db: Session, limit: int = 200) -> list[SalesOrder]:
     """List posted sales orders."""
     return repository.list_orders(db, limit=limit)
+
+
+def get_order(db: Session, order_id: int) -> SalesOrder:
+    """Fetch one posted sale with its lines, or raise :class:`NotFoundError`."""
+    order = repository.get_order(db, order_id)
+    if order is None:
+        raise NotFoundError(f"Sale {order_id} not found")
+    return order
