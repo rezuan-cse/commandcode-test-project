@@ -232,6 +232,42 @@ RPCI_TEST_DATABASE_URL=postgresql+psycopg://user:pass@host/db \
 
 ---
 
+## Keeping the Render instance awake
+
+Options A and C both run on Render, whose free tier puts a web service to sleep
+after about 15 minutes without traffic. The next visitor then waits 30–60 seconds
+while it starts again. The data is safe either way — this is only about the first
+impression.
+
+`.github/workflows/keep-alive.yml` requests `/healthz` every 10 minutes so the
+instance never reaches that idle threshold. It needs no account and no
+configuration; it starts running as soon as the repository has the file.
+
+You can test it immediately from the **Actions** tab → *Keep the demo awake* →
+**Run workflow**.
+
+### What it will not do
+
+Worth knowing, because it is easy to assume this is a guarantee:
+
+- **GitHub's scheduler is best effort.** Scheduled runs are queued on shared
+  runners and often start several minutes late. If a slot slips by more than
+  about 5 minutes, the instance can still sleep.
+- **It stops after 60 days without a push.** GitHub disables scheduled workflows
+  in quiet repositories. Any commit re-enables them.
+- **On a private repository it uses Actions minutes.** Every 10 minutes is
+  roughly 1,080 minutes a month against the 2,000 free ones. Public repositories
+  are unlimited.
+
+If you want a firmer guarantee, a dedicated uptime monitor does the same job on
+a fixed schedule and alerts you when the service is down — UptimeRobot and
+cron-job.org both have free tiers. The workflow above is the option that needs no
+third-party account.
+
+If the demo moves to another host, change `DEMO_HEALTH_URL` in the workflow.
+
+---
+
 ## Environment variables
 
 Set these on whichever host runs the API.

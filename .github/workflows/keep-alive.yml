@@ -1,0 +1,76 @@
+name: Keep the demo awake
+
+# Render's free tier puts a web service to sleep after about 15 minutes without
+# traffic. The next visit then waits 30-60 seconds while it starts again, which
+# is a poor first impression for a client opening the link.
+#
+# This workflow requests the health endpoint every 10 minutes so the instance
+# never reaches that idle threshold.
+#
+# Things worth knowing before relying on it:
+#
+#   * GitHub's scheduler is best effort, not a real cron. Scheduled runs are
+#     queued on shared runners and frequently start several minutes late. If a
+#     slot is missed by more than about 5 minutes the instance can still sleep.
+#   * GitHub disables scheduled workflows after 60 days without a push to the
+#     repository. Any commit re-enables them. If the repo goes quiet, this
+#     silently stops working.
+#   * On a private repository each run consumes Actions minutes. Every 10
+#     minutes is roughly 1,080 minutes a month against the 2,000 free minutes,
+#     so it fits, but it is not free of cost. Public repositories are unlimited.
+#
+# For a firmer guarantee, a dedicated uptime monitor (UptimeRobot, cron-job.org
+# and similar all have free tiers) polls on a fixed schedule and alerts you when
+# the service is down. This workflow is the option that needs no third-party
+# account.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  # Lets you run it by hand from the Actions tab to check it works.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-alive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      # Change this if the demo moves to another host.
+      DEMO_HEALTH_URL: https://rpci-demo.onrender.com/healthz
+    steps:
+      - name: Request the health endpoint
+        run: |
+          set -euo pipefail
+
+          # A sleeping instance needs time to wake, so each attempt waits up to
+          # 90 seconds before giving up. Three attempts cover a slow cold start.
+          RETRY_DELAY=20
+
+          for attempt in 1 2 3; do
+            # %{http_code} prints 000 when curl cannot connect at all, so the
+            # assignment below only needs a fallback if curl produced nothing.
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              --max-time 90 "$DEMO_HEALTH_URL" 2>/dev/null) || code="000"
+            code=${code:-000}
+            echo "Attempt ${attempt}: HTTP ${code}"
+
+            if [ "$code" = "200" ]; then
+              echo "Demo is awake."
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 3 ]; then
+              echo "No response yet; waiting ${RETRY_DELAY} seconds before retrying."
+              sleep "$RETRY_DELAY"
+            fi
+          done
+
+          echo "::error::The demo did not return 200 after three attempts. It may be down, or the service may have been renamed."
+          exit 1
