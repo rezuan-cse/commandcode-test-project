@@ -19,6 +19,11 @@ the Trial Balance and it nets to zero. Open the Balance Sheet and it balances at
 > ```bash
 > backend/.venv/bin/python scripts/md_to_docx.py USER_MANUAL.md
 > ```
+>
+> **Information still needed from the client** is collected in
+> [CLIENT_QUESTIONS.md](CLIENT_QUESTIONS.md) / `.docx` — tax rates, payroll
+> structure, and the few permission questions the specification left open. Each
+> row has a sample answer the client can work from.
 
 ---
 
