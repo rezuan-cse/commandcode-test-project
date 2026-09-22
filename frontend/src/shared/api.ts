@@ -20,6 +20,7 @@ import type {
   ProductionRun,
   PurchasePostResult,
   PurchasePreview,
+  Purchase,
   RoleMatrix,
   Sale,
   SalePostResult,
@@ -167,6 +168,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+
+  purchases: () => request<Purchase[]>("/purchases"),
 
   postPurchase: (payload: unknown) =>
     request<PurchasePostResult>("/purchases", { method: "POST", body: JSON.stringify(payload) }),

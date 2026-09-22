@@ -128,6 +128,7 @@ export default function SalesPage() {
           resource="sales_purchase"
           write
           level={level("sales_purchase")}
+          readableBelow
         />
       )}
 

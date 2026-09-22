@@ -111,6 +111,7 @@ export default function ProductionPage() {
           resource="production"
           write
           level={level("production")}
+          readableBelow
         />
       )}
 

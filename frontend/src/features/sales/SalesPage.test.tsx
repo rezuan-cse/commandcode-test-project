@@ -134,6 +134,29 @@ describe("Sales Entry — restricted roles", () => {
     expect(mocked.previewSale).not.toHaveBeenCalled();
   });
 
+  it("still shows the posted list, so the screen is not empty", async () => {
+    session.permissions = { sales_purchase: "view", items_bom: "view", reports: "view" };
+    mocked.sales.mockResolvedValue([
+      {
+        id: 1,
+        order_no: "SALE-002",
+        sale_date: "2026-10-25",
+        customer: "Karim Enterprise",
+        revenue: "2400.0000",
+        cogs: "1347.4419",
+        journal_entry_id: 9,
+        posted_by: "Sales",
+      },
+    ]);
+    renderPage();
+
+    // The notice tells the reader the information below is still available, so
+    // there had better be some.
+    expect(await screen.findByText(/can view the Purchase and Sales Entry screen/i)).toBeTruthy();
+    expect(await screen.findByText("SALE-002")).toBeTruthy();
+    expect(screen.queryByText(/No sales posted yet/i)).toBeNull();
+  });
+
   it("shows the form for a role that may post", async () => {
     renderPage();
 

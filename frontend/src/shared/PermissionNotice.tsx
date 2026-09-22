@@ -14,11 +14,14 @@ export function PermissionNotice({
   resource,
   write,
   level,
+  readableBelow = false,
 }: {
   role: string;
   resource: string;
   write: boolean;
   level: Access | undefined;
+  /** Only claim there is something to read when the screen really shows one. */
+  readableBelow?: boolean;
 }) {
   return (
     <div className="permission-notice">
@@ -36,7 +39,9 @@ export function PermissionNotice({
         </div>
         {write && canRead(level) && (
           <div className="permission-hint">
-            The information on this screen is still available to read below.
+            {readableBelow
+              ? "You can still read what has already been posted, below. "
+              : ""}
             Sign in as an administrator if you need to make changes.
           </div>
         )}

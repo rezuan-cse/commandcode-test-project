@@ -7,7 +7,7 @@ import JournalPreview from "../../shared/JournalPreview";
 import { PermissionNotice } from "../../shared/PermissionNotice";
 import { Card, ErrorBox, Field, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
-import type { PurchasePreview } from "../../shared/types";
+import type { Purchase, PurchasePreview } from "../../shared/types";
 
 interface DraftLine {
   item_code: string;
@@ -25,6 +25,7 @@ export default function PurchasesPage() {
   const { user, can, level } = useAuth();
   const canWrite = can("sales_purchase", true);
   const items = useAsync(() => api.items(), []);
+  const purchases = useAsync(() => api.purchases(), []);
 
   const [supplier, setSupplier] = useState("Raw Material Supplier");
   const [date, setDate] = useState(asOf);
@@ -146,6 +147,7 @@ export default function PurchasesPage() {
           resource="sales_purchase"
           write
           level={level("sales_purchase")}
+          readableBelow
         />
       )}
 
@@ -319,6 +321,42 @@ export default function PurchasesPage() {
         {items.loading && <Spinner />}
       </Card>
       )}
+
+      <Card title="Posted purchases" subtitle="Newest first">
+        {purchases.loading && <Spinner />}
+        {purchases.error && <ErrorBox message={purchases.error} />}
+        {purchases.data && purchases.data.length === 0 && (
+          <p className="small muted" style={{ margin: 0 }}>
+            No purchases posted yet.
+          </p>
+        )}
+        {purchases.data && purchases.data.length > 0 && (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Date</th>
+                  <th>Supplier</th>
+                  <th className="numeric">Value</th>
+                  <th>Entered by</th>
+                </tr>
+              </thead>
+              <tbody>
+                {purchases.data.map((purchase: Purchase) => (
+                  <tr key={purchase.id}>
+                    <td className="name-cell">{purchase.order_no}</td>
+                    <td>{purchase.purchase_date}</td>
+                    <td>{purchase.supplier}</td>
+                    <td className="numeric">{fmt(purchase.total_value)}</td>
+                    <td className="muted small">{purchase.posted_by}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </>
   );
 
