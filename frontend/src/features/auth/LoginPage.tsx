@@ -2,13 +2,44 @@ import { useState } from "react";
 import { useAuth } from "../../shared/AuthContext";
 import { Card, ErrorBox, Field } from "../../shared/ui";
 
-/** The demo accounts, shown so a reviewer can switch roles without guesswork. */
+/**
+ * The demo accounts, shown so a reviewer can switch roles without guesswork.
+ *
+ * `canChange` lists what the role may actually change. It used to say "can do",
+ * which read as though anything not listed was inaccessible — when in fact those
+ * roles can often still read the screen. The wording now separates the two.
+ */
 const DEMO_ACCOUNTS = [
-  { email: "admin@rpci.demo", role: "Admin", can: "everything" },
-  { email: "accountant@rpci.demo", role: "Accountant", can: "journals, reports" },
-  { email: "store@rpci.demo", role: "Store / Production", can: "items, production" },
-  { email: "sales@rpci.demo", role: "Sales Staff", can: "purchases, sales" },
-  { email: "owner@rpci.demo", role: "Owner / Viewer", can: "read only" },
+  {
+    email: "admin@rpci.demo",
+    role: "Admin",
+    canChange: "Everything",
+    canSee: "Everything",
+  },
+  {
+    email: "accountant@rpci.demo",
+    role: "Accountant",
+    canChange: "Journal entries",
+    canSee: "Everything else",
+  },
+  {
+    email: "store@rpci.demo",
+    role: "Store / Production",
+    canChange: "Items, production runs",
+    canSee: "Reports",
+  },
+  {
+    email: "sales@rpci.demo",
+    role: "Sales Staff",
+    canChange: "Purchases, sales",
+    canSee: "Items, reports",
+  },
+  {
+    email: "owner@rpci.demo",
+    role: "Owner / Viewer",
+    canChange: "Nothing",
+    canSee: "Everything",
+  },
 ];
 
 export default function LoginPage() {
@@ -129,7 +160,8 @@ export default function LoginPage() {
                 <tr>
                   <th>Email</th>
                   <th>Role</th>
-                  <th>Can do</th>
+                  <th>Can change</th>
+                  <th>Can also read</th>
                 </tr>
               </thead>
               <tbody>
@@ -146,7 +178,8 @@ export default function LoginPage() {
                       {account.email}
                     </td>
                     <td>{account.role}</td>
-                    <td className="muted small">{account.can}</td>
+                    <td>{account.canChange}</td>
+                    <td className="muted small">{account.canSee}</td>
                   </tr>
                 ))}
               </tbody>
@@ -154,8 +187,8 @@ export default function LoginPage() {
           </div>
           <p className="small muted" style={{ marginTop: 10, marginBottom: 0 }}>
             Click a row to fill the form. Signing in as different people is how you
-            see the permission rules applied — the server refuses a restricted
-            action regardless of what the screen shows.
+            see the permission rules applied. Menus a role cannot read are hidden,
+            and screens it may read but not change are shown without their forms.
           </p>
         </Card>
       </div>

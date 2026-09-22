@@ -126,21 +126,24 @@ Yes = allowed. No = blocked.
 2. **Sales staff can do purchases.** For the same reason, the permission for
    purchases and sales is shared.
 
-### How the blocking works
+### How the restrictions appear
 
-The side menu shows every screen to everyone. The block happens when the screen
-asks the server for data.
+**Screens you may not read are not in the menu.** Signed in as Store staff, you
+will not see Chart of Accounts or Journal Entries at all.
 
-So if you are signed in as Store staff and you open the Chart of Accounts, you
-will see a red error box saying you do not have access. The screen does not hide
-itself — the server refuses to answer.
+**Screens you may read but not change open without their form.** Purchase Entry,
+Production Entry and Sales Entry are like this for an Accountant: the screen
+opens, the list of what has already been posted is there, and the form for adding
+something new is replaced by a short note explaining the position. There is
+nothing to fill in that cannot be submitted.
 
-That is on purpose. It proves the restriction is real and checked by the server,
-not merely hidden in the menu. The full version will also hide the menu items.
+If you reach a screen you are not allowed to see — by typing its address, for
+example — you get a plain explanation rather than an error.
 
 **The menu is not the security.** Your permissions travel with your signed-in
-session, and the server decides on every request. Nobody can grant themselves
-access by changing what the browser sends.
+session, and the server checks them on every request. Nobody can reach a screen
+by typing its address, and nobody can grant themselves access by changing what
+the browser sends.
 
 ---
 
@@ -592,8 +595,10 @@ server as whoever you are currently acting as.
 403 is the standard code for "you are not allowed". Seeing it proves the block is
 real.
 
-Try it: sign out, sign in as **`sales@rpci.demo`**, come back to this screen, and
-press the button.
+Try it: sign out, sign in as **`sales@rpci.demo`**. The Ledger menu is gone,
+because that role may not read the accounts. Then sign in as
+**`accountant@rpci.demo`** and open Purchase Entry — the screen opens for reading,
+with the form replaced by a note explaining that the role cannot post.
 
 ---
 

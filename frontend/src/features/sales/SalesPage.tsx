@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../shared/api";
+import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
 import { fmt, fmtPct, fmtQty } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
+import { PermissionNotice } from "../../shared/PermissionNotice";
 import { Card, ErrorBox, Field, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { Sale, SalePreview } from "../../shared/types";
@@ -15,6 +17,8 @@ interface DraftLine {
 
 export default function SalesPage() {
   const { asOf, refresh } = useDemo();
+  const { user, can, level } = useAuth();
+  const canWrite = can("sales_purchase", true);
   const items = useAsync(() => api.items(), []);
   const sales = useAsync(() => api.sales(), []);
 
@@ -66,7 +70,9 @@ export default function SalesPage() {
 
   useEffect(() => {
     let cancelled = false;
-    if (payload.lines.length === 0) {
+    // Nothing to price when the role cannot post, and calling the preview would
+    // only provoke a refusal the user can do nothing about.
+    if (!canWrite || payload.lines.length === 0) {
       setPreview(null);
       return;
     }
@@ -87,7 +93,7 @@ export default function SalesPage() {
     return () => {
       cancelled = true;
     };
-  }, [payload]);
+  }, [payload, canWrite]);
 
   async function post() {
     setError(null);
@@ -116,6 +122,16 @@ export default function SalesPage() {
       {toast && <div className="toast">✓ {toast}</div>}
       {error && <ErrorBox message={error} />}
 
+      {!canWrite && (
+        <PermissionNotice
+          role={user?.role ?? ""}
+          resource="sales_purchase"
+          write
+          level={level("sales_purchase")}
+        />
+      )}
+
+      {canWrite && (
       <Card title="New sale" subtitle="Inventory is valued at average cost automatically">
         <div className="form-row" style={{ marginBottom: 14 }}>
           <Field label="Customer">
@@ -276,6 +292,7 @@ export default function SalesPage() {
           </>
         )}
       </Card>
+      )}
 
       <Card title="Posted sales">
         {sales.loading && <Spinner />}

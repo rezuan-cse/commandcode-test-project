@@ -348,6 +348,8 @@ export interface UserRow {
   is_active: boolean;
   is_2fa_enabled: boolean;
   last_login_at: string | null;
+  /** Access level per resource: "none", "view" or "full". */
+  permissions: Record<string, Access>;
 }
 
 /** Step one of sign-in. Either a session, or a request for the second factor. */

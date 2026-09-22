@@ -221,9 +221,10 @@ picture of how the business actually runs.
 7. **Sales Entry** — sell some `TRD-018`. Revenue and COGS post together in one
    balanced entry, and the Trading segment appears on the dashboard.
 8. **Reports → Balance Sheet** — the final check still reads zero after everything.
-9. **Roles & Access** — sign out, sign in as *Sales Staff*, and try the accounts
-   screen. The server returns 403. Sign in as *Admin* and it returns 200. The
-   restriction is in the API, not the screen.
+9. **Roles & Access** — sign out, sign in as *Sales Staff*. The Ledger menu is
+   gone and Production Entry is no longer offered, because that role may not read
+   them. Sales Entry opens normally. Try the Chart of Accounts address directly
+   and the server still refuses — the menu is not the security.
 10. **Configuration** — VAT, payroll, and the approval switches, each marked
     *pending client* rather than silently assumed.
 

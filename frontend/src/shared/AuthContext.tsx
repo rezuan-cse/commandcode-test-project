@@ -13,7 +13,8 @@ import {
   setAccessToken,
   setUnauthorizedHandler,
 } from "./api";
-import type { UserRow } from "./types";
+import { canRead, canWrite } from "./permissions";
+import type { Access, UserRow } from "./types";
 
 /**
  * Session state for the whole app.
@@ -33,6 +34,10 @@ interface AuthState {
   submitCode: (challengeToken: string, code: string) => Promise<void>;
   signOut: () => void;
   refreshUser: () => Promise<void>;
+  /** This user's access level for a resource. */
+  level: (resource: string) => Access | undefined;
+  /** Whether this user may read, or change, a resource. */
+  can: (resource: string, write?: boolean) => boolean;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -94,9 +99,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(await api.me());
   }, []);
 
+  const level = useCallback(
+    (resource: string): Access | undefined => user?.permissions?.[resource],
+    [user],
+  );
+
+  const can = useCallback(
+    (resource: string, write = false): boolean =>
+      write ? canWrite(level(resource)) : canRead(level(resource)),
+    [level],
+  );
+
   const value = useMemo(
-    () => ({ user, checking, signIn, submitCode, signOut, refreshUser }),
-    [user, checking, signIn, submitCode, signOut, refreshUser],
+    () => ({ user, checking, signIn, submitCode, signOut, refreshUser, level, can }),
+    [user, checking, signIn, submitCode, signOut, refreshUser, level, can],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

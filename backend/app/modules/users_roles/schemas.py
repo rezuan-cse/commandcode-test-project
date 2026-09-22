@@ -26,6 +26,9 @@ class UserOut(BaseModel):
     is_active: bool
     is_2fa_enabled: bool = False
     last_login_at: dt.datetime | None = None
+    # Access level per resource, so the interface can hide what the role cannot
+    # use. Empty for a list of other users, populated for the signed-in one.
+    permissions: dict[str, str] = {}
 
 
 class RoleAccessRow(BaseModel):

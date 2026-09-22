@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../shared/api";
+import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
 import { fmt, fmtQty } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
+import { PermissionNotice } from "../../shared/PermissionNotice";
 import { Card, ErrorBox, Field, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { ProductionPreview, ProductionRun } from "../../shared/types";
 
 export default function ProductionPage() {
   const { asOf, refresh } = useDemo();
+  const { user, can, level } = useAuth();
+  const canWrite = can("production", true);
   const items = useAsync(() => api.items(), []);
   const runs = useAsync(() => api.productionRuns(), []);
 
@@ -45,7 +49,9 @@ export default function ProductionPage() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!outputItem || !qty || Number(qty) <= 0) {
+    // Nothing to price when the role cannot post, and calling the preview would
+    // only provoke a refusal the user can do nothing about.
+    if (!canWrite || !outputItem || !qty || Number(qty) <= 0) {
       setPreview(null);
       return;
     }
@@ -68,7 +74,7 @@ export default function ProductionPage() {
     return () => {
       cancelled = true;
     };
-  }, [payload]);
+  }, [payload, canWrite]);
 
   async function post() {
     setPostError(null);
@@ -99,6 +105,16 @@ export default function ProductionPage() {
       {toast && <div className="toast">✓ {toast}</div>}
       {postError && <ErrorBox message={postError} />}
 
+      {!canWrite && (
+        <PermissionNotice
+          role={user?.role ?? ""}
+          resource="production"
+          write
+          level={level("production")}
+        />
+      )}
+
+      {canWrite && (
       <Card title="New production run" subtitle="Components are suggested from the BOM and scaled automatically">
         <div className="form-row" style={{ marginBottom: 6 }}>
           <Field label="Item to produce">
@@ -273,6 +289,7 @@ export default function ProductionPage() {
           </>
         )}
       </Card>
+      )}
 
       <Card title="Posted production runs" subtitle="Newest first">
         {runs.loading && <Spinner />}

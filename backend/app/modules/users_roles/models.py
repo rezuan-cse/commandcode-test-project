@@ -59,6 +59,21 @@ class User(Base):
         """True when the account can be signed into with a password."""
         return bool(self.password_hash)
 
+    @property
+    def permissions(self) -> dict[str, str]:
+        """This user's access level for each resource.
+
+        Derived, never stored, and returned with the user so the interface can
+        hide menus and forms the role cannot use. The server still enforces every
+        request; this only stops the interface offering actions that will be
+        refused.
+
+        Imported inside the property because the service module imports this one.
+        """
+        from app.modules.users_roles.service import permissions_for
+
+        return permissions_for(self.role)
+
 
 class RecoveryCode(Base):
     """A single-use code that bypasses 2FA when the authenticator is lost.

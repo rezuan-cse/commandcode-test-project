@@ -17,33 +17,54 @@ import SettingsPage from "./features/settings/SettingsPage";
 import LoginPage from "./features/auth/LoginPage";
 import SecurityPage from "./features/auth/SecurityPage";
 
-const NAV_GROUPS = [
+interface NavItem {
+  to: string;
+  text: string;
+  /** Resource required to see this item. Omit for anything any role may open. */
+  resource?: string;
+  /** Match the route exactly rather than as a prefix. */
+  end?: boolean;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+/**
+ * Menu entries, each tagged with the resource it needs.
+ *
+ * An entry without a resource is available to anyone signed in. Entries whose
+ * resource the role cannot read are hidden entirely, so the menu only offers
+ * screens that will open.
+ */
+const NAV_GROUPS: NavGroup[] = [
   {
     label: "Overview",
-    items: [{ to: "/", text: "Dashboard", end: true }],
+    items: [{ to: "/", text: "Dashboard", end: true, resource: "reports" }],
   },
   {
     label: "Ledger",
     items: [
-      { to: "/accounts", text: "Chart of Accounts" },
-      { to: "/journal", text: "Journal Entries" },
+      { to: "/accounts", text: "Chart of Accounts", resource: "accounts" },
+      { to: "/journal", text: "Journal Entries", resource: "journal_entries" },
     ],
   },
   {
     label: "Operations",
     items: [
-      { to: "/inventory", text: "Inventory & BOM" },
-      { to: "/purchases", text: "Purchase Entry" },
-      { to: "/production", text: "Production Entry" },
-      { to: "/sales", text: "Sales Entry" },
+      { to: "/inventory", text: "Inventory & BOM", resource: "items_bom" },
+      { to: "/purchases", text: "Purchase Entry", resource: "sales_purchase" },
+      { to: "/production", text: "Production Entry", resource: "production" },
+      { to: "/sales", text: "Sales Entry", resource: "sales_purchase" },
     ],
   },
   {
     label: "Reports",
     items: [
-      { to: "/reports/trial-balance", text: "Trial Balance" },
-      { to: "/reports/general-ledger", text: "General Ledger" },
-      { to: "/reports/balance-sheet", text: "Balance Sheet" },
+      { to: "/reports/trial-balance", text: "Trial Balance", resource: "reports" },
+      { to: "/reports/general-ledger", text: "General Ledger", resource: "reports" },
+      { to: "/reports/balance-sheet", text: "Balance Sheet", resource: "reports" },
     ],
   },
   {
@@ -57,7 +78,7 @@ const NAV_GROUPS = [
 ];
 
 export default function App() {
-  const { user, checking, signOut } = useAuth();
+  const { user, checking, signOut, can } = useAuth();
   const { asOf, setAsOf, dateFrom, setDateFrom } = useDemo();
 
   // A stored token is verified against the server before anything renders, so
@@ -74,6 +95,12 @@ export default function App() {
 
   if (!user) return <LoginPage />;
 
+  // Drop menu items this role cannot read, and any group left empty.
+  const visibleGroups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.resource || can(item.resource)),
+  })).filter((group) => group.items.length > 0);
+
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -82,14 +109,14 @@ export default function App() {
           <span className="brand-sub">Accounting &amp; Production ERP</span>
         </div>
         <nav>
-          {NAV_GROUPS.map((group) => (
+          {visibleGroups.map((group) => (
             <div className="nav-group" key={group.label}>
               <span className="nav-group-label">{group.label}</span>
               {group.items.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  end={"end" in item ? item.end : false}
+                  end={item.end ?? false}
                   className={({ isActive }) => (isActive ? "nav-item active" : "nav-item")}
                 >
                   {item.text}

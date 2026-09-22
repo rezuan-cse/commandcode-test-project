@@ -19,6 +19,37 @@ vi.mock("../../shared/api", () => ({
   },
 }));
 
+// The page now renders according to the signed-in role's permissions, so the
+// test supplies a session and a mutable permission map it can change per test.
+const session = vi.hoisted(() => ({
+  permissions: { sales_purchase: "full" } as Record<string, string>,
+}));
+
+vi.mock("../../shared/AuthContext", () => ({
+  useAuth: () => ({
+    user: {
+      id: 2,
+      email: "sales@rpci.demo",
+      full_name: "Sales Desk",
+      role: "Sales Staff",
+      is_active: true,
+      is_2fa_enabled: false,
+      last_login_at: null,
+      permissions: session.permissions,
+    },
+    checking: false,
+    signIn: vi.fn(),
+    submitCode: vi.fn(),
+    signOut: vi.fn(),
+    refreshUser: vi.fn(),
+    level: (resource: string) => session.permissions[resource],
+    can: (resource: string, write = false) => {
+      const level = session.permissions[resource];
+      return write ? level === "full" : level === "view" || level === "full";
+    },
+  }),
+}));
+
 import { api } from "../../shared/api";
 import { DemoProvider } from "../../shared/DemoContext";
 import SalesPage from "./SalesPage";
@@ -64,6 +95,7 @@ afterEach(cleanup);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  session.permissions = { sales_purchase: "full", items_bom: "view", reports: "view" };
   mocked.items.mockResolvedValue([BAG, FILLER]);
   mocked.sales.mockResolvedValue([]);
   mocked.previewSale.mockResolvedValue({
@@ -77,6 +109,36 @@ beforeEach(() => {
     balanced: true,
     can_post: true,
     warnings: [],
+  });
+});
+
+describe("Sales Entry — restricted roles", () => {
+  it("hides the form and explains the restriction in plain words", async () => {
+    session.permissions = { sales_purchase: "view", items_bom: "view", reports: "view" };
+    renderPage();
+
+    // The old behaviour showed a raw "Role 'Sales Staff' does not have write
+    // access to 'sales_purchase'" next to a form that could never be submitted.
+    expect(
+      await screen.findByText(/can view the Purchase and Sales Entry screen but cannot make changes/i),
+    ).toBeTruthy();
+    expect(screen.queryByLabelText("Item line 1")).toBeNull();
+    expect(screen.queryByRole("button", { name: /post sale/i })).toBeNull();
+  });
+
+  it("does not ask the server to price a sale the role cannot post", async () => {
+    session.permissions = { sales_purchase: "view", items_bom: "view", reports: "view" };
+    renderPage();
+
+    await screen.findByText(/cannot make changes/i);
+    expect(mocked.previewSale).not.toHaveBeenCalled();
+  });
+
+  it("shows the form for a role that may post", async () => {
+    renderPage();
+
+    expect(await screen.findByLabelText("Item line 1")).toBeTruthy();
+    expect(screen.queryByText(/cannot make changes/i)).toBeNull();
   });
 });
 

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../shared/api";
+import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
 import { fmt, fmtQty } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
+import { PermissionNotice } from "../../shared/PermissionNotice";
 import { Card, ErrorBox, Field, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { PurchasePreview } from "../../shared/types";
@@ -20,6 +22,8 @@ interface DraftLine {
  */
 export default function PurchasesPage() {
   const { asOf, refresh } = useDemo();
+  const { user, can, level } = useAuth();
+  const canWrite = can("sales_purchase", true);
   const items = useAsync(() => api.items(), []);
 
   const [supplier, setSupplier] = useState("Raw Material Supplier");
@@ -68,7 +72,9 @@ export default function PurchasesPage() {
 
   useEffect(() => {
     let cancelled = false;
-    if (payload.lines.length === 0) {
+    // Nothing to price when the role cannot post, and calling the preview would
+    // only provoke a refusal the user can do nothing about.
+    if (!canWrite || payload.lines.length === 0) {
       setPreview(null);
       return;
     }
@@ -89,7 +95,7 @@ export default function PurchasesPage() {
     return () => {
       cancelled = true;
     };
-  }, [payload]);
+  }, [payload, canWrite]);
 
   async function post() {
     setError(null);
@@ -134,6 +140,16 @@ export default function PurchasesPage() {
       {toast && <div className="toast">✓ {toast}</div>}
       {error && <ErrorBox message={error} />}
 
+      {!canWrite && (
+        <PermissionNotice
+          role={user?.role ?? ""}
+          resource="sales_purchase"
+          write
+          level={level("sales_purchase")}
+        />
+      )}
+
+      {canWrite && (
       <Card
         title="New purchase"
         subtitle="Receiving stock updates the average cost used by every later movement"
@@ -302,6 +318,7 @@ export default function PurchasesPage() {
 
         {items.loading && <Spinner />}
       </Card>
+      )}
     </>
   );
 
