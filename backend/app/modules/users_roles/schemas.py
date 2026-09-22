@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.enums import Role
 
@@ -43,3 +43,41 @@ class RoleMatrixOut(BaseModel):
 
     resources: list[str]
     roles: list[RoleAccessRow]
+
+
+class ResetPasswordRequest(BaseModel):
+    """Issue a new password. Leave it out to have one generated."""
+
+    new_password: str | None = Field(default=None, min_length=8, max_length=200)
+
+
+class PasswordIssuedOut(BaseModel):
+    """A generated password, shown once so the administrator can pass it on."""
+
+    password: str
+    message: str
+
+
+class SetActiveRequest(BaseModel):
+    """Enable or disable an account."""
+
+    is_active: bool
+
+
+class AdminActionOut(BaseModel):
+    """The result of an administrative action."""
+
+    message: str
+
+
+class AuditEntryOut(BaseModel):
+    """One recorded administrative action."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    actor_email: str
+    action: str
+    target_email: str
+    detail: str | None
+    created_at: dt.datetime

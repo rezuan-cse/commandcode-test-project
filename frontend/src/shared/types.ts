@@ -391,6 +391,16 @@ export interface TotpEnableResponse {
   message: string;
 }
 
+/** One recorded administrative action on a user account. */
+export interface AuditEntry {
+  id: number;
+  actor_email: string;
+  action: string;
+  target_email: string;
+  detail: string | null;
+  created_at: string;
+}
+
 export interface Setting {
   key: string;
   value: string;

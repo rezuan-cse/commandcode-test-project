@@ -95,3 +95,31 @@ class RecoveryCode(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="recovery_codes")
+
+
+class AdminAuditLog(Base):
+    """A record of a security-relevant action taken by an administrator.
+
+    Clearing somebody's second factor or issuing them a new password is exactly
+    the kind of action that needs to be answerable later — "who reset this, and
+    when?". Rows are append-only: nothing in the application updates or deletes
+    them.
+    """
+
+    __tablename__ = "admin_audit_log"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    actor_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    actor_email: Mapped[str] = mapped_column(String(160), nullable=False)
+    action: Mapped[str] = mapped_column(String(48), nullable=False, index=True)
+    target_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    # Kept as text so the record survives the account being renamed or removed.
+    target_email: Mapped[str] = mapped_column(String(160), nullable=False)
+    detail: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )

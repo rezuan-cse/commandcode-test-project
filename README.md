@@ -111,13 +111,35 @@ The flow is deliberately two-step: a password alone yields a short-lived
 issues a session, so a stolen password is not by itself enough, and a challenge
 token cannot be replayed as a session. Both properties are tested.
 
+### Unlocking an account
+
+If someone loses their phone *and* their recovery codes, an administrator can
+clear their second factor from **Roles & Access**, and they sign in with a
+password again. An administrator can also issue a new password, and enable or
+disable an account.
+
+Three deliberate constraints:
+
+- **You cannot act on your own account** through these screens — that is what the
+  Security page is for, and an accidental self-reset is far more likely than an
+  intended one.
+- **You cannot disable your own account.** That is what keeps the system
+  administrable: an administrator can only disable somebody else, and disabling
+  one of two leaves one.
+- **Every action is recorded** in an append-only log, so "who cleared this, and
+  when" is answerable afterwards.
+
+*Still to do:* an issued password is not a forced change — the user can keep
+using it. Requiring a change at next sign-in is the tidier behaviour and needs a
+small extra flow.
+
 ## Verifying the numbers
 
 The import is checked against the workbook, both by the test suite and by a
 standalone script:
 
 ```bash
-cd backend && .venv/bin/python -m pytest tests -q          # 87 tests
+cd backend && .venv/bin/python -m pytest tests -q          # 106 tests
 cd .. && backend/.venv/bin/python scripts/seed_from_excel.py --check
 ```
 
@@ -290,6 +312,7 @@ cd backend && .venv/bin/python -m pytest tests -q
 | `test_sales_posting.py` | Revenue and COGS together, margin, overselling, rollback |
 | `test_role_permissions.py` | Every role's read and write access, enforced over HTTP |
 | `test_auth.py` | Passwords, the TOTP second factor, recovery codes, password change |
+| `test_account_admin.py` | Unlocking a locked-out account, and who may do it |
 | `test_demo_reset.py` | The demo can be restored to the workbook state, Admin only |
 | `test_schema_sync.py` | A deployed database gains new tables and columns without losing rows |
 

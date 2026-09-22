@@ -616,6 +616,33 @@ button:disabled {
   font-family: var(--mono);
 }
 
+/* ---------- Account administration ---------- */
+
+.row-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.row-actions button {
+  padding: 5px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.issued-password {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 10px 12px;
+  margin: 6px 0;
+  background: #fff;
+  border: 1px dashed var(--warn);
+  border-radius: 7px;
+  user-select: all;
+}
+
 /* ---------- Permission notice ---------- */
 
 .permission-notice {

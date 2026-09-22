@@ -5,6 +5,7 @@
 
 import type {
   Account,
+  AuditEntry,
   BalanceSheet,
   BomComponent,
   BomExplosion,
@@ -180,6 +181,30 @@ export const api = {
   roleMatrix: () => request<RoleMatrix>("/access/matrix"),
 
   users: () => request<UserRow[]>("/access/users"),
+
+  // --- Account administration (Admin only) ------------------------------
+
+  resetTwoFactor: (userId: number) =>
+    request<{ message: string }>(`/access/users/${userId}/reset-two-factor`, {
+      method: "POST",
+    }),
+
+  resetUserPassword: (userId: number, newPassword?: string) =>
+    request<{ password: string; message: string }>(
+      `/access/users/${userId}/reset-password`,
+      {
+        method: "POST",
+        body: JSON.stringify({ new_password: newPassword || null }),
+      },
+    ),
+
+  setUserActive: (userId: number, isActive: boolean) =>
+    request<{ message: string }>(`/access/users/${userId}/active`, {
+      method: "POST",
+      body: JSON.stringify({ is_active: isActive }),
+    }),
+
+  auditLog: () => request<AuditEntry[]>("/access/audit"),
 
   settings: () => request<Setting[]>("/settings"),
 

@@ -642,7 +642,39 @@ characters.
 
 ---
 
-### 6.13 Configuration
+### 6.13 Helping someone who cannot sign in
+
+If a colleague cannot get in, an **Admin** can help from **Roles & Access**. The
+**User accounts** table has three buttons on each row.
+
+**Reset 2FA.** Use this when someone has lost the phone with their authenticator
+*and* their recovery codes. It clears their second step, so their password alone
+works again, and they set it up afresh from the Security page. Their old recovery
+codes stop working at the same moment, which is deliberate.
+
+**Reset password.** Use this when someone has forgotten theirs. A new password
+appears on screen, once. Write it down or read it out to them — it is never shown
+again, and it is not stored anywhere readable. They can change it afterwards from
+the Security page.
+
+**Disable / Enable.** Use this when someone leaves, or when an account should be
+paused. A disabled account cannot sign in, and is signed out straight away — the
+server checks on every request, not just at sign-in.
+
+**Two things you cannot do here, on purpose:**
+
+- You cannot use these buttons on your own account. Use **Security** for that.
+  It is a safeguard against clearing your own second factor by accident.
+- You cannot disable your own account, so the company can never be left with
+  nobody able to administer the system.
+
+**Every one of these actions is recorded.** The **Administrative actions** list
+below the table shows who did what, to whom, and when. Only an administrator can
+see it.
+
+---
+
+### 6.14 Configuration
 
 This screen holds the settings that the client has not yet decided.
 
@@ -1006,5 +1038,6 @@ button.
 | See account detail | Reports → General Ledger | Everyone |
 | See the company position | Reports → Balance Sheet | Everyone |
 | Test permissions | Roles & Access | Everyone |
+| Unlock a colleague's account | Roles & Access | Admin |
 | Set up two-factor or change password | Security | Everyone (your own account) |
 | See what is still undecided | Configuration | Everyone |
