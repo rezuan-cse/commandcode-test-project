@@ -168,7 +168,7 @@ The import is checked against the workbook, both by the test suite and by a
 standalone script:
 
 ```bash
-cd backend && .venv/bin/python -m pytest tests -q          # 120 tests
+cd backend && .venv/bin/python -m pytest tests -q          # 124 tests
 cd .. && backend/.venv/bin/python scripts/seed_from_excel.py --check
 ```
 
@@ -344,7 +344,7 @@ cd backend && .venv/bin/python -m pytest tests -q
 | `test_auth.py` | Passwords, the TOTP second factor, recovery codes, password change |
 | `test_account_admin.py` | Unlocking a locked-out account, and who may do it |
 | `test_demo_reset.py` | The demo can be restored to the workbook state, Admin only |
-| `test_schema_sync.py` | A deployed database gains new tables and columns without losing rows |
+| `test_schema_sync.py` | A deployed database gains new tables and columns without losing rows, and drift is caught rather than ignored |
 
 The interface has its own tests, because the figures shown on screen must round
 the same way the ledger does:
@@ -435,6 +435,10 @@ startup, which is what lets a deployment with existing data gain new fields
 without being rebuilt.
 
 It is additive only — no drops, renames, type changes, or backfills — and it
-raises rather than guessing a value for a NOT NULL column with no default. That
-covers the changes this project makes, but Alembic is the right answer once the
-schema starts moving in ways this cannot express.
+raises rather than guessing a value for a NOT NULL column with no default. It
+also **refuses to start on a type mismatch**, because a narrowed money column
+would truncate silently, and reports any column no model claims, which is what a
+botched rename leaves behind.
+
+That covers the changes this project makes, so Alembic is deferred until the
+schema needs something this cannot express.

@@ -331,9 +331,29 @@ added to a table with rows, so it raises and says so rather than inventing data.
 
 Watch the deploy log for `[schema] added …` lines to see what it did.
 
+### It now refuses to start on the things it cannot fix
+
+Rather than let a change it cannot express pass in silence, it checks for two
+kinds of drift at startup:
+
+- **A type mismatch stops the service.** If a model declares a wider
+  `Numeric(18,4)` than the database holds, running on would truncate amounts
+  quietly. A service that refuses to start is the better failure. The message
+  names the column and both types.
+- **A column no model claims is reported, not fatal.** That usually means a
+  rename went wrong — the new column was added empty while the old one kept the
+  data — so it is worth knowing, but not a reason to be down.
+
+```
+[schema] warning: accounts.old_name exists in the database but no model claims
+it. Left untouched; probably a leftover from a rename.
+```
+
 **This is a stopgap, not a migration framework.** The specification calls for
-Alembic, and that is the right answer once the schema starts moving in ways this
-cannot express — dropping a column, changing a type, or backfilling.
+Alembic, and that is the right answer once the schema needs something this
+cannot express — dropping a column, changing a type, or backfilling. It is
+deliberately not done yet: the remaining phases mostly add tables and columns,
+which this handles, so the ceremony is deferred until it earns its keep.
 
 ---
 
