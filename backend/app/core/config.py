@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -31,5 +32,20 @@ class Settings(BaseSettings):
     # this if the data must be preserved.
     allow_demo_reset: bool = True
 
+    @field_validator("database_url", mode="after")
+    @classmethod
+    def route_postgres_to_psycopg(cls, value: str) -> str:
+        """Accept a plain Postgres URL and route it to the psycopg 3 driver.
+
+        Hosted providers hand out ``postgresql://…`` or ``postgres://…``, which
+        SQLAlchemy would send to psycopg2. Only psycopg 3 is installed, so the
+        URL is rewritten here. A pasted connection string then works unchanged.
+        """
+        for prefix in ("postgres://", "postgresql://"):
+            if value.startswith(prefix):
+                return "postgresql+psycopg://" + value[len(prefix):]
+        return value
+
 
 settings = Settings()
+

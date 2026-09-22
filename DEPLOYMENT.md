@@ -38,20 +38,22 @@ puts the interface on Vercel or Netlify if you want that URL.
 
 | | Option A | Option B | Option C |
 |---|---|---|---|
-| **Where** | Render (one service) | Vercel/Netlify + Render | Vercel + Neon Postgres |
-| **Public URLs** | One | Two | Two |
-| **Interface on Vercel/Netlify?** | No | **Yes** | **Yes** |
-| **API on Vercel?** | No | No | **Yes** |
-| **Data survives a restart?** | No (re-seeds) | No (re-seeds) | **Yes** |
-| **Code changes needed** | None | None | Postgres + serverless rework |
-| **Setup effort** | ~10 minutes | ~20 minutes | A few hours |
+| **Where** | Render (one service) | Vercel/Netlify + Render | Render + Neon Postgres |
+| **Public URLs** | One | Two | One |
+| **Interface on Vercel/Netlify?** | No | **Yes** | No |
+| **Data survives a restart?** | No — re-seeds | No — re-seeds | **Yes** |
+| **Setup effort** | ~10 minutes | ~20 minutes | ~25 minutes |
+| **Good for** | One guided sitting | A Vercel/Netlify URL | Leaving a link with the client |
 
-**Recommendation: Option A** if you just need a working link to show them, or
-**Option B** if the URL needs to be a Vercel or Netlify one specifically.
+**Recommendation: Option C** if you are leaving the link with the client to
+explore on their own. With Options A and B the data resets whenever the instance
+sleeps, so anything they post disappears after about 15 minutes of inactivity —
+which reads as a bug even though it is not one. Option A is fine for a single
+guided session where you keep clicking.
 
 ---
 
-## Option A — Render, single URL (recommended)
+## Option A — Render, single URL
 
 The repository is already configured for this. `render.yaml` is a Render
 blueprint and the `Dockerfile` builds the interface and the API into one image.
@@ -73,11 +75,12 @@ the workbook is inside the image and the database seeds itself on first boot.
   inactivity and take 30–60 seconds to wake. Open the link yourself a minute
   before the client sees it, so their first impression is not a spinner.
 - **Posted data resets when the instance restarts.** There is no persistent disk
-  on the free plan. Every restart re-seeds from the client's workbook, so the
-  demo always opens on their real figures.
-- **This is mostly a feature.** Nobody can permanently break the demo, and each
-  visitor gets a clean set of books. Visitors can also press **Reset demo data**
-  on the Dashboard.
+  on the free plan, so the SQLite file is recreated from the workbook each time.
+  Every restart therefore opens on the client's real figures.
+- **Nobody can permanently break the demo**, and each visitor gets a clean set of
+  books. Visitors can also press **Reset demo data** on the Dashboard.
+
+**If you need the data to stay put, use Option C below instead.**
 
 If you need posted data to survive permanently, add a disk to the Render service
 (a paid plan) and keep `RPCI_DATABASE_URL` pointing at its mount path.
@@ -143,34 +146,89 @@ open the Render URL directly first.
 
 ---
 
-## Option C — Everything on Vercel, with a hosted Postgres
+## Option C — Render with a hosted Postgres (recommended for a shared link)
 
-This is the only way to have the *whole* application on Vercel. It works, but it
-is real work and it changes the architecture.
+Use this when you are handing the client a URL to explore on their own. It keeps
+one public URL, and **posted data survives a restart**, so nothing the client
+enters vanishes while they are thinking.
 
-The idea is to replace SQLite with a hosted Postgres (Neon has a free tier), so
-the data lives outside the function instead of on a filesystem that disappears.
+Only the database changes. The API stays on Render exactly as in Option A; the
+books simply live in a managed Postgres instead of a file inside the container.
 
-What it requires:
+```
+Client's browser  →  Render (interface + API)
+                          ↓
+                     Neon Postgres (the books)
+```
 
-1. A Neon account and a free Postgres database.
-2. `psycopg[binary]` added to `backend/requirements.txt`.
-3. `RPCI_DATABASE_URL` changed to the Neon connection string.
-4. Connection handling adjusted for serverless — each invocation is a new
-   process, so a normal pool exhausts Postgres connections. Neon's pooled
-   connection string plus a small pool size, or a driver like `pg8000` with
-   `NullPool`.
-5. The API exposed as a Vercel Python function (`api/index.py` with a
-   `vercel.json` rewrite), rather than a long-running server.
-6. The schema and seed run once against Postgres, not on every cold start.
+### Step 1 — Create a free Postgres database
 
-The code is already portable in the ways that matter — money is `Decimal` with
-`Numeric` columns, the database URL is environment-driven, and there are no
-SQLite-specific queries or views. So this is a configuration and plumbing job
-rather than a rewrite, but it is not a ten-minute job either.
+1. Sign in at <https://neon.tech> and create a project.
+2. Choose the region closest to your Render service — both are usually
+   `us-east` or `eu-central`. Keeping them on the same continent matters more
+   than it sounds; the API talks to the database on every request.
+3. Copy the **connection string**. It looks like:
 
-**Ask for this option only if keeping the whole thing on Vercel genuinely
-matters.** Option B gets you a Vercel URL with none of the risk.
+   ```
+   postgresql://neondb_owner:AbC123@ep-cool-name-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
+   ```
+
+   Use the **direct** string, not the one with `-pooler` in the host. A single
+   long-running container keeps its own small connection pool, so pgbouncer in
+   front of it only adds a layer that prepared statements can trip over.
+
+### Step 2 — Point Render at it
+
+1. Open your Render service → **Environment**.
+2. Set `RPCI_DATABASE_URL` to the connection string you copied. Paste it
+   unchanged — the application rewrites `postgresql://` to use the installed
+   driver, so no `+psycopg` suffix is needed.
+3. Save. Render redeploys.
+
+### Step 3 — First boot
+
+Nothing else to do. On first start the application creates its tables and
+imports the client's workbook. Later starts detect the data already there and
+leave it alone, so restarts no longer reset anything.
+
+**Verify it worked:** post a purchase, then wait twenty minutes, then reload the
+page. If the purchase is still there, persistence is working. Under Option A it
+would have gone.
+
+### Clearing the data
+
+Because data now persists, the **Reset demo data** button on the Dashboard is how
+you return to the pristine workbook state. It empties the tables and re-imports;
+it takes well under a second.
+
+### Free tier notes
+
+- Neon's free tier includes 0.5 GB of storage, which is far more than this demo
+  will ever use.
+- Neon's compute scales to zero when idle. The first request after a quiet spell
+  may take a moment longer, but the data is untouched.
+- If you later delete the Neon project, the demo will create a fresh empty
+  database on the next boot and re-seed from the workbook. Nothing is lost that
+  cannot be re-imported.
+
+### Where Postgres differs from SQLite
+
+Two changes were needed, both already made:
+
+1. A Postgres driver (`psycopg`) is in `backend/requirements.txt`.
+2. The demo reset deletes rows instead of dropping tables. `DROP TABLE` needs an
+   exclusive lock, so on Postgres it blocks behind any session holding a read
+   lock — with a running application that means it hangs. Row deletion takes only
+   a row lock and is compatible with readers.
+
+The whole test suite runs against both engines:
+
+```bash
+cd backend
+.venv/bin/python -m pytest tests -q                                   # SQLite
+RPCI_TEST_DATABASE_URL=postgresql+psycopg://user:pass@host/db \
+  .venv/bin/python -m pytest tests -q                                 # Postgres
+```
 
 ---
 

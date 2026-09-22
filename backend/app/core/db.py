@@ -53,3 +53,22 @@ def init_db() -> None:
     from app import models_registry  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+
+
+def clear_all_data(session: Session) -> None:
+    """Delete every row, children before parents.
+
+    Deliberately not DROP TABLE. Dropping needs an exclusive lock on each table,
+    so on Postgres it blocks behind any other session holding a read lock — which
+    the running application always has. Plain DELETE takes only a row lock, which
+    is compatible with readers, and it works identically on SQLite.
+
+    Table order comes from the metadata's dependency sort, reversed, so foreign
+    keys are never violated and the helper needs no maintenance when models are
+    added.
+    """
+    from app import models_registry  # noqa: F401
+
+    for table in reversed(Base.metadata.sorted_tables):
+        session.execute(table.delete())
+    session.flush()

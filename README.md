@@ -261,12 +261,40 @@ Copy `.env.example` to `.env`, or set the variables directly:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `RPCI_DATABASE_URL` | `sqlite:///./rpci_demo.db` | Database location |
+| `RPCI_DATABASE_URL` | `sqlite:///./rpci_demo.db` | Where the books live — SQLite or Postgres |
 | `RPCI_AUTO_SEED` | `true` | Seed from the workbook on first boot |
 | `RPCI_SEED_FROM_EXCEL_PATH` | `../RPCI Accounts.xlsx` | Workbook to import |
 | `RPCI_DEMO_PASSWORD` | `rpci` | Shared password gate |
+| `RPCI_CORS_ORIGINS` | `*` | Origins allowed to call the API |
+| `RPCI_ALLOW_DEMO_RESET` | `true` | Allow restoring the workbook state from the Dashboard |
 
-Reset the demo by deleting the database file, or run
+### SQLite or Postgres
+
+SQLite is the default: one file, no setup. It is lost whenever the container is
+rebuilt, which is fine locally and for a demo held in a single sitting.
+
+For a link you leave with the client, point `RPCI_DATABASE_URL` at a Postgres
+database so nothing they enter disappears when the host sleeps:
+
+```bash
+RPCI_DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
+```
+
+Paste a hosted URL unchanged — the application rewrites `postgres://` and
+`postgresql://` to the installed `psycopg` driver, so no `+psycopg` suffix is
+needed. Tables are created and seeded from the workbook on first boot, and left
+alone afterwards. See [DEPLOYMENT.md](DEPLOYMENT.md), option C.
+
+The suite runs against either engine:
+
+```bash
+cd backend
+.venv/bin/python -m pytest tests -q                      # SQLite
+RPCI_TEST_DATABASE_URL=postgresql+psycopg://user:pass@host/db \
+  .venv/bin/python -m pytest tests -q                    # Postgres
+```
+
+Reset the demo from the Dashboard, by deleting the database file, or with
 `backend/.venv/bin/python scripts/seed_from_excel.py --rebuild`.
 
 ---
