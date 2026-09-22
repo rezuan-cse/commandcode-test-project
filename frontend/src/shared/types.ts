@@ -208,7 +208,7 @@ export interface ProductionPreview {
   warnings: string[];
 }
 
-export interface ProductionRun {
+export interface ProductionRun extends Reversible {
   id: number;
   order_no: string;
   production_date: string;
@@ -256,7 +256,14 @@ export interface SalePreview {
   warnings: string[];
 }
 
-export interface Sale {
+/** Reversal state carried by every posted transaction. */
+export interface Reversible {
+  is_reversed: boolean;
+  reversed_by: string | null;
+  reversal_reason: string | null;
+}
+
+export interface Sale extends Reversible {
   id: number;
   order_no: string;
   sale_date: string;
@@ -315,7 +322,7 @@ export interface PurchasePreview {
   warnings: string[];
 }
 
-export interface Purchase {
+export interface Purchase extends Reversible {
   id: number;
   order_no: string;
   purchase_date: string;

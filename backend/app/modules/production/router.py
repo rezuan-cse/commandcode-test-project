@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
+from app.core.schemas import ReversalRequest
 from app.modules.production import service
 from app.modules.production.schemas import (
     ProductionPostResult,
@@ -25,6 +26,28 @@ CAN_WRITE = Depends(require("production", write=True))
 def list_orders(db: Session = Depends(get_db)) -> list[ProductionRunOut]:
     """List posted production orders."""
     return service.list_orders(db)
+
+
+@router.post(
+    "/{order_id}/reverse", response_model=ProductionRunOut, dependencies=[CAN_WRITE]
+)
+def reverse_run(
+    order_id: int,
+    payload: ReversalRequest,
+    db: Session = Depends(get_db),
+) -> ProductionRunOut:
+    """Undo a posted production run.
+
+    The output comes back out and every component goes back in. Refused if the
+    output has since been sold or used.
+    """
+    return service.reverse(
+        db,
+        order_id,
+        reason=payload.reason,
+        posted_by=payload.posted_by,
+        reversal_date=payload.reversal_date,
+    )
 
 
 @router.post("/preview", response_model=ProductionPreview, dependencies=[CAN_WRITE])

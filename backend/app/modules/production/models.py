@@ -9,9 +9,10 @@ from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
+from app.core.mixins import ReversibleMixin
 
 
-class ProductionOrder(Base):
+class ProductionOrder(ReversibleMixin, Base):
     """A completed production run: components consumed, output produced."""
 
     __tablename__ = "production_orders"

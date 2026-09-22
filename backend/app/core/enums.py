@@ -58,6 +58,20 @@ class MovementType(str, enum.Enum):
     PRODUCTION_OUT = "Production-Out"
     SALE_OUT = "Sale-Out"
     ADJUSTMENT = "Adjustment"
+    # Stock moving back because a posted transaction was undone. Given their own
+    # types rather than reusing the originals, so the ledger says plainly that a
+    # row is a correction and not a fresh purchase or sale.
+    REVERSAL_IN = "Reversal-In"
+    REVERSAL_OUT = "Reversal-Out"
+
+
+# Movement types that increase stock. Everything else decreases it.
+INCREASING_MOVEMENTS = {
+    MovementType.OPENING,
+    MovementType.PURCHASE_IN,
+    MovementType.PRODUCTION_IN,
+    MovementType.REVERSAL_IN,
+}
 
 
 class JournalSource(str, enum.Enum):

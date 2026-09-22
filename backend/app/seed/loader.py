@@ -181,7 +181,7 @@ def _load_inventory(db: Session, data: WorkbookData) -> None:
                 movement_date=row["movement_date"] or cutover,
                 qty=to_decimal(row["in_qty"]),
                 reference=row["reference"] or "OPENING-IMPORT",
-                out_value=to_decimal(row["in_value"]),
+                value=to_decimal(row["in_value"]),
             )
         elif to_decimal(row["out_qty"]) > 0:
             ledger.record_movement(
@@ -191,7 +191,7 @@ def _load_inventory(db: Session, data: WorkbookData) -> None:
                 movement_date=row["movement_date"] or cutover,
                 qty=to_decimal(row["out_qty"]),
                 reference=row["reference"] or "HISTORIC-OUT",
-                out_value=to_decimal(row["out_value"]),
+                value=to_decimal(row["out_value"]),
             )
     db.flush()
 

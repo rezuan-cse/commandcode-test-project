@@ -157,6 +157,12 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  reverseProduction: (id: number, reason: string) =>
+    request<ProductionRun>(`/production/${id}/reverse`, {
+      method: "POST",
+      body: JSON.stringify({ reason, posted_by: "store" }),
+    }),
+
   sales: () => request<Sale[]>("/sales"),
 
   sale: (id: number | string) => request<SaleDetail>(`/sales/${id}`),
@@ -166,6 +172,12 @@ export const api = {
 
   postSale: (payload: unknown) =>
     request<SalePostResult>("/sales", { method: "POST", body: JSON.stringify(payload) }),
+
+  reverseSale: (id: number, reason: string) =>
+    request<SaleDetail>(`/sales/${id}/reverse`, {
+      method: "POST",
+      body: JSON.stringify({ reason, posted_by: "sales" }),
+    }),
 
   previewPurchase: (payload: unknown) =>
     request<PurchasePreview>("/purchases/preview", {
@@ -177,6 +189,12 @@ export const api = {
 
   postPurchase: (payload: unknown) =>
     request<PurchasePostResult>("/purchases", { method: "POST", body: JSON.stringify(payload) }),
+
+  reversePurchase: (id: number, reason: string) =>
+    request<Purchase>(`/purchases/${id}/reverse`, {
+      method: "POST",
+      body: JSON.stringify({ reason, posted_by: "store" }),
+    }),
 
   roleMatrix: () => request<RoleMatrix>("/access/matrix"),
 

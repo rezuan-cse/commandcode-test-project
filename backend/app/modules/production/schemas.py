@@ -7,6 +7,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.schemas import ReversalOut
+
 
 class SuggestedComponent(BaseModel):
     """A BOM-suggested component for a production run."""
@@ -71,7 +73,7 @@ class ProductionPreview(BaseModel):
     warnings: list[str]
 
 
-class ProductionRunOut(BaseModel):
+class ProductionRunOut(ReversalOut):
     """A posted production order."""
 
     model_config = ConfigDict(from_attributes=True)

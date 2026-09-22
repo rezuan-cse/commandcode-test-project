@@ -5,6 +5,7 @@ import { useDemo } from "../../shared/DemoContext";
 import { fmt, fmtQty } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
 import { PermissionNotice } from "../../shared/PermissionNotice";
+import { ReversedBadge, ReverseButton } from "../../shared/ReverseButton";
 import { Card, ErrorBox, Field, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { Purchase, PurchasePreview } from "../../shared/types";
@@ -340,16 +341,32 @@ export default function PurchasesPage() {
                   <th>Supplier</th>
                   <th className="numeric">Value</th>
                   <th>Entered by</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
                 {purchases.data.map((purchase: Purchase) => (
                   <tr key={purchase.id}>
-                    <td className="name-cell">{purchase.order_no}</td>
+                    <td className="name-cell">
+                      {purchase.order_no}{" "}
+                      {purchase.is_reversed && (
+                        <ReversedBadge reason={purchase.reversal_reason} />
+                      )}
+                    </td>
                     <td>{purchase.purchase_date}</td>
                     <td>{purchase.supplier}</td>
                     <td className="numeric">{fmt(purchase.total_value)}</td>
                     <td className="muted small">{purchase.posted_by}</td>
+                    <td>
+                      {canWrite && !purchase.is_reversed && (
+                        <ReverseButton
+                          onReverse={async (reason) => {
+                            await api.reversePurchase(purchase.id, reason);
+                            refresh();
+                          }}
+                        />
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

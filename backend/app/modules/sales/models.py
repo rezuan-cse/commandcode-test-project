@@ -9,9 +9,10 @@ from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
+from app.core.mixins import ReversibleMixin
 
 
-class SalesOrder(Base):
+class SalesOrder(ReversibleMixin, Base):
     """A posted sale: inventory reduced, revenue and COGS recognised."""
 
     __tablename__ = "sales_orders"

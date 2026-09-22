@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
+from app.core.schemas import ReversalRequest
 from app.modules.purchases import service
 from app.modules.purchases.schemas import (
     PurchasePostResult,
@@ -25,6 +26,26 @@ CAN_WRITE = Depends(require("sales_purchase", write=True))
 def list_orders(db: Session = Depends(get_db)) -> list[PurchaseOut]:
     """List posted purchase orders."""
     return service.list_orders(db)
+
+
+@router.post("/{order_id}/reverse", response_model=PurchaseOut, dependencies=[CAN_WRITE])
+def reverse_purchase(
+    order_id: int,
+    payload: ReversalRequest,
+    db: Session = Depends(get_db),
+) -> PurchaseOut:
+    """Undo a posted purchase.
+
+    Refused if the goods have since been used: taking back stock that has been
+    consumed would drive the quantity negative.
+    """
+    return service.reverse(
+        db,
+        order_id,
+        reason=payload.reason,
+        posted_by=payload.posted_by,
+        reversal_date=payload.reversal_date,
+    )
 
 
 @router.post("/preview", response_model=PurchasePreview, dependencies=[CAN_WRITE])

@@ -7,6 +7,7 @@ Cr Sales) and cost of goods sold (Dr COGS / Cr Inventory).
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
@@ -293,3 +294,46 @@ def get_order(db: Session, order_id: int) -> SalesOrder:
     if order is None:
         raise NotFoundError(f"Sale {order_id} not found")
     return order
+
+
+def reverse(
+    db: Session,
+    order_id: int,
+    *,
+    reason: str,
+    posted_by: str,
+    reversal_date: date | None = None,
+) -> SalesOrder:
+    """Undo a posted sale, atomically.
+
+    The goods go back into stock at exactly the cost they left at, so the
+    inventory value unwinds precisely, and the journal entry is mirrored, so
+    revenue and cost of goods sold both fall away.
+
+    Nothing is edited or deleted. The original sale stays, marked as reversed,
+    and the correction sits beside it — which is what makes the history
+    explainable to an accountant or an auditor afterwards.
+    """
+    order = get_order(db, order_id)
+    when = reversal_date or order.sale_date
+
+    try:
+        entry = journal_service.reverse_for_transaction(
+            db, order, reason=reason, posted_by=posted_by, reversal_date=when
+        )
+        for line in order.lines:
+            ledger.record_movement(
+                db,
+                item_code=line.item_code,
+                movement_type=MovementType.REVERSAL_IN,
+                movement_date=when,
+                qty=line.qty,
+                reference=f"{order.order_no}-REV",
+                value=line.line_cogs,
+                journal_entry_id=entry.id,
+            )
+        db.commit()
+        return order
+    except Exception:
+        db.rollback()
+        raise

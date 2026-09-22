@@ -330,3 +330,58 @@ def post(db: Session, payload: ProductionRequest) -> ProductionPostResult:
 def list_orders(db: Session, limit: int = 200) -> list[ProductionOrder]:
     """List posted production orders."""
     return repository.list_orders(db, limit=limit)
+
+
+def reverse(
+    db: Session,
+    order_id: int,
+    *,
+    reason: str,
+    posted_by: str,
+    reversal_date: date | None = None,
+) -> ProductionOrder:
+    """Undo a posted production run, atomically.
+
+    The output goes back out at the cost it was received at, and every component
+    goes back in at the cost it was consumed at, so stock, average costs and the
+    accounts all unwind exactly.
+
+    The output is removed first. If it has since been sold, this refuses before
+    touching the components — and because it is one transaction, a failure
+    anywhere leaves nothing changed either way.
+    """
+    order = repository.get_order(db, order_id)
+    if order is None:
+        raise NotFoundError(f"Production order {order_id} not found")
+    when = reversal_date or order.production_date
+
+    try:
+        entry = journal_service.reverse_for_transaction(
+            db, order, reason=reason, posted_by=posted_by, reversal_date=when
+        )
+        ledger.record_movement(
+            db,
+            item_code=order.output_item_code,
+            movement_type=MovementType.REVERSAL_OUT,
+            movement_date=when,
+            qty=order.qty_produced,
+            reference=f"{order.order_no}-REV",
+            value=order.total_cost,
+            journal_entry_id=entry.id,
+        )
+        for line in order.lines:
+            ledger.record_movement(
+                db,
+                item_code=line.component_code,
+                movement_type=MovementType.REVERSAL_IN,
+                movement_date=when,
+                qty=line.qty_consumed,
+                reference=f"{order.order_no}-REV",
+                value=line.line_cost,
+                journal_entry_id=entry.id,
+            )
+        db.commit()
+        return order
+    except Exception:
+        db.rollback()
+        raise

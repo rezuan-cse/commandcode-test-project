@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.schemas import ReversalOut
 from app.modules.production.schemas import JournalLinePreview
 
 
@@ -54,7 +55,7 @@ class PurchasePreview(BaseModel):
     warnings: list[str]
 
 
-class PurchaseOut(BaseModel):
+class PurchaseOut(ReversalOut):
     """A posted purchase."""
 
     model_config = ConfigDict(from_attributes=True)

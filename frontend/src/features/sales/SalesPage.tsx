@@ -6,6 +6,7 @@ import { useDemo } from "../../shared/DemoContext";
 import { fmt, fmtPct, fmtQty } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
 import { PermissionNotice } from "../../shared/PermissionNotice";
+import { ReversedBadge, ReverseButton } from "../../shared/ReverseButton";
 import { Card, ErrorBox, Field, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { Sale, SalePreview } from "../../shared/types";
@@ -320,16 +321,29 @@ export default function SalesPage() {
               <tbody>
                 {sales.data.map((sale: Sale) => (
                   <tr key={sale.id}>
-                    <td className="name-cell">{sale.order_no}</td>
+                    <td className="name-cell">
+                      {sale.order_no}{" "}
+                      {sale.is_reversed && <ReversedBadge reason={sale.reversal_reason} />}
+                    </td>
                     <td>{sale.sale_date}</td>
                     <td>{sale.customer}</td>
                     <td className="numeric">{fmt(sale.revenue)}</td>
                     <td className="numeric">{fmt(sale.cogs)}</td>
                     <td className="numeric">{fmt(Number(sale.revenue) - Number(sale.cogs))}</td>
                     <td>
-                      <Link to={`/sales/${sale.id}/receipt`}>
-                        <button>Receipt</button>
-                      </Link>
+                      <div className="row-actions">
+                        <Link to={`/sales/${sale.id}/receipt`}>
+                          <button>Receipt</button>
+                        </Link>
+                        {canWrite && !sale.is_reversed && (
+                          <ReverseButton
+                            onReverse={async (reason) => {
+                              await api.reverseSale(sale.id, reason);
+                              refresh();
+                            }}
+                          />
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

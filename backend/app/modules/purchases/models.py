@@ -9,9 +9,10 @@ from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
+from app.core.mixins import ReversibleMixin
 
 
-class PurchaseOrder(Base):
+class PurchaseOrder(ReversibleMixin, Base):
     """A posted purchase: inventory increased at cost, payable or cash credited."""
 
     __tablename__ = "purchase_orders"

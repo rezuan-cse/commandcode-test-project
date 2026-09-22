@@ -7,6 +7,7 @@ either the supplier payable or cash.
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
@@ -217,3 +218,54 @@ def post(db: Session, payload: PurchaseRequest) -> PurchasePostResult:
 def list_orders(db: Session, limit: int = 200) -> list[PurchaseOrder]:
     """List posted purchase orders."""
     return repository.list_orders(db, limit=limit)
+
+
+def get_order(db: Session, order_id: int) -> PurchaseOrder:
+    """Fetch one posted purchase with its lines, or raise :class:`NotFoundError`."""
+    order = repository.get_order(db, order_id)
+    if order is None:
+        raise NotFoundError(f"Purchase {order_id} not found")
+    return order
+
+
+def reverse(
+    db: Session,
+    order_id: int,
+    *,
+    reason: str,
+    posted_by: str,
+    reversal_date: date | None = None,
+) -> PurchaseOrder:
+    """Undo a posted purchase, atomically.
+
+    The stock goes back out at exactly the price paid, and the journal entry is
+    mirrored, so the payable or the bank credit unwinds with it.
+
+    This will refuse if the goods have already been used. Taking back stock that
+    has since been consumed in production would drive the quantity negative, and
+    the honest answer is to reverse the later consumption first rather than let
+    the ledger hold a balance that never existed.
+    """
+    order = get_order(db, order_id)
+    when = reversal_date or order.purchase_date
+
+    try:
+        entry = journal_service.reverse_for_transaction(
+            db, order, reason=reason, posted_by=posted_by, reversal_date=when
+        )
+        for line in order.lines:
+            ledger.record_movement(
+                db,
+                item_code=line.item_code,
+                movement_type=MovementType.REVERSAL_OUT,
+                movement_date=when,
+                qty=line.qty,
+                reference=f"{order.order_no}-REV",
+                value=line.line_value,
+                journal_entry_id=entry.id,
+            )
+        db.commit()
+        return order
+    except Exception:
+        db.rollback()
+        raise

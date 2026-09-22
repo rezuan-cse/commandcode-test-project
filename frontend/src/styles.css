@@ -616,6 +616,37 @@ button:disabled {
   font-family: var(--mono);
 }
 
+/* ---------- Reversal ---------- */
+
+.reverse-form {
+  min-width: 260px;
+  padding: 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: #fff;
+  text-align: left;
+}
+
+.reverse-form input {
+  font-size: 12.5px;
+}
+
+/* A receipt that has been reversed must never read as a live document. */
+.receipt-reversed-banner {
+  background: var(--negative-soft);
+  color: var(--negative);
+  border: 1px solid #fecaca;
+  border-radius: 7px;
+  padding: 10px 14px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.receipt-reversed {
+  opacity: 0.9;
+}
+
 /* ---------- Account administration ---------- */
 
 .row-actions {

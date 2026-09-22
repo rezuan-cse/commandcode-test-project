@@ -14,7 +14,7 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from app.core.enums import MovementType
+from app.core.enums import INCREASING_MOVEMENTS, MovementType
 from app.core.exceptions import InsufficientStockError, NotFoundError
 from app.core.money import money, rate, to_decimal, ZERO
 from app.modules.inventory_ledger import repository
@@ -69,16 +69,18 @@ def record_movement(
     qty: Decimal,
     reference: str | None = None,
     unit_cost: Decimal | None = None,
-    out_value: Decimal | None = None,
+    value: Decimal | None = None,
     journal_entry_id: int | None = None,
 ) -> InventoryLedgerRow:
     """Append one movement and recompute the running balance and average cost.
 
-    ``movement_type`` decides direction: Production-In, Purchase-In and
-    Opening Stock increase stock; everything else decreases it. For an increase,
-    ``unit_cost`` (or ``out_value`` reused as the in-value) sets the receipt cost.
-    For a decrease, the cost is the item's current average, unless an explicit
-    ``out_value`` is supplied for a historical import.
+    ``movement_type`` decides direction: Opening, Purchase-In, Production-In and
+    Reversal-In increase stock; everything else decreases it.
+
+    ``value`` sets the total for the movement explicitly, which matters when it
+    is not simply quantity times a unit cost — a reversal restores stock at
+    exactly the value it left at, so the arithmetic unwinds precisely. Supply
+    ``unit_cost`` instead when the movement is priced at a known rate.
     """
     from app.modules.items_bom import repository as items_repo
 
@@ -87,14 +89,10 @@ def record_movement(
 
     qty = money(qty)
     current = position(db, item_code)
-    is_increase = movement_type in {
-        MovementType.OPENING,
-        MovementType.PURCHASE_IN,
-        MovementType.PRODUCTION_IN,
-    }
+    is_increase = movement_type in INCREASING_MOVEMENTS
 
     if is_increase:
-        in_value = money(to_decimal(out_value) if out_value is not None else to_decimal(unit_cost) * qty)
+        in_value = money(to_decimal(value) if value is not None else to_decimal(unit_cost) * qty)
         new_qty = money(current.qty + qty)
         new_value = money(current.value + in_value)
         new_avg = _next_average(current.qty, current.value, qty, in_value)
@@ -117,7 +115,7 @@ def record_movement(
             raise InsufficientStockError(
                 f"Cannot take {qty} of {item_code}: only {current.qty} on hand"
             )
-        cost = out_value if out_value is not None else money(current.avg_cost * qty)
+        cost = value if value is not None else money(current.avg_cost * qty)
         cost = money(cost)
         new_qty = money(current.qty - qty)
         new_value = money(current.value - cost)

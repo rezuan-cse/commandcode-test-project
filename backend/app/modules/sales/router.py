@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
+from app.core.schemas import ReversalRequest
 from app.modules.sales import service
 from app.modules.sales.schemas import (
     SaleDetailOut,
@@ -32,6 +33,26 @@ def list_orders(db: Session = Depends(get_db)) -> list[SaleOut]:
 def get_order(order_id: int, db: Session = Depends(get_db)) -> SaleDetailOut:
     """Fetch one posted sale with its lines, for the receipt."""
     return service.get_order(db, order_id)
+
+
+@router.post("/{order_id}/reverse", response_model=SaleDetailOut, dependencies=[CAN_WRITE])
+def reverse_sale(
+    order_id: int,
+    payload: ReversalRequest,
+    db: Session = Depends(get_db),
+) -> SaleDetailOut:
+    """Undo a posted sale.
+
+    The stock goes back and the entry is mirrored. Nothing is edited or deleted —
+    the original stays, marked as reversed.
+    """
+    return service.reverse(
+        db,
+        order_id,
+        reason=payload.reason,
+        posted_by=payload.posted_by,
+        reversal_date=payload.reversal_date,
+    )
 
 
 @router.post("/preview", response_model=SalePreview, dependencies=[CAN_WRITE])

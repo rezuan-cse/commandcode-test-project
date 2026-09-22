@@ -133,13 +133,42 @@ Three deliberate constraints:
 using it. Requiring a change at next sign-in is the tidier behaviour and needs a
 small extra flow.
 
+## Correcting a mistake
+
+A wrong posting is **reversed, never edited or deleted.** Any posted sale,
+purchase or production run has a **Reverse** button; it asks for a reason and
+then posts a mirror image — the stock moves back and the entry is reversed.
+
+The original stays on the record, marked as reversed. The correction sits beside
+it, with its own voucher number ending `-REV`.
+
+Three reasons it works this way:
+
+- **Editing would silently corrupt stock valuation.** Change a past purchase
+  quantity and every later issue cost, every COGS figure and the closing stock
+  value change — but the journal entries already posted do not. The stock sheet
+  and the accounts would then disagree, which is the exact problem this system
+  exists to remove.
+- **The inventory ledger is append-only.** Every running balance depends on the
+  row before it; editing one invalidates all those after.
+- **Deleting destroys the evidence.** "Reversed on 3 November by Rahim" is a fact
+  the client can defend. A vanished entry is not.
+
+A reversal is refused if it cannot be done honestly — taking back stock that has
+already been consumed, or un-making something that has since been sold. Those
+cases need the later transaction reversed first.
+
+*Still to consider:* whether reversing should require a second person. The build
+specification raises approval for postings as an open question, and a reversal is
+where it matters most.
+
 ## Verifying the numbers
 
 The import is checked against the workbook, both by the test suite and by a
 standalone script:
 
 ```bash
-cd backend && .venv/bin/python -m pytest tests -q          # 106 tests
+cd backend && .venv/bin/python -m pytest tests -q          # 120 tests
 cd .. && backend/.venv/bin/python scripts/seed_from_excel.py --check
 ```
 
@@ -311,6 +340,7 @@ cd backend && .venv/bin/python -m pytest tests -q
 | `test_production_posting.py` | Costing, balanced auto-posting, insufficient stock, rollback |
 | `test_sales_posting.py` | Revenue and COGS together, margin, overselling, rollback |
 | `test_role_permissions.py` | Every role's read and write access, enforced over HTTP |
+| `test_reversal.py` | A reversal restores stock, average cost and the trial balance exactly |
 | `test_auth.py` | Passwords, the TOTP second factor, recovery codes, password change |
 | `test_account_admin.py` | Unlocking a locked-out account, and who may do it |
 | `test_demo_reset.py` | The demo can be restored to the workbook state, Admin only |

@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+import datetime as dt
 from datetime import date
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
 from app.core.enums import JournalSource, Segment
-from app.core.exceptions import DuplicateError, NotFoundError, UnbalancedEntryError
+from app.core.exceptions import (
+    DomainError,
+    DuplicateError,
+    NotFoundError,
+    UnbalancedEntryError,
+)
 from app.core.money import money, ZERO
 from app.modules.journal_entries import repository
 from app.modules.journal_entries.models import JournalEntry, JournalLine
@@ -85,6 +91,90 @@ def post_manual_entry(db: Session, payload: JournalEntryCreate) -> JournalEntry:
     )
     repository.add_entry(db, entry)
     db.commit()
+    return entry
+
+
+def reverse_entry(
+    db: Session,
+    original: JournalEntry,
+    *,
+    reversal_date: date,
+    posted_by: str,
+    reason: str,
+) -> JournalEntry:
+    """Build the mirror image of a posted entry, but do not persist it.
+
+    Every line is swapped debit for credit, so the two together net to nothing.
+    The original is left untouched: the correction is a new record, which is what
+    makes the history explainable afterwards.
+
+    The voucher number carries a ``-REV`` suffix so it is obvious at a glance
+    which entry it undoes, and the suffix doubles as the guard against reversing
+    the same entry twice.
+    """
+    voucher_no = f"{original.voucher_no}-REV"
+    if repository.get_by_voucher(db, voucher_no) is not None:
+        raise DuplicateError(f"{voucher_no} already exists; this entry is reversed")
+
+    mirror = [
+        JournalLineIn(
+            account_code=line.account_code,
+            segment=line.segment,
+            debit=money(line.credit),
+            credit=money(line.debit),
+            narration=f"Reversal of {original.voucher_no}",
+        )
+        for line in original.lines
+    ]
+    return build_entry(
+        voucher_no=voucher_no,
+        entry_date=reversal_date,
+        lines=mirror,
+        source=original.source,
+        narration=f"Reversal of {original.voucher_no} — {reason}",
+        reference=original.voucher_no,
+        posted_by=posted_by,
+    )
+
+
+def reverse_for_transaction(
+    db: Session,
+    transaction: object,
+    *,
+    reason: str,
+    posted_by: str,
+    reversal_date: date,
+) -> JournalEntry:
+    """Reverse the entry behind a posted transaction, and mark the transaction.
+
+    Shared by sales, purchases and production, which all carry the same reversal
+    columns. The guards live here so the three cannot drift apart: a transaction
+    that is already reversed is refused, and one with no entry behind it is
+    refused rather than silently left half-undone.
+    """
+    if getattr(transaction, "is_reversed", False):
+        raise DomainError(f"{transaction.order_no} has already been reversed")  # type: ignore[attr-defined]
+
+    entry_id = getattr(transaction, "journal_entry_id", None)
+    original = repository.get_entry(db, entry_id) if entry_id else None
+    if original is None:
+        raise DomainError(
+            f"{transaction.order_no} has no journal entry to reverse"  # type: ignore[attr-defined]
+        )
+
+    entry = reverse_entry(
+        db,
+        original,
+        reversal_date=reversal_date,
+        posted_by=posted_by,
+        reason=reason,
+    )
+    repository.add_entry(db, entry)
+
+    transaction.reversed_at = dt.datetime.now(dt.timezone.utc)  # type: ignore[attr-defined]
+    transaction.reversed_by = posted_by  # type: ignore[attr-defined]
+    transaction.reversal_reason = reason  # type: ignore[attr-defined]
+    transaction.reversal_journal_entry_id = entry.id  # type: ignore[attr-defined]
     return entry
 
 

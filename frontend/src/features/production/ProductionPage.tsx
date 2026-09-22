@@ -5,6 +5,7 @@ import { useDemo } from "../../shared/DemoContext";
 import { fmt, fmtQty } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
 import { PermissionNotice } from "../../shared/PermissionNotice";
+import { ReversedBadge, ReverseButton } from "../../shared/ReverseButton";
 import { Card, ErrorBox, Field, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { ProductionPreview, ProductionRun } from "../../shared/types";
@@ -312,12 +313,16 @@ export default function ProductionPage() {
                   <th className="numeric">Labor + OH</th>
                   <th className="numeric">Total cost</th>
                   <th className="numeric">Unit cost</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
                 {runs.data.map((run: ProductionRun) => (
                   <tr key={run.id}>
-                    <td className="name-cell">{run.order_no}</td>
+                    <td className="name-cell">
+                      {run.order_no}{" "}
+                      {run.is_reversed && <ReversedBadge reason={run.reversal_reason} />}
+                    </td>
                     <td>{run.production_date}</td>
                     <td>{run.output_item_code}</td>
                     <td className="numeric">{fmtQty(run.qty_produced)}</td>
@@ -327,6 +332,16 @@ export default function ProductionPage() {
                     </td>
                     <td className="numeric">{fmt(run.total_cost)}</td>
                     <td className="numeric">{fmt(run.unit_cost, 4)}</td>
+                    <td>
+                      {canWrite && !run.is_reversed && (
+                        <ReverseButton
+                          onReverse={async (reason) => {
+                            await api.reverseProduction(run.id, reason);
+                            refresh();
+                          }}
+                        />
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

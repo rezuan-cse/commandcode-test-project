@@ -41,7 +41,13 @@ export default function ReceiptPage() {
         </button>
       </div>
 
-      <article className="receipt">
+      <article className={`receipt ${order.is_reversed ? "receipt-reversed" : ""}`}>
+        {order.is_reversed && (
+          <div className="receipt-reversed-banner">
+            Reversed — this sale has been undone
+            {order.reversal_reason ? `: ${order.reversal_reason}` : ""}
+          </div>
+        )}
         <header className="receipt-head">
           <div>
             <h1>{company.name || "RPCI"}</h1>

@@ -674,7 +674,41 @@ see it.
 
 ---
 
-### 6.14 Configuration
+### 6.14 Correcting a posting mistake
+
+If a sale, purchase or production run was entered wrongly — a wrong quantity, a
+wrong price, the wrong item — you fix it by **reversing** it, not by editing or
+deleting it.
+
+Find the posting in the list at the bottom of the screen and press **Reverse**.
+You will be asked to say why. Press **Confirm reversal** and the software:
+
+- puts the stock back where it was,
+- posts an opposite accounting entry that cancels the original, and
+- leaves the original in place, marked **reversed**, with your reason beside it.
+
+Then enter the transaction again, correctly.
+
+**Why not just edit it?** Because editing a past transaction changes what the
+stock cost, and every later figure that was worked out from it — but it does not
+change the accounts that were already posted. The stock sheet and the books would
+then disagree, which is exactly the problem this system was built to remove.
+
+**Why not delete it?** Because "this was reversed on 3 November by Rahim, because
+the customer ordered four not fourteen" is something you can defend. A record
+that simply vanished is not.
+
+**Sometimes a reversal is refused.** If the stock has already been used — the
+goods have been consumed in production, or the finished items have been sold —
+the software will not take them back, because that would mean recording a stock
+position that never existed. Reverse the later transaction first.
+
+Reversed postings are shown with a red **reversed** badge. A reversed receipt
+carries a warning across the top, so it can never be mistaken for a live one.
+
+---
+
+### 6.15 Configuration
 
 This screen holds the settings that the client has not yet decided.
 
@@ -925,6 +959,7 @@ mistake.
 | Use the same voucher number twice | Refused |
 | Open a screen your role does not allow | You see an error saying you do not have access |
 | Post something that fails halfway | The whole thing is undone. Nothing is saved. |
+| Change or delete a posted transaction | Refused. Reverse it instead — see section 6.14. |
 
 ---
 
