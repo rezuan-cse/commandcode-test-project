@@ -9,3 +9,4 @@
 - Wants demos deployed to a shareable public URL so the client can click through it themselves and send back observations/new requirements. Confidence: 0.55
 - When reporting a bug, expects the fix to be completed and then committed and pushed to git ("recheck fix and push the git") — the app is deployed and used publicly, so changes must land on the remote/live deployment, not just locally. Confidence: 0.7
 - Wants visible live progress in the CLI while multi-step work runs — checks repeatedly ("can't I see the progress in CLI?") and loses patience if turns pass without tool calls/output. Prefers continuous tool activity / streamed progress over silent work between turns. Confidence: 0.7
+- Prefers to report bugs with visual evidence — sends browser error screenshots (pasted directly into the chat) rather than only describing the problem in text. Confidence: 0.6

@@ -748,18 +748,51 @@ the cost of the sale (last two lines). That is why the total is 3,747.44 and not
 
 ### Step 4 — Check the results
 
-Go back to the **Dashboard**.
+All three steps are done. Now look at what changed. The figures are spread over
+three screens, so this last step says which screen to open.
+
+**On the Dashboard:**
 
 | What | Value | Why |
 |---|---|---|
-| TRD-018 on hand | 6 units | 10 made − 4 sold |
-| TRD-018 average cost | 336.86046667 | The cost from step 2 |
-| Manufacturing profit | 1,600.00 | From the original data |
-| Trading profit | 1,052.56 | From your sale |
+| Manufacturing profit | 1,600.00 | Unchanged — this came from the original workbook data |
+| Trading profit | 1,052.56 | Your sale: 2,400.00 revenue less 1,347.44 cost |
 | Net profit | 2,652.56 | 1,600.00 + 1,052.56 |
-| Total assets | 830,652.56 | Up by the profit |
+| Total assets | 830,652.56 | Up from 801,600.00 — see the note below |
+| Total liabilities | 28,000.00 | The purchase was on credit, so you now owe the supplier |
 | Balance sheet check | 0.00 | Still balanced |
-| Trial balance difference | 0.00 | Still balanced |
+
+**On Inventory & BOM** (search for `TRD-018`):
+
+| What | Value | Why |
+|---|---|---|
+| Quantity on hand | 6 | 10 made, 4 sold |
+| Average cost | 336.86046667 | The unit cost worked out in step 2 |
+
+**On Trial Balance** (Reports → Trial Balance):
+
+| What | Value | Why |
+|---|---|---|
+| Difference | 0.00 | The books still net to zero |
+
+**Why total assets rose by more than the profit**
+
+Total assets went from 801,600.00 to 830,652.56, an increase of 29,052.56. That
+is more than the profit, and it is worth understanding why. It is two things:
+
+- **28,000.00 of new stock**, bought in step 1. The goods arrived, so an asset
+  went up.
+- **1,052.56 of profit** from the sale in step 3.
+
+The purchase was on credit. That is why total liabilities now read 28,000.00:
+you gained the stock, and you owe the supplier for it. Both sides moved together,
+which is why the balance sheet still balances:
+
+```
+Assets 830,652.56  =  Liabilities 28,000.00  +  Equity 802,652.56
+```
+
+Equity is the 800,000.00 you started with, plus the 2,652.56 of profit.
 
 Everything adds up, and the books are still sound after all three transactions.
 That is the whole point of the system.
@@ -797,6 +830,10 @@ GL inventory 301400 vs stock ledger 775500 (variance -474100)
 
 It means: the stock sheet says there is 775,500 of stock, but the accounts only
 show 301,400. There is a gap of 474,100.
+
+Those two figures change as you buy and sell, so you may see different ones from
+the example above. **The 474,100 gap between them does not change** — that is the
+size of the problem in the workbook, and it stays put.
 
 This is **not a fault in the software**. It is a real problem in the original
 spreadsheet.
