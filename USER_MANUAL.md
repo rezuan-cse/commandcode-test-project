@@ -154,6 +154,15 @@ The menu on the left is grouped into five parts.
 
 This is the first screen. It shows the health of the business at a glance.
 
+**Top right — Reset demo data:**
+
+A button in the top right of the page. Press it to put everything back to the
+original workbook figures. Anything you have entered is removed, and the demo
+looks exactly as it did the first time you opened it.
+
+Nothing is permanently lost by exploring. If you are unsure whether something on
+screen is your doing or the original data, press this and start again.
+
 **Top row — five boxes:**
 Revenue, COGS, Gross profit, Gross margin, and Net profit.
 
@@ -872,8 +881,13 @@ On Production Entry, it can also mean the item has no recipe (BOM).
 
 ### "I want to start over"
 
-Delete the file `rpci_demo.db` in the project folder and restart the software. All
-the original data comes back, and your test entries are gone.
+Press **Reset demo data** on the Dashboard. Everything goes back to the original
+workbook figures and anything you entered is removed.
+
+If you are running the software yourself on your own computer, and it is keeping
+its data in a file, you can instead delete the `rpci_demo.db` file in the project
+folder and restart. On a hosted copy there is no file for you to delete — use the
+button.
 
 ---
 

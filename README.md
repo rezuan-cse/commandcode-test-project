@@ -186,6 +186,10 @@ picture of how the business actually runs.
 10. **Configuration** — VAT, payroll, and the approval switches, each marked
     *pending client* rather than silently assumed.
 
+Nothing in the walkthrough is destructive. **Reset demo data** on the Dashboard
+puts the books back to the workbook state at any point, so a reviewer can try
+things without wondering whether what they see is their own doing.
+
 ---
 
 ## Architecture
