@@ -49,10 +49,54 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def init_db() -> None:
-    """Create all tables. Imports models so they register on the metadata."""
+    """Bring the database schema up to date. Imports models so they register."""
+    for change in sync_schema():
+        print(f"[schema] added {change}")
+
+
+def sync_schema() -> list[str]:
+    """Create missing tables and add missing columns, returning what changed.
+
+    ``create_all`` only creates tables that do not exist yet; it never alters
+    one. Without this, the first schema change after a deployment would fail at
+    request time with a missing-column error, which is exactly what happened
+    when password and 2FA columns were introduced against a live database.
+
+    This is deliberately **additive only**. It adds tables and columns and does
+    nothing else: no drops, no renames, no type changes, no data backfill. A
+    column that is NOT NULL and has no server default cannot be added to a table
+    that already holds rows, so that case raises rather than guessing a value.
+
+    It is a stopgap, not a migration framework. The build specification calls
+    for Alembic, and that is the right long-term answer once the schema starts
+    changing in ways this cannot express.
+    """
+    from sqlalchemy import inspect, text
+    from sqlalchemy.schema import CreateColumn
+
     from app import models_registry  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+
+    inspector = inspect(engine)
+    applied: list[str] = []
+
+    for table in Base.metadata.sorted_tables:
+        present = {column["name"] for column in inspector.get_columns(table.name)}
+        for column in table.columns:
+            if column.name in present:
+                continue
+            if not column.nullable and column.server_default is None:
+                raise RuntimeError(
+                    f"Cannot add required column {table.name}.{column.name} to an "
+                    f"existing table. Give it a server_default, or migrate by hand."
+                )
+            ddl = str(CreateColumn(column).compile(dialect=engine.dialect))
+            with engine.begin() as connection:
+                connection.execute(text(f"ALTER TABLE {table.name} ADD COLUMN {ddl}"))
+            applied.append(f"{table.name}.{column.name}")
+
+    return applied
 
 
 def clear_all_data(session: Session) -> None:

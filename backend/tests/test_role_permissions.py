@@ -2,15 +2,17 @@
 
 Mirrors the permission table in the build specification: a restricted role must
 receive 403 from the server even if it reaches a screen in the browser.
+
+The identity behind these checks is a signed token, not a header the caller
+chooses, so each request is made as a real signed-in user.
 """
 
 from __future__ import annotations
 
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 
 from app.core.enums import Role
-from app.main import app
 from app.modules.users_roles.service import Access, access_for, is_allowed
 
 # Resource-level expectations, read side.
@@ -40,6 +42,15 @@ EXPECTED_WRITE = {
     Role.OWNER_VIEWER: set(),
 }
 
+# Which seeded account holds which role.
+DEMO_EMAIL = {
+    Role.ADMIN: "admin@rpci.demo",
+    Role.ACCOUNTANT: "accountant@rpci.demo",
+    Role.STORE_PRODUCTION: "store@rpci.demo",
+    Role.SALES_STAFF: "sales@rpci.demo",
+    Role.OWNER_VIEWER: "owner@rpci.demo",
+}
+
 
 @pytest.mark.parametrize("role", list(Role))
 def test_read_matrix_matches_specification(role: Role) -> None:
@@ -60,49 +71,37 @@ def test_write_matrix_matches_specification(role: Role) -> None:
         )
 
 
-@pytest.fixture
-def client(db) -> TestClient:
-    """A test client sharing the seeded database session.
-
-    The application lifespan does not run when TestClient is used without a
-    context manager, so the configurable settings defaults are seeded here.
-    """
-    from app.modules.settings import service as settings_service
-
-    settings_service.seed_defaults(db)
-    db.commit()
-    return TestClient(app)
-
-
 @pytest.mark.parametrize(
-    "role,path,expected",
+    "role,expected",
     [
-        ("Admin", "/api/accounts", 200),
-        ("Accountant", "/api/accounts", 200),
-        ("Owner/Viewer", "/api/accounts", 200),
-        ("Store/Production Staff", "/api/accounts", 403),
-        ("Sales Staff", "/api/accounts", 403),
+        (Role.ADMIN, 200),
+        (Role.ACCOUNTANT, 200),
+        (Role.OWNER_VIEWER, 200),
+        (Role.STORE_PRODUCTION, 403),
+        (Role.SALES_STAFF, 403),
     ],
 )
 def test_chart_of_accounts_endpoint_respects_role(
-    client: TestClient, role: str, path: str, expected: int
+    client: TestClient, auth_headers, role: Role, expected: int
 ) -> None:
     """The accounts endpoint returns 403 for roles without access."""
-    response = client.get(path, headers={"X-Demo-Role": role})
+    response = client.get("/api/accounts", headers=auth_headers(role))
     assert response.status_code == expected
 
 
 @pytest.mark.parametrize(
     "role,expected",
     [
-        ("Admin", 200),
-        ("Store/Production Staff", 200),
-        ("Accountant", 403),
-        ("Sales Staff", 403),
-        ("Owner/Viewer", 403),
+        (Role.ADMIN, 200),
+        (Role.STORE_PRODUCTION, 200),
+        (Role.ACCOUNTANT, 403),
+        (Role.SALES_STAFF, 403),
+        (Role.OWNER_VIEWER, 403),
     ],
 )
-def test_production_posting_respects_role(client: TestClient, role: str, expected: int) -> None:
+def test_production_posting_respects_role(
+    client: TestClient, auth_headers, role: Role, expected: int
+) -> None:
     """Only Admin and store staff may post a production run."""
     payload = {
         "output_item_code": "WIP001",
@@ -111,14 +110,55 @@ def test_production_posting_respects_role(client: TestClient, role: str, expecte
         "lines": [{"component_code": "RMC-003", "qty_consumed": "1"}],
     }
     response = client.post(
-        "/api/production/preview", json=payload, headers={"X-Demo-Role": role}
+        "/api/production/preview", json=payload, headers=auth_headers(role)
     )
     assert response.status_code == expected
 
 
-def test_access_matrix_endpoint_lists_every_role(client: TestClient) -> None:
+def test_an_unauthenticated_request_is_refused(client: TestClient) -> None:
+    """No token at all means 401, not a default role."""
+    assert client.get("/api/accounts").status_code == 401
+
+
+def test_the_old_role_header_cannot_impersonate(
+    client: TestClient, auth_headers
+) -> None:
+    """A caller cannot promote themselves by setting the old demo header.
+
+    This is the hole that real authentication closes: the header used to select
+    the acting role, so anyone could set X-Demo-Role: Admin and be an
+    administrator.
+    """
+    response = client.get("/api/accounts", headers={"X-Demo-Role": "Admin"})
+    assert response.status_code == 401
+
+    # And a genuine low-privilege token cannot be upgraded by the header either.
+    store = auth_headers(Role.STORE_PRODUCTION)
+    response = client.get("/api/accounts", headers={**store, "X-Demo-Role": "Admin"})
+    assert response.status_code == 403
+
+
+def test_a_token_from_one_role_cannot_perform_another_roles_write(
+    client: TestClient, auth_headers
+) -> None:
+    """The token's role is what counts, and it is checked on every request."""
+    store = auth_headers(Role.STORE_PRODUCTION)
+    payload = {
+        "voucher_no": "PRIV-1",
+        "entry_date": "2026-10-15",
+        "lines": [
+            {"account_code": "1010", "segment": "Shared", "debit": "1"},
+            {"account_code": "4010", "segment": "Manufacturing", "credit": "1"},
+        ],
+    }
+    assert client.post("/api/journal-entries", json=payload, headers=store).status_code == 403
+
+
+def test_access_matrix_endpoint_lists_every_role(
+    client: TestClient, auth_headers
+) -> None:
     """The matrix endpoint describes all five roles."""
-    response = client.get("/api/access/matrix")
+    response = client.get("/api/access/matrix", headers=auth_headers(Role.ADMIN))
     assert response.status_code == 200
     body = response.json()
     assert len(body["roles"]) == len(Role)
@@ -128,29 +168,38 @@ def test_access_matrix_endpoint_lists_every_role(client: TestClient) -> None:
 @pytest.mark.parametrize(
     "role,expected",
     [
-        ("Admin", 200),
-        ("Accountant", 403),
-        ("Store/Production Staff", 403),
-        ("Sales Staff", 403),
-        ("Owner/Viewer", 403),
+        (Role.ADMIN, 200),
+        (Role.ACCOUNTANT, 403),
+        (Role.STORE_PRODUCTION, 403),
+        (Role.SALES_STAFF, 403),
+        (Role.OWNER_VIEWER, 403),
     ],
 )
 def test_only_admin_may_change_configuration(
-    client: TestClient, role: str, expected: int
+    client: TestClient, auth_headers, role: Role, expected: int
 ) -> None:
     """Configuration sits outside the resource matrix and is Admin-only."""
     response = client.patch(
         "/api/settings/vat.standard_rate_pct",
         json={"value": "15"},
-        headers={"X-Demo-Role": role},
+        headers=auth_headers(role),
     )
     assert response.status_code == expected
 
 
-def test_every_role_may_read_configuration(client: TestClient) -> None:
+def test_user_listing_is_admin_only(client: TestClient, auth_headers) -> None:
+    """Listing colleagues' accounts is not available to every role."""
+    assert client.get("/api/access/users", headers=auth_headers(Role.ADMIN)).status_code == 200
+    assert (
+        client.get("/api/access/users", headers=auth_headers(Role.OWNER_VIEWER)).status_code
+        == 403
+    )
+
+
+def test_every_role_may_read_configuration(client: TestClient, auth_headers) -> None:
     """Reading the settings list is open to any signed-in role."""
     for role in Role:
-        response = client.get("/api/settings", headers={"X-Demo-Role": role.value})
+        response = client.get("/api/settings", headers=auth_headers(role))
         assert response.status_code == 200, role.value
 
 

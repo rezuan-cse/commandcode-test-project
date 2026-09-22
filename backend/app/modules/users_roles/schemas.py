@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
+import datetime as dt
+
 from pydantic import BaseModel, ConfigDict
 
 from app.core.enums import Role
 
 
 class UserOut(BaseModel):
-    """A demo user."""
+    """A user as returned by the API.
+
+    Carries no credential material: the password hash and the TOTP secret are
+    deliberately absent, so they cannot leak through any endpoint that returns
+    a user.
+    """
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -17,6 +24,8 @@ class UserOut(BaseModel):
     full_name: str
     role: Role
     is_active: bool
+    is_2fa_enabled: bool = False
+    last_login_at: dt.datetime | None = None
 
 
 class RoleAccessRow(BaseModel):

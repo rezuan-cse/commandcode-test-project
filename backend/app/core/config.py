@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     # Allow a visitor to wipe and re-seed the demo from the interface. Disable
     # this if the data must be preserved.
     allow_demo_reset: bool = True
+    # Session signing key. Leave unset and a random one is generated per process,
+    # which works locally but signs everybody out on restart. Set it on any real
+    # deployment. Generate one with: python -c "import secrets;
+    # print(secrets.token_urlsafe(48))"
+    jwt_secret: str = ""
+    # How long a signed-in session lasts before the user must sign in again.
+    access_token_minutes: int = 720
 
     @field_validator("database_url", mode="after")
     @classmethod

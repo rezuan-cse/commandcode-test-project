@@ -1,5 +1,7 @@
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "./shared/AuthContext";
 import { useDemo } from "./shared/DemoContext";
+import { Spinner } from "./shared/ui";
 import DashboardPage from "./features/dashboard/DashboardPage";
 import AccountsPage from "./features/accounts/AccountsPage";
 import JournalPage from "./features/journal/JournalPage";
@@ -12,6 +14,8 @@ import GeneralLedgerPage from "./features/reports/GeneralLedgerPage";
 import BalanceSheetPage from "./features/reports/BalanceSheetPage";
 import AccessPage from "./features/access/AccessPage";
 import SettingsPage from "./features/settings/SettingsPage";
+import LoginPage from "./features/auth/LoginPage";
+import SecurityPage from "./features/auth/SecurityPage";
 
 const NAV_GROUPS = [
   {
@@ -46,21 +50,29 @@ const NAV_GROUPS = [
     label: "Administration",
     items: [
       { to: "/access", text: "Roles & Access" },
+      { to: "/security", text: "Security" },
       { to: "/settings", text: "Configuration" },
     ],
   },
 ];
 
-const ROLES = [
-  "Admin",
-  "Accountant",
-  "Store/Production Staff",
-  "Sales Staff",
-  "Owner/Viewer",
-];
-
 export default function App() {
-  const { asOf, setAsOf, dateFrom, setDateFrom, role, setRole } = useDemo();
+  const { user, checking, signOut } = useAuth();
+  const { asOf, setAsOf, dateFrom, setDateFrom } = useDemo();
+
+  // A stored token is verified against the server before anything renders, so
+  // an expired session shows the sign-in screen rather than a broken dashboard.
+  if (checking) {
+    return (
+      <div className="login-shell">
+        <div className="login-panel">
+          <Spinner label="Checking your session…" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return <LoginPage />;
 
   return (
     <div className="shell">
@@ -108,16 +120,17 @@ export default function App() {
               />
             </label>
           </div>
-          <label className="inline-field role-picker">
-            <span>Acting role</span>
-            <select value={role} onChange={(event) => setRole(event.target.value)}>
-              {ROLES.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
+
+          <div className="user-chip">
+            <div>
+              <span className="user-name">{user.full_name}</span>
+              <span className="user-role">
+                {user.role}
+                {user.is_2fa_enabled ? " · 2FA on" : ""}
+              </span>
+            </div>
+            <button onClick={signOut}>Sign out</button>
+          </div>
         </header>
 
         <main className="content">
@@ -133,6 +146,7 @@ export default function App() {
             <Route path="/reports/general-ledger" element={<GeneralLedgerPage />} />
             <Route path="/reports/balance-sheet" element={<BalanceSheetPage />} />
             <Route path="/access" element={<AccessPage />} />
+            <Route path="/security" element={<SecurityPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

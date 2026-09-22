@@ -10,3 +10,9 @@ pytest==8.3.4
 # Postgres driver, used when RPCI_DATABASE_URL points at a hosted database
 # (for example Neon) instead of the default SQLite file.
 psycopg[binary]==3.2.3
+# Authentication: token signing, password hashing, and TOTP second factor.
+pyjwt==2.10.1
+bcrypt==4.2.1
+pyotp==2.9.0
+# Renders the 2FA enrolment QR code as a PNG data URI.
+qrcode[pil]==8.0

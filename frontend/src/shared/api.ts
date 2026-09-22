@@ -13,6 +13,7 @@ import type {
   InventoryRow,
   Item,
   JournalEntry,
+  LoginResponse,
   Pnl,
   ProductionPostResult,
   ProductionPreview,
@@ -23,7 +24,10 @@ import type {
   Sale,
   SalePostResult,
   SalePreview,
+  SessionResponse,
   Setting,
+  TotpEnableResponse,
+  TotpSetupResponse,
   TrialBalance,
   UserRow,
 } from "./types";
@@ -33,27 +37,58 @@ import type {
 // Netlify) with the API elsewhere, set VITE_API_BASE to the API's full URL.
 const BASE = (import.meta.env.VITE_API_BASE ?? "/api").replace(/\/$/, "");
 
-let actingRole = "Admin";
+const TOKEN_KEY = "rpci.session";
 
-/** Set the role sent on every subsequent request, for RBAC demonstration. */
-export function setActingRole(role: string): void {
-  actingRole = role;
+// Kept in local storage so a refresh does not sign the user out. That is
+// readable by any script on the page, so it is the weaker of the two options
+// against cross-site scripting; httpOnly cookies would need CSRF handling and
+// credential-bearing CORS, which this demo deliberately avoids.
+let accessToken: string | null = localStorage.getItem(TOKEN_KEY);
+
+/** Called when the server rejects our token, so the app can return to sign-in. */
+let onUnauthorized: (() => void) | null = null;
+
+export function setAccessToken(token: string | null): void {
+  accessToken = token;
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
 }
 
-/** The role currently being impersonated. */
-export function getActingRole(): string {
-  return actingRole;
+export function getAccessToken(): string | null {
+  return accessToken;
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+/** Register the handler invoked when the session is no longer valid. */
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  onUnauthorized = handler;
+}
+
+/**
+ * @param handleUnauthorized run the session-expired handler on 401. Sign-in
+ *   calls pass false: a wrong password is a 401 too, and it must not be treated
+ *   as an expired session.
+ */
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  handleUnauthorized = true,
+): Promise<T> {
   const response = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      "X-Demo-Role": actingRole,
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...(init?.headers ?? {}),
     },
   });
+
+  if (response.status === 401 && handleUnauthorized) {
+    // The token is gone, expired, or the account was disabled. Drop it so the
+    // app cannot keep retrying with a credential the server will never accept.
+    setAccessToken(null);
+    onUnauthorized?.();
+  }
+
   if (!response.ok) {
     let detail = `${response.status} ${response.statusText}`;
     try {
@@ -147,4 +182,49 @@ export const api = {
       "/demo/reset",
       { method: "POST" },
     ),
+
+  // --- Authentication ---------------------------------------------------
+
+  login: (email: string, password: string) =>
+    request<LoginResponse>(
+      "/auth/login",
+      { method: "POST", body: JSON.stringify({ email, password }) },
+      false,
+    ),
+
+  loginWithTotp: (challengeToken: string, code: string) =>
+    request<SessionResponse>(
+      "/auth/login/totp",
+      {
+        method: "POST",
+        body: JSON.stringify({ challenge_token: challengeToken, code }),
+      },
+      false,
+    ),
+
+  me: () => request<UserRow>("/auth/me"),
+
+  setupTwoFactor: () =>
+    request<TotpSetupResponse>("/auth/2fa/setup", { method: "POST" }),
+
+  enableTwoFactor: (code: string) =>
+    request<TotpEnableResponse>("/auth/2fa/enable", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+
+  disableTwoFactor: (password: string) =>
+    request<{ message: string }>("/auth/2fa/disable", {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    }),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ message: string }>("/auth/password", {
+      method: "POST",
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+      }),
+    }),
 };

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api } from "../../shared/api";
-import { useDemo } from "../../shared/DemoContext";
+import { useAuth } from "../../shared/AuthContext";
 import { Card, ErrorBox, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 
@@ -13,7 +13,8 @@ const ACCESS_LABEL: Record<string, string> = {
 export default function AccessPage() {
   const matrix = useAsync(() => api.roleMatrix(), []);
   const users = useAsync(() => api.users(), []);
-  const { role } = useDemo();
+  const { user } = useAuth();
+  const role = user?.role ?? "";
 
   return (
     <>
@@ -99,7 +100,8 @@ export default function AccessPage() {
 }
 
 function PermissionProbe() {
-  const { role } = useDemo();
+  const { user } = useAuth();
+  const role = user?.role ?? "";
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
 

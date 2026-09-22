@@ -30,15 +30,35 @@ During the demo, the address is usually **http://localhost:8000**.
 The software works on a laptop, a tablet, and a mobile phone. The screen adjusts
 itself to fit.
 
-### A note about the demo
+### Signing in
 
-This is a demo version. It does not have a login screen yet.
+The software asks for an email and password before it shows anything.
 
-Instead, look at the top bar. You will see a box called **Acting role**. Use that
-box to choose who you want to be. The whole system then behaves as if you are
-that person.
+The sign-in screen lists the demo accounts, and clicking a row fills the form.
+They all use the same password: **`rpci`**
 
-The real version will have proper logins with passwords.
+| Email | Role |
+|---|---|
+| `admin@rpci.demo` | Admin |
+| `accountant@rpci.demo` | Accountant |
+| `store@rpci.demo` | Store / Production |
+| `sales@rpci.demo` | Sales Staff |
+| `owner@rpci.demo` | Owner / Viewer |
+
+Signing in as different people is how you see the permission rules at work. What
+you are allowed to do comes from the account you signed in with, and the server
+checks it every time — not the screen.
+
+To change who you are, press **Sign out** in the top right and sign in again.
+
+### If your account has two-factor authentication
+
+Some accounts are protected by a second step. After your password, you will be
+asked for a six-digit code from an authenticator app on your phone.
+
+You can use a recovery code instead if you do not have the phone with you. Those
+codes are given to you once when two-factor is switched on — keep them somewhere
+safe.
 
 ### The two date boxes
 
@@ -108,15 +128,19 @@ Yes = allowed. No = blocked.
 
 ### How the blocking works
 
-In the demo, the side menu shows every screen to everyone. The block happens when
-the screen asks the server for data.
+The side menu shows every screen to everyone. The block happens when the screen
+asks the server for data.
 
-So if you are Store staff and you open the Chart of Accounts, you will see a red
-error box saying you do not have access. The screen does not hide itself — the
-server refuses to answer.
+So if you are signed in as Store staff and you open the Chart of Accounts, you
+will see a red error box saying you do not have access. The screen does not hide
+itself — the server refuses to answer.
 
-This is on purpose. It proves the restriction is real and not just hidden in the
-menu. The real version will also hide the menu items.
+That is on purpose. It proves the restriction is real and checked by the server,
+not merely hidden in the menu. The full version will also hide the menu items.
+
+**The menu is not the security.** Your permissions travel with your signed-in
+session, and the server decides on every request. Nobody can grant themselves
+access by changing what the browser sends.
 
 ---
 
@@ -144,6 +168,7 @@ The menu on the left is grouped into five parts.
 
 **Administration**
 - **Roles & Access** — who can do what.
+- **Security** — your password and two-factor authentication.
 - **Configuration** — settings like VAT rates.
 
 ---
@@ -162,6 +187,8 @@ looks exactly as it did the first time you opened it.
 
 Nothing is permanently lost by exploring. If you are unsure whether something on
 screen is your doing or the original data, press this and start again.
+
+Only an **Admin** can press it, because it erases everyone's entries.
 
 **Top row — five boxes:**
 Revenue, COGS, Gross profit, Gross margin, and Net profit.
@@ -565,12 +592,34 @@ server as whoever you are currently acting as.
 403 is the standard code for "you are not allowed". Seeing it proves the block is
 real.
 
-Try it: switch the Acting role box at the top to **Sales Staff**, come back to this
-screen, and press the button.
+Try it: sign out, sign in as **`sales@rpci.demo`**, come back to this screen, and
+press the button.
 
 ---
 
-### 6.12 Configuration
+### 6.12 Security
+
+Your own account. Three things live here.
+
+**Two-factor authentication.** A second step at sign-in, using an authenticator
+app on your phone. Press **Set up two-factor authentication**, scan the QR code
+with the app, then type the six-digit code it shows. That last step matters: the
+app has to prove it works before the protection is switched on, so you cannot
+lock yourself out by accident.
+
+When it is on you are given **eight recovery codes**. They are shown once.
+Print them or save them somewhere safe — they are the only way back in if you
+lose your phone.
+
+To turn it off, you must type your password again. Being signed in is not enough,
+in case someone finds your laptop unlocked.
+
+**Change password.** Type your current password, then the new one. At least eight
+characters.
+
+---
+
+### 6.13 Configuration
 
 This screen holds the settings that the client has not yet decided.
 
@@ -868,7 +917,8 @@ kind of error this system removes.
 
 ### "I cannot see a screen my colleague can see"
 
-Check the **Acting role** box at the top. You may be set as the wrong person.
+Check which account you are signed in as — it is shown in the top right. You may
+be signed in as the wrong person, in which case sign out and sign in again.
 
 Then check section 4. Your role may simply not be allowed.
 
@@ -932,4 +982,5 @@ button.
 | See account detail | Reports → General Ledger | Everyone |
 | See the company position | Reports → Balance Sheet | Everyone |
 | Test permissions | Roles & Access | Everyone |
+| Set up two-factor or change password | Security | Everyone (your own account) |
 | See what is still undecided | Configuration | Everyone |

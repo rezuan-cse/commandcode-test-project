@@ -10,10 +10,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from fastapi import Header
+from fastapi import Depends
 
 from app.core.enums import Role
 from app.core.exceptions import PermissionDeniedError
+from app.modules.auth.dependencies import get_current_user
+from app.modules.users_roles.models import User
 
 
 class Access(str, Enum):
@@ -91,23 +93,18 @@ def is_allowed(role: Role, resource: str, *, write: bool) -> bool:
 class Principal:
     """The acting user for a request."""
 
-    role: Role
-    source: str
+    user: User
+    source: str = "token"
+
+    @property
+    def role(self) -> Role:
+        """The role the permission matrix is evaluated against."""
+        return self.user.role
 
     @property
     def is_admin(self) -> bool:
         """True for the Admin role."""
         return self.role == Role.ADMIN
-
-
-def resolve_role(x_demo_role: str | None) -> Role:
-    """Resolve the acting role from the demo header, defaulting to Admin."""
-    if not x_demo_role:
-        return Role.ADMIN
-    for role in Role:
-        if role.value.lower() == x_demo_role.lower() or role.name.lower() == x_demo_role.lower():
-            return role
-    return Role.ADMIN
 
 
 def require(resource: str, *, write: bool) -> "RequirePermission":
@@ -116,38 +113,41 @@ def require(resource: str, *, write: bool) -> "RequirePermission":
 
 
 class RequirePermission:
-    """Callable dependency that raises 403 when the acting role lacks access."""
+    """Callable dependency that raises 403 when the acting role lacks access.
+
+    The role comes from the signed token, never from the request body or a
+    caller-supplied header, so the matrix cannot be side-stepped by the client.
+    """
 
     def __init__(self, *, resource: str, write: bool) -> None:
         self.resource = resource
         self.write = write
 
-    def __call__(self, x_demo_role: str | None = Header(default=None)) -> Principal:
-        """Check the acting role and return the principal."""
-        role = resolve_role(x_demo_role)
-        if not is_allowed(role, self.resource, write=self.write):
+    def __call__(self, user: User = Depends(get_current_user)) -> Principal:
+        """Check the signed-in user's role and return the principal."""
+        if not is_allowed(user.role, self.resource, write=self.write):
             needed = "write" if self.write else "read"
             raise PermissionDeniedError(
-                f"Role '{role.value}' does not have {needed} access to '{self.resource}'"
+                f"Role '{user.role.value}' does not have {needed} access to "
+                f"'{self.resource}'"
             )
-        return Principal(role=role, source="header")
+        return Principal(user=user)
 
 
 class RequireAdmin:
     """Callable dependency that allows only the Admin role.
 
-    Configuration and role management live outside the resource matrix, so they
+    Configuration and user management live outside the resource matrix, so they
     are gated on the role itself rather than on a resource.
     """
 
-    def __call__(self, x_demo_role: str | None = Header(default=None)) -> Principal:
+    def __call__(self, user: User = Depends(get_current_user)) -> Principal:
         """Reject every role except Admin."""
-        role = resolve_role(x_demo_role)
-        if role != Role.ADMIN:
+        if user.role != Role.ADMIN:
             raise PermissionDeniedError(
-                f"Role '{role.value}' may not change configuration; Admin only"
+                f"Role '{user.role.value}' may not perform this action; Admin only"
             )
-        return Principal(role=role, source="header")
+        return Principal(user=user)
 
 
 def require_admin() -> RequireAdmin:

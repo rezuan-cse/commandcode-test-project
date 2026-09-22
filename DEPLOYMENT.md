@@ -274,19 +274,66 @@ Set these on whichever host runs the API.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `RPCI_DATABASE_URL` | `sqlite:///<repo>/rpci_demo.db` | Where the database lives |
+| `RPCI_DATABASE_URL` | `sqlite:///<repo>/rpci_demo.db` | Where the books live |
+| `RPCI_JWT_SECRET` | *(random per process)* | Session signing key. **Set this** |
+| `RPCI_ACCESS_TOKEN_MINUTES` | `720` | How long a sign-in lasts |
 | `RPCI_AUTO_SEED` | `true` | Seed from the workbook on first boot |
 | `RPCI_SEED_FROM_EXCEL_PATH` | `<repo>/RPCI Accounts.xlsx` | Workbook to import |
+| `RPCI_DEMO_PASSWORD` | `rpci` | Password for the seeded demo accounts |
 | `RPCI_CORS_ORIGINS` | `*` | Comma-separated allowed origins |
-| `RPCI_ALLOW_DEMO_RESET` | `true` | Show and allow the reset button |
+| `RPCI_ALLOW_DEMO_RESET` | `true` | Allow an Admin to restore the workbook state |
 
-`RPCI_CORS_ORIGINS` is `*` because the demo uses no cookies — the acting role
-travels in a request header. Once you know your Vercel or Netlify URL you can
-narrow it, for example:
+### Set RPCI_JWT_SECRET
+
+Without it a random key is generated each time the process starts, which means
+every restart signs everybody out — including every redeploy. There is no
+guessable default in the source, so leaving it unset is safe, just annoying.
+
+`render.yaml` asks Render to generate one and keep it. If you are configuring the
+service by hand, generate your own:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Changing it later invalidates every existing session, which is also how you
+would force everyone to sign in again.
+
+### About RPCI_CORS_ORIGINS
+
+It defaults to `*`, which is fine here because the session travels in an
+`Authorization` header rather than a cookie — so a wide-open origin list does not
+let another site act as the user. Once you know your Vercel or Netlify URL you
+can narrow it anyway:
 
 ```
 RPCI_CORS_ORIGINS=https://rpci-erp-demo.vercel.app
 ```
+
+For the same reason `allow_credentials` is off in the CORS middleware: nothing
+authenticates by cookie, so leaving it on would only widen the surface.
+
+---
+
+## Schema changes on a deployed database
+
+Worth knowing if you keep iterating, because it caused a real outage.
+
+`create_all()` creates tables that do not exist, but it **never alters one**. So
+adding a column to a model is invisible to a database that already holds data,
+and the app then fails at request time with a missing-column error. That is
+exactly what happened when the password and 2FA columns were introduced.
+
+`sync_schema()` in `backend/app/core/db.py` closes that gap. It runs at startup
+and adds missing tables and columns. It is **additive only**: no drops, renames,
+type changes, or backfills. A NOT NULL column with no server default cannot be
+added to a table with rows, so it raises and says so rather than inventing data.
+
+Watch the deploy log for `[schema] added …` lines to see what it did.
+
+**This is a stopgap, not a migration framework.** The specification calls for
+Alembic, and that is the right answer once the schema starts moving in ways this
+cannot express — dropping a column, changing a type, or backfilling.
 
 ---
 

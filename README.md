@@ -74,13 +74,50 @@ set `VITE_API_BASE` on the static host. `frontend/vercel.json` and
 
 ---
 
+## Signing in
+
+Authentication is real. Passwords are hashed with bcrypt, sessions are signed
+JWTs, and the permission matrix is evaluated against the role inside the token —
+never against anything the browser claims.
+
+One account is seeded per role, all with the password **`rpci`** (set
+`RPCI_DEMO_PASSWORD` to change it). The sign-in screen lists them, and clicking a
+row fills the form:
+
+| Email | Role | Can do |
+|---|---|---|
+| `admin@rpci.demo` | Admin | everything |
+| `accountant@rpci.demo` | Accountant | journal entries, reports |
+| `store@rpci.demo` | Store / Production | items, production runs |
+| `sales@rpci.demo` | Sales Staff | purchases, sales |
+| `owner@rpci.demo` | Owner / Viewer | read only |
+
+Signing in as different people is how the permission rules are demonstrated. It
+also replaced the old `X-Demo-Role` header, which anyone could set by hand — the
+test suite now asserts that header is ignored.
+
+### Two-factor authentication
+
+TOTP, for use with Google Authenticator, Authy or similar. Enrol from
+**Administration → Security**: scan the QR code, then enter a code to prove the
+app works before it is switched on. Eight single-use recovery codes are issued
+once, and are the way back in if the authenticator is lost.
+
+It is off by default so nobody is locked out of a shared demo. Turning it on is a
+good thing to show a client.
+
+The flow is deliberately two-step: a password alone yields a short-lived
+*challenge* token that can only be exchanged for a code. Only the code step
+issues a session, so a stolen password is not by itself enough, and a challenge
+token cannot be replayed as a session. Both properties are tested.
+
 ## Verifying the numbers
 
 The import is checked against the workbook, both by the test suite and by a
 standalone script:
 
 ```bash
-cd backend && .venv/bin/python -m pytest tests -q          # 47 tests
+cd backend && .venv/bin/python -m pytest tests -q          # 87 tests
 cd .. && backend/.venv/bin/python scripts/seed_from_excel.py --check
 ```
 
@@ -119,10 +156,14 @@ represented by working stubs and deployment configuration.
 - Sales entry: reduces stock at average cost and posts revenue and COGS in one entry
 - Segment dashboard, with segment totals reconciling to company-wide figures
 
-**Phase 4 — Roles, VAT/tax, payroll (structure in place)**
-- The full permission matrix is enforced server-side; every role is tested
+**Phase 4 — Roles, authentication, VAT/tax, payroll (in progress)**
+- Authentication is real: hashed passwords, signed sessions, and a TOTP second
+  factor with single-use recovery codes
+- The full permission matrix is enforced server-side against the role in the
+  token; every cell is tested
 - VAT and payroll rules live in a configuration table, flagged pending client
   confirmation, so no unconfirmed rule is hardcoded
+- *Still to build:* VAT computation on transactions, payroll, and receipts
 
 **Phase 5 — Deployment (configuration in place)**
 - Dockerfile, docker-compose, and a Render blueprint for a public HTTPS URL
@@ -180,9 +221,9 @@ picture of how the business actually runs.
 7. **Sales Entry** — sell some `TRD-018`. Revenue and COGS post together in one
    balanced entry, and the Trading segment appears on the dashboard.
 8. **Reports → Balance Sheet** — the final check still reads zero after everything.
-9. **Roles & Access** — switch the acting role in the top bar to *Sales Staff* and
-   press the probe. The server returns 403. Switch back to *Admin* and it returns
-   200. The restriction is in the API, not the screen.
+9. **Roles & Access** — sign out, sign in as *Sales Staff*, and try the accounts
+   screen. The server returns 403. Sign in as *Admin* and it returns 200. The
+   restriction is in the API, not the screen.
 10. **Configuration** — VAT, payroll, and the approval switches, each marked
     *pending client* rather than silently assumed.
 
@@ -243,7 +284,9 @@ cd backend && .venv/bin/python -m pytest tests -q
 | `test_production_posting.py` | Costing, balanced auto-posting, insufficient stock, rollback |
 | `test_sales_posting.py` | Revenue and COGS together, margin, overselling, rollback |
 | `test_role_permissions.py` | Every role's read and write access, enforced over HTTP |
-| `test_demo_reset.py` | The demo can be restored to the workbook state |
+| `test_auth.py` | Passwords, the TOTP second factor, recovery codes, password change |
+| `test_demo_reset.py` | The demo can be restored to the workbook state, Admin only |
+| `test_schema_sync.py` | A deployed database gains new tables and columns without losing rows |
 
 The interface has its own tests, because the figures shown on screen must round
 the same way the ledger does:
@@ -266,11 +309,22 @@ Copy `.env.example` to `.env`, or set the variables directly:
 | Variable | Default | Purpose |
 |---|---|---|
 | `RPCI_DATABASE_URL` | `sqlite:///./rpci_demo.db` | Where the books live — SQLite or Postgres |
+| `RPCI_JWT_SECRET` | *(random per process)* | Session signing key. Set it on any deployment |
+| `RPCI_ACCESS_TOKEN_MINUTES` | `720` | How long a session lasts |
+| `RPCI_DEMO_PASSWORD` | `rpci` | Password for the seeded demo accounts |
 | `RPCI_AUTO_SEED` | `true` | Seed from the workbook on first boot |
 | `RPCI_SEED_FROM_EXCEL_PATH` | `../RPCI Accounts.xlsx` | Workbook to import |
-| `RPCI_DEMO_PASSWORD` | `rpci` | Shared password gate |
 | `RPCI_CORS_ORIGINS` | `*` | Origins allowed to call the API |
-| `RPCI_ALLOW_DEMO_RESET` | `true` | Allow restoring the workbook state from the Dashboard |
+| `RPCI_ALLOW_DEMO_RESET` | `true` | Allow an Admin to restore the workbook state |
+
+If `RPCI_JWT_SECRET` is unset, a random key is generated at process start. That
+keeps local development frictionless and means there is no guessable default in
+the source, but it signs everyone out whenever the service restarts. Generate a
+real one with:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
 
 ### SQLite or Postgres
 
@@ -307,10 +361,21 @@ Reset the demo from the Dashboard, by deleting the database file, or with
 
 Deliberately excluded, and scheduled for the production build:
 
-- Real authentication with hashed passwords and JWT (the demo uses a role
-  switcher to make permission enforcement visible)
-- PostgreSQL with database-level triggers (the demo uses SQLite with the same
-  rules enforced in the service layer and covered by tests)
+- Database-level triggers for the double-entry rule (the demo enforces it in the
+  service layer, covered by tests that inject a mid-transaction failure)
+- Alembic migrations (the demo uses an additive schema sync; see below)
 - Opening-balance editing and locking UI (imported data is shown read-only)
-- Payroll calculation and VAT computation (structure and configuration only)
+- VAT computation on transactions, payroll, and receipts
 - Automated backups to S3
+
+### A note on migrations
+
+The specification calls for Alembic. The demo does not use it. Instead
+`sync_schema()` in `backend/app/core/db.py` adds missing tables and columns at
+startup, which is what lets a deployment with existing data gain new fields
+without being rebuilt.
+
+It is additive only — no drops, renames, type changes, or backfills — and it
+raises rather than guessing a value for a NOT NULL column with no default. That
+covers the changes this project makes, but Alembic is the right answer once the
+schema starts moving in ways this cannot express.

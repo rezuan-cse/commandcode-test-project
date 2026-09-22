@@ -44,3 +44,8 @@ services:
         value: "true"
       - key: RPCI_CORS_ORIGINS
         value: "*"
+      # Session signing key. Render generates it once and keeps it, so sign-ins
+      # survive restarts. Without it a random key is used per process and every
+      # redeploy signs everybody out.
+      - key: RPCI_JWT_SECRET
+        generateValue: true

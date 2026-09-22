@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.core.db import SessionLocal, init_db
 from app.core.exceptions import DomainError
 from app.modules.accounts.router import router as accounts_router
+from app.modules.auth.router import router as auth_router
 from app.modules.demo.router import router as demo_router
 from app.modules.inventory_ledger.router import router as inventory_router
 from app.modules.items_bom.router import router as items_router
@@ -31,6 +32,15 @@ from app.modules.users_roles.router import router as access_router
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Create tables and seed demo data on first boot."""
+    from app.core.security import using_ephemeral_secret
+
+    if using_ephemeral_secret():
+        print(
+            "[auth] RPCI_JWT_SECRET is not set, so a random one was generated for "
+            "this process. Sign-ins will not survive a restart. Set it on any "
+            "real deployment."
+        )
+
     init_db()
     if settings.auto_seed:
         from app.seed.loader import seed_if_empty
@@ -46,6 +56,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     with SessionLocal() as session:
         settings_service.seed_defaults(session)
         session.commit()
+
+    # Repair demo accounts that predate passwords, so a database upgraded from
+    # an earlier version can still be signed into.
+    from app.seed.loader import ensure_demo_users
+
+    with SessionLocal() as session:
+        repaired = ensure_demo_users(session)
+        session.commit()
+        if repaired:
+            print(f"[seed] gave a demo password to: {', '.join(repaired)}")
 
     yield
 
@@ -86,6 +106,7 @@ def healthz() -> dict[str, str]:
 
 
 for router in (
+    auth_router,
     accounts_router,
     opening_router,
     journal_router,

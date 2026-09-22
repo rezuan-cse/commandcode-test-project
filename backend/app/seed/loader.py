@@ -197,10 +197,64 @@ def _load_inventory(db: Session, data: WorkbookData) -> None:
 
 
 def _load_users(db: Session) -> None:
-    """Insert one demo user per role."""
+    """Insert one demo user per role, each with the shared demo password.
+
+    The password is hashed with bcrypt like any other, so the demo exercises the
+    same sign-in path as production. It comes from RPCI_DEMO_PASSWORD and is
+    listed on the sign-in screen, which is what lets a reviewer switch roles by
+    signing out and back in.
+    """
+    from app.core.security import hash_password
+
+    password_hash = hash_password(settings.demo_password)
     for email, name, role in DEMO_USERS:
-        db.add(User(email=email, full_name=name, role=role))
+        db.add(
+            User(
+                email=email,
+                full_name=name,
+                role=role,
+                password_hash=password_hash,
+            )
+        )
     db.flush()
+
+
+def ensure_demo_users(db: Session) -> list[str]:
+    """Make sure each demo account exists and can be signed into.
+
+    Runs on every boot, and is deliberately conservative:
+
+    * a missing account is created;
+    * an account with no password gets one, which repairs users seeded before
+      passwords existed;
+    * an account that already has a password is **left alone**, so a password
+      someone has changed is never quietly reset back to the demo default.
+
+    Returns the addresses it touched, for the startup log.
+    """
+    from app.core.security import hash_password
+
+    repaired: list[str] = []
+    default_hash = hash_password(settings.demo_password)
+
+    for email, name, role in DEMO_USERS:
+        existing = db.execute(
+            select(User).where(func.lower(User.email) == email.lower())
+        ).scalar_one_or_none()
+
+        if existing is None:
+            db.add(
+                User(email=email, full_name=name, role=role, password_hash=default_hash)
+            )
+            repaired.append(email)
+            continue
+
+        if not existing.has_password:
+            existing.password_hash = default_hash
+            repaired.append(email)
+
+    db.flush()
+    return repaired
 
 
 def seed_if_empty(db: Session) -> SeedReport:

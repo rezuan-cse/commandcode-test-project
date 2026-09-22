@@ -346,6 +346,34 @@ export interface UserRow {
   full_name: string;
   role: string;
   is_active: boolean;
+  is_2fa_enabled: boolean;
+  last_login_at: string | null;
+}
+
+/** Step one of sign-in. Either a session, or a request for the second factor. */
+export interface LoginResponse {
+  needs_2fa: boolean;
+  challenge_token: string | null;
+  access_token: string | null;
+  expires_in_minutes: number | null;
+  user: UserRow | null;
+}
+
+export interface SessionResponse {
+  access_token: string;
+  expires_in_minutes: number;
+  user: UserRow;
+}
+
+export interface TotpSetupResponse {
+  secret: string;
+  otpauth_uri: string;
+  qr_png_data_uri: string;
+}
+
+export interface TotpEnableResponse {
+  recovery_codes: string[];
+  message: string;
 }
 
 export interface Setting {

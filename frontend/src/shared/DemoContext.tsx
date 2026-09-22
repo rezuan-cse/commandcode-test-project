@@ -6,20 +6,20 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getActingRole, setActingRole } from "./api";
 
 /**
- * Session-wide demo state: the reporting period and the role being
- * impersonated. The role is pushed into the API client so every request
- * carries it, which is what makes server-side permission checks visible.
+ * Session-wide view state: the reporting period, and a revision counter used to
+ * refetch after a posting.
+ *
+ * The acting role used to live here. It now comes from the signed-in user in
+ * AuthContext, because the server derives permissions from the token rather than
+ * from anything the browser claims.
  */
 interface DemoState {
   asOf: string;
   dateFrom: string;
   setAsOf: (value: string) => void;
   setDateFrom: (value: string) => void;
-  role: string;
-  setRole: (value: string) => void;
   /** Bumped to force dependent screens to refetch after a posting. */
   revision: number;
   refresh: () => void;
@@ -34,19 +34,13 @@ const DemoContext = createContext<DemoState | null>(null);
 export function DemoProvider({ children }: { children: ReactNode }) {
   const [asOf, setAsOf] = useState(DEFAULT_AS_OF);
   const [dateFrom, setDateFrom] = useState(DEFAULT_FROM);
-  const [role, setRoleState] = useState(getActingRole());
   const [revision, setRevision] = useState(0);
-
-  const setRole = useCallback((value: string) => {
-    setActingRole(value);
-    setRoleState(value);
-  }, []);
 
   const refresh = useCallback(() => setRevision((current) => current + 1), []);
 
   const value = useMemo(
-    () => ({ asOf, dateFrom, setAsOf, setDateFrom, role, setRole, revision, refresh }),
-    [asOf, dateFrom, role, setRole, revision, refresh],
+    () => ({ asOf, dateFrom, setAsOf, setDateFrom, revision, refresh }),
+    [asOf, dateFrom, revision, refresh],
   );
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;

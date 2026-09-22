@@ -17,8 +17,6 @@ vi.mock("../../shared/api", () => ({
     previewSale: vi.fn(),
     postSale: vi.fn(),
   },
-  setActingRole: vi.fn(),
-  getActingRole: () => "Admin",
 }));
 
 import { api } from "../../shared/api";

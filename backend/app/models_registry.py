@@ -11,4 +11,4 @@ from app.modules.production.models import ProductionLine, ProductionOrder  # noq
 from app.modules.purchases.models import PurchaseLine, PurchaseOrder  # noqa: F401
 from app.modules.sales.models import SalesLine, SalesOrder  # noqa: F401
 from app.modules.settings.models import Setting  # noqa: F401
-from app.modules.users_roles.models import User  # noqa: F401
+from app.modules.users_roles.models import RecoveryCode, User  # noqa: F401
