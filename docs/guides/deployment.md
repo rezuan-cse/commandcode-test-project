@@ -43,8 +43,18 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"
 
 ### SQLite or Postgres
 
-SQLite is the default: one file, no setup. It is lost whenever the container is
-rebuilt, which is fine locally and for a demo held in a single sitting.
+SQLite is the default: one file, no setup. It is fine locally and for a demo held
+in a single sitting.
+
+**On a host with no persistent disk, SQLite loses everything on a restart.** A
+free Render instance sleeps after ~15 minutes; when it wakes, the container's
+filesystem is recreated, so the SQLite file is gone and startup seeds the starting
+state again. Every boot logs which database is in use, so this is easy to spot:
+
+```
+[db] using sqlite file /data/rpci_demo.db                      <- data will be lost
+[db] using postgresql database books on ep-….neon.tech          <- persistent
+```
 
 For a link you leave with the client, point `RPCI_DATABASE_URL` at a Postgres
 database so nothing they enter disappears when the host sleeps:
@@ -55,8 +65,10 @@ RPCI_DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
 
 Paste a hosted URL unchanged — the application rewrites `postgres://` and
 `postgresql://` to the installed `psycopg` driver, so no `+psycopg` suffix is
-needed. Tables are created and seeded on first boot, and left alone afterwards.
-See [DEPLOYMENT.md](../../DEPLOYMENT.md), option C.
+needed. Use the provider's **direct** (non-pooler) host. Tables are created and
+seeded on first boot, and left alone afterwards. See
+[DEPLOYMENT.md](../../DEPLOYMENT.md), option C, and its *"All my data reset to
+zero"* section.
 
 The suite runs against either engine:
 

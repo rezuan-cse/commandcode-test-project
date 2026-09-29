@@ -1,8 +1,9 @@
 """Database engine, session factory, and declarative base.
 
-The demo uses SQLite for zero-ops hosting. Money columns are SQLAlchemy
-``Numeric`` values and are read back as :class:`decimal.Decimal` so no float
-math ever touches the ledger.
+SQLite is the zero-setup default locally; a hosted Postgres (Neon and similar) is
+what makes data survive on a host with no persistent disk. Money columns are
+SQLAlchemy ``Numeric`` values and are read back as :class:`decimal.Decimal` so no
+float math ever touches the ledger.
 """
 
 from __future__ import annotations
@@ -11,14 +12,39 @@ from collections.abc import Generator
 
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
 
-_connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
+_is_sqlite = settings.database_url.startswith("sqlite")
+_connect_args = {"check_same_thread": False} if _is_sqlite else {}
 
-engine = create_engine(settings.database_url, connect_args=_connect_args, future=True)
+engine = create_engine(
+    settings.database_url,
+    connect_args=_connect_args,
+    future=True,
+    # A hosted Postgres (Neon and similar) drops idle connections when its compute
+    # scales to zero. Pre-ping checks the connection before handing it out and
+    # quietly reconnects, instead of failing the first request after a quiet
+    # spell. Recycling caps how long a connection is reused.
+    pool_pre_ping=True,
+    pool_recycle=-1 if _is_sqlite else 300,
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+
+
+def describe_database() -> str:
+    """Name the database in use, without revealing credentials.
+
+    Printed once at startup, so "where did my data go?" is answerable from the
+    log: a ``sqlite file`` path on a host with no persistent disk means anything
+    entered will be lost when the instance restarts.
+    """
+    url = make_url(settings.database_url)
+    if url.get_backend_name() == "sqlite":
+        return f"sqlite file {url.database}"
+    return f"{url.get_backend_name()} database {url.database} on {url.host}"
 
 
 class Base(DeclarativeBase):

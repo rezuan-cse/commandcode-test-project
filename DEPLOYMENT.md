@@ -244,6 +244,36 @@ under a second.
   database on the next boot and re-seed from the workbook. Nothing is lost that
   cannot be re-imported.
 
+### "All my data reset to zero"
+
+This means the service is still writing to a **SQLite file**, not to Postgres.
+The free plan has no persistent disk, so when the instance sleeps after ~15
+minutes and restarts, the container's filesystem — and the SQLite file with it —
+is recreated. Startup then seeds the starting state again.
+
+**Confirm it in the logs.** On every boot the application prints one line naming
+the database it is using:
+
+```
+[db] using sqlite file /data/rpci_demo.db          <- ephemeral, data will be lost
+[db] using postgresql database books on ep-….neon.tech   <- persistent
+```
+
+**Fix it:**
+
+1. Create a free Neon Postgres project and copy the **direct** (non-pooler)
+   connection string.
+2. In the Render dashboard, open the service → **Environment**, and set
+   `RPCI_DATABASE_URL` to that string. The application accepts it unchanged;
+   `postgresql://…?sslmode=require` is fine.
+3. Save and redeploy. The log should now read `postgresql database … on …`.
+4. First boot on the new database creates the tables and seeds the starting state.
+   Re-import your workbook from **Administration → Data**.
+
+`render.yaml` deliberately does **not** set `RPCI_DATABASE_URL` (`sync: false`),
+so the dashboard value is used and is not overwritten by a Blueprint sync. Never
+hardcode a `sqlite:///` path there — it is what causes this.
+
 ### Where Postgres differs from SQLite
 
 Two changes were needed, both already made:
