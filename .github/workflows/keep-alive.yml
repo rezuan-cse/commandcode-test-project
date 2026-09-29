@@ -1,4 +1,4 @@
-name: Keep the demo awake
+name: Keep the service awake
 
 # Render's free tier puts a web service to sleep after about 15 minutes without
 # traffic. The next visit then waits 30-60 seconds while it starts again, which
@@ -15,6 +15,9 @@ name: Keep the demo awake
 #   * GitHub disables scheduled workflows after 60 days without a push to the
 #     repository. Any commit re-enables them. If the repo goes quiet, this
 #     silently stops working.
+#   * Scheduled workflows run from the repository's DEFAULT branch only. If the
+#     service is deployed from another branch, keep this file current on the
+#     default branch too, or use an external monitor.
 #   * On a private repository each run consumes Actions minutes. Every 10
 #     minutes is roughly 1,080 minutes a month against the 2,000 free minutes,
 #     so it fits, but it is not free of cost. Public repositories are unlimited.
@@ -42,8 +45,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     env:
-      # Change this if the demo moves to another host.
-      DEMO_HEALTH_URL: https://rpci-demo.onrender.com/healthz
+      # Change this if the service moves to another host.
+      HEALTH_URL: https://rpci.onrender.com/healthz
     steps:
       - name: Request the health endpoint
         run: |
@@ -57,12 +60,12 @@ jobs:
             # %{http_code} prints 000 when curl cannot connect at all, so the
             # assignment below only needs a fallback if curl produced nothing.
             code=$(curl -sS -o /dev/null -w '%{http_code}' \
-              --max-time 90 "$DEMO_HEALTH_URL" 2>/dev/null) || code="000"
+              --max-time 90 "$HEALTH_URL" 2>/dev/null) || code="000"
             code=${code:-000}
             echo "Attempt ${attempt}: HTTP ${code}"
 
             if [ "$code" = "200" ]; then
-              echo "Demo is awake."
+              echo "Service is awake."
               exit 0
             fi
 
@@ -72,5 +75,5 @@ jobs:
             fi
           done
 
-          echo "::error::The demo did not return 200 after three attempts. It may be down, or the service may have been renamed."
+          echo "::error::The service did not return 200 after three attempts. It may be down, or the service may have been renamed."
           exit 1
