@@ -338,12 +338,6 @@ export const api = {
       body: JSON.stringify({ value, confirmed_by_client: confirmed ?? null }),
     }),
 
-  resetDemo: () =>
-    request<{ seeded: boolean; counts: Record<string, number>; message: string }>(
-      "/demo/reset",
-      { method: "POST" },
-    ),
-
   // --- Authentication ---------------------------------------------------
 
   login: (email: string, password: string) =>

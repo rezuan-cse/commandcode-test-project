@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../shared/api";
 import { useDemo } from "../../shared/DemoContext";
@@ -15,29 +14,10 @@ const SEGMENT_BLURB: Record<string, string> = {
 };
 
 export default function DashboardPage() {
-  const { asOf, dateFrom, refresh } = useDemo();
+  const { asOf, dateFrom } = useDemo();
   const pnl = useAsync(() => api.pnl(dateFrom, asOf), [dateFrom, asOf]);
   const bs = useAsync(() => api.balanceSheet(asOf), [asOf]);
   const integrity = useAsync(() => api.integrity(asOf), [asOf]);
-  const [resetting, setResetting] = useState(false);
-  const [resetMessage, setResetMessage] = useState<string | null>(null);
-
-  async function resetDemo() {
-    if (!window.confirm("Restore the demo to the original workbook data? Anything you posted will be removed.")) {
-      return;
-    }
-    setResetting(true);
-    setResetMessage(null);
-    try {
-      const result = await api.resetDemo();
-      setResetMessage(result.message);
-      refresh();
-    } catch (error) {
-      setResetMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setResetting(false);
-    }
-  }
 
   if (pnl.loading || bs.loading || integrity.loading) return <Spinner />;
   if (pnl.error || bs.error || integrity.error) {
@@ -56,14 +36,6 @@ export default function DashboardPage() {
         balances, and posted journal entries. Nothing on this page is stored separately — every
         figure is derived on request.
       </p>
-
-      {resetMessage && <div className="toast">✓ {resetMessage}</div>}
-
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-        <button onClick={resetDemo} disabled={resetting}>
-          {resetting ? "Restoring…" : "Reset data"}
-        </button>
-      </div>
 
       <div className="grid grid-5" style={{ marginBottom: 20 }}>
         <Stat

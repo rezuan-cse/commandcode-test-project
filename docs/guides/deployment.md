@@ -30,7 +30,7 @@ Copy `.env.example` to `.env`, or set the variables directly:
 | `RPCI_SEED_MODE` | `fresh` | `fresh` (starter chart of accounts), `workbook`, or `none` |
 | `RPCI_SEED_FROM_EXCEL_PATH` | `../RPCI Accounts.xlsx` | Workbook to import |
 | `RPCI_CORS_ORIGINS` | `*` | Origins allowed to call the API |
-| `RPCI_ALLOW_DEMO_RESET` | `true` | Allow an Admin to restore sample data |
+| `RPCI_ALLOW_DATA_RESET` | `true` | Allow an Admin to start the books over |
 
 If `RPCI_JWT_SECRET` is unset, a random key is generated at process start. That
 keeps local development frictionless and means there is no guessable default in

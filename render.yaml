@@ -47,7 +47,7 @@ services:
       # make the data persistent.
       - key: RPCI_DATABASE_URL
         value: "sqlite:////data/rpci_demo.db"
-      - key: RPCI_ALLOW_DEMO_RESET
+      - key: RPCI_ALLOW_DATA_RESET
         value: "true"
       - key: RPCI_CORS_ORIGINS
         value: "*"

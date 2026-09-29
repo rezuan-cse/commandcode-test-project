@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 
-from app.core.exceptions import DomainError
+from app.core.config import settings
+from app.core.exceptions import DomainError, PermissionDeniedError
 from app.modules.data import service
 from app.modules.data.schemas import DataResult
 from app.modules.users_roles.service import require_admin
@@ -49,6 +50,10 @@ def reset(mode: str | None = None) -> DataResult:
     Mode is ``fresh`` (starter chart of accounts), ``workbook`` (the sample
     workbook), or ``none``. Defaults to the deployment's configured seed mode.
     """
+    if not settings.allow_data_reset:
+        raise PermissionDeniedError(
+            "Starting the books over is disabled on this deployment."
+        )
     if mode not in {None, "fresh", "workbook", "none"}:
         raise DomainError("mode must be one of: fresh, workbook, none")
 

@@ -16,6 +16,7 @@ from app.core.db import clear_all_data
 from app.core.enums import Role
 from app.modules.accounts.models import Account
 from app.modules.data import service as data_service
+from app.modules.inventory_ledger import service as ledger
 from app.modules.reports import service as reports
 from app.seed.starter import STARTER_ACCOUNTS, seed_starter
 
@@ -91,3 +92,45 @@ def test_import_endpoint_requires_an_administrator(
     )
     assert ok.status_code == 200
     assert ok.json()["counts"]["accounts"] == 89
+
+
+def test_reset_workbook_restores_the_workbook_figures(db) -> None:
+    """Reset in workbook mode loads the sample data."""
+    data_service.reset("workbook")
+    db.expire_all()
+
+    assert reports.balance_sheet(db, AS_OF).total_assets == 801600
+    assert reports.trial_balance(db, AS_OF).difference == 0
+    assert ledger.position(db, "RMC-003").qty == 790
+
+
+def test_reset_is_refused_when_disabled(
+    client: TestClient, auth_headers, monkeypatch
+) -> None:
+    """A deployment that must not lose data can switch this off."""
+    monkeypatch.setattr(settings, "allow_data_reset", False)
+    response = client.post(
+        "/api/data/reset", headers=auth_headers(Role.ADMIN)
+    )
+    assert response.status_code == 403
+
+
+def test_reset_requires_an_administrator(client: TestClient, auth_headers) -> None:
+    """Emptying the books is not something any role may do."""
+    for role in [Role.ACCOUNTANT, Role.STORE_PRODUCTION, Role.SALES_STAFF, Role.OWNER_VIEWER]:
+        response = client.post("/api/data/reset", headers=auth_headers(role))
+        assert response.status_code == 403, role.value
+
+
+def test_reset_requires_a_session(client: TestClient) -> None:
+    """Signed out means refused."""
+    assert client.post("/api/data/reset").status_code == 401
+
+
+def test_reset_is_allowed_for_an_admin(client: TestClient, auth_headers) -> None:
+    """The administrator can start the books over."""
+    response = client.post(
+        "/api/data/reset?mode=fresh", headers=auth_headers(Role.ADMIN)
+    )
+    assert response.status_code == 200
+    assert response.json()["seeded"] is True

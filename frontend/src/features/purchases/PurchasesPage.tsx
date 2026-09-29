@@ -17,9 +17,8 @@ interface DraftLine {
 }
 
 /**
- * Purchase entry. The workbook never defined this screen, but production needs
- * a source of raw material, so it is built as the mirror image of sales: stock
- * rises at cost and a balanced entry debits inventory while crediting payable.
+ * Purchase entry. Stock rises at cost and a balanced entry debits inventory
+ * while crediting payable or bank.
  */
 export default function PurchasesPage() {
   const { asOf, refresh } = useDemo();
@@ -114,22 +113,6 @@ export default function PurchasesPage() {
     }
   }
 
-  /** Fill the line up with every component the TRD-018 BOM needs. */
-  async function loadFillerRequirements() {
-    try {
-      const explosion = await api.explode("TRD-018", "50");
-      setLines(
-        explosion.lines.map((line) => ({
-          item_code: line.item_code,
-          qty: String(Math.max(Number(line.qty_required), 1)),
-          unit_cost: line.avg_cost === "0.00000000" ? "20" : line.avg_cost,
-        })),
-      );
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    }
-  }
-
   return (
     <>
       <h1>Purchase Entry</h1>
@@ -156,7 +139,6 @@ export default function PurchasesPage() {
       <Card
         title="New purchase"
         subtitle="Receiving stock updates the average cost used by every later movement"
-        actions={<button onClick={loadFillerRequirements}>Load TRD-018 requirements</button>}
       >
         <div className="form-row" style={{ marginBottom: 14 }}>
           <Field label="Supplier">

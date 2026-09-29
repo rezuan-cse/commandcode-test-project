@@ -2,7 +2,7 @@
 
 interface ImportMetaEnv {
   /** Full URL of the API when the interface is hosted separately, e.g.
-   *  "https://rpci-demo.onrender.com/api". Defaults to "/api". */
+   *  "https://rpci.onrender.com/api". Defaults to "/api". */
   readonly VITE_API_BASE?: string;
 }
 

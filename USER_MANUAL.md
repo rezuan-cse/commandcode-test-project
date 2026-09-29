@@ -182,16 +182,9 @@ The menu on the left is grouped into five parts.
 
 This is the first screen. It shows the health of the business at a glance.
 
-**Top right — Reset data:**
-
-A button in the top right of the page. Press it to put everything back to the
-starting state. Anything you have entered is removed, and the books look exactly
-as they did the first time you opened them.
-
 Nothing is permanently lost by exploring. If you are unsure whether something on
-screen is your doing or the original data, press this and start again.
-
-Only an **Admin** can press it, because it erases everyone's entries.
+screen is your doing or the original data, an **Admin** can start the books over
+from **Administration → Data** (see section 7).
 
 **Top row — five boxes:**
 Revenue, COGS, Gross profit, Gross margin, and Net profit.
@@ -1021,13 +1014,13 @@ On Production Entry, it can also mean the item has no recipe (BOM).
 
 ### "I want to start over"
 
-Press **Reset data** on the Dashboard. Everything goes back to the starting state
-and anything you entered is removed.
+An **Admin** can start the books over from **Administration → Data**. Everything
+goes back to the starting state and anything entered is removed.
 
 If you are running the software yourself on your own computer, and it is keeping
 its data in a file, you can instead delete the `rpci_demo.db` file in the project
 folder and restart. On a hosted copy there is no file for you to delete — use the
-button.
+Data screen.
 
 ---
 

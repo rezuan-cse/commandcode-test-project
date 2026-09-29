@@ -108,7 +108,8 @@ the workbook is inside the image and the database seeds itself on first boot.
   state each time (the starter chart of accounts, or the workbook if
   `RPCI_SEED_MODE=workbook`).
 - **Nobody can permanently break the demo**, and each visitor gets a clean set of
-  books. Visitors can also press **Reset data** on the Dashboard.
+  books. An administrator can start over or restore the sample data from
+  **Administration → Data**.
 
 **If you need the data to stay put, use Option C below instead.**
 
@@ -227,11 +228,11 @@ would have gone.
 
 ### Clearing the data
 
-Because data now persists, the **Reset data** button on the Dashboard is how you
-return to the starting state the deployment is configured for (the starter chart
-of accounts, or the sample workbook). It empties the tables and re-seeds; it
-takes well under a second. An administrator can also import a workbook or start
-over from Administration → Data.
+Because data now persists, **Administration → Data** is how you return to the
+starting state the deployment is configured for (the starter chart of accounts,
+or the sample workbook). An administrator can start over, import a workbook, or
+empty the books there; each action empties the tables and re-seeds and takes well
+under a second.
 
 ### Free tier notes
 
@@ -313,7 +314,7 @@ Set these on whichever host runs the API.
 | `RPCI_SEED_FROM_EXCEL_PATH` | `<repo>/RPCI Accounts.xlsx` | Workbook available to import |
 | `RPCI_DEMO_PASSWORD` | `rpci` | Password for the seeded demo accounts |
 | `RPCI_CORS_ORIGINS` | `*` | Comma-separated allowed origins |
-| `RPCI_ALLOW_DEMO_RESET` | `true` | Allow an Admin to start the books over |
+| `RPCI_ALLOW_DATA_RESET` | `true` | Allow an Admin to start the books over |
 
 ### Set RPCI_JWT_SECRET
 
@@ -402,8 +403,8 @@ the manual alongside the link means they can read at their own pace.
 demo: it finds a real 474,100 discrepancy in their own workbook. See section 9 of
 the user manual.
 
-**Tell them about the reset button.** It is on the Dashboard. They can post
-whatever they like without worrying about breaking anything.
+**Tell them they can start over.** It is on **Administration → Data**. They can
+post whatever they like without worrying about breaking anything.
 
 **Ask them to send observations against the screen names.** The screens are
 Dashboard, Chart of Accounts, Journal Entries, Inventory & BOM, Purchase Entry,

@@ -23,7 +23,7 @@ All are prefixed `RPCI_`. Full table with defaults: [../guides/deployment.md](..
 
 `RPCI_DATABASE_URL`, `RPCI_JWT_SECRET`, `RPCI_ACCESS_TOKEN_MINUTES`,
 `RPCI_DEMO_PASSWORD`, `RPCI_SEED_MODE`,
-`RPCI_SEED_FROM_EXCEL_PATH`, `RPCI_CORS_ORIGINS`, `RPCI_ALLOW_DEMO_RESET`,
+`RPCI_SEED_FROM_EXCEL_PATH`, `RPCI_CORS_ORIGINS`, `RPCI_ALLOW_DATA_RESET`,
 `RPCI_DEFAULT_SEGMENT`.
 
 Rules the configuration follows: no secret or real value in a router; the app reads only

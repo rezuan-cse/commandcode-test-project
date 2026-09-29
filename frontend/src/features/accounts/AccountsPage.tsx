@@ -42,19 +42,14 @@ export default function AccountsPage() {
     <>
       <h1>Chart of Accounts</h1>
       <p className="page-intro">
-        Imported directly from the client's workbook. Every account carries a segment tag, which
-        is what makes segment-wise reporting possible. All other modules reference this list — no
-        screen in the system accepts a free-text account.
+        Every account carries a segment tag, which is what makes segment-wise reporting
+        possible. All other modules reference this list — no screen in the system accepts a
+        free-text account.
       </p>
 
       <Card
         title={`${counts.total} accounts across ${counts.segments} segments`}
         subtitle="Filter by segment, type, or search by code and name"
-        actions={
-          <>
-            <Pill tone="info">Admin / Accountant only</Pill>
-          </>
-        }
       >
         <div className="form-row" style={{ marginBottom: 16 }}>
           <label className="field" style={{ marginBottom: 0 }}>

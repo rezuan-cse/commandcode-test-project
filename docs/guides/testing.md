@@ -14,7 +14,7 @@ cd backend && .venv/bin/python -m pytest tests -q
 | `test_reversal.py` | A reversal restores stock, average cost and the trial balance exactly |
 | `test_auth.py` | Passwords, the TOTP second factor, recovery codes, password change |
 | `test_account_admin.py` | Unlocking a locked-out account, and who may do it |
-| `test_demo_reset.py` | The books can be started over, Admin only |
+| `test_data.py` | Fresh start, workbook import, and starting the books over (Admin only) |
 | `test_schema_sync.py` | A deployed database gains new tables and columns without losing rows, and drift is caught rather than ignored |
 
 The interface has its own tests, because the figures shown on screen must round

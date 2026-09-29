@@ -17,13 +17,12 @@ export default function ProductionPage() {
   const items = useAsync(() => api.items(), []);
   const runs = useAsync(() => api.productionRuns(), []);
 
-  const [outputItem, setOutputItem] = useState("TRD-018");
+  const [outputItem, setOutputItem] = useState("");
   const [qty, setQty] = useState("50");
   const [date, setDate] = useState(asOf);
-  const [labor, setLabor] = useState("100");
+  const [labor, setLabor] = useState("0");
   const [overhead, setOverhead] = useState("0");
   const [overrides, setOverrides] = useState<Record<string, string>>({});
-  const [simulateFailure, setSimulateFailure] = useState(false);
 
   const [preview, setPreview] = useState<ProductionPreview | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -31,6 +30,14 @@ export default function ProductionPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [postError, setPostError] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
+
+  const options = items.data ?? [];
+
+  // Default to the first item once the list has loaded, so a deployment with no
+  // items shows an empty state instead of asking for an item that is not there.
+  useEffect(() => {
+    if (!outputItem && options.length > 0) setOutputItem(options[0].code);
+  }, [options, outputItem]);
 
   const payload = useMemo(() => {
     const lines = Object.entries(overrides)
@@ -44,7 +51,6 @@ export default function ProductionPage() {
       overhead_cost: overhead,
       posted_by: "Store",
       lines: lines.length > 0 ? lines : null,
-      simulate_failure: false,
     };
   }, [outputItem, qty, date, labor, overhead, overrides]);
 
@@ -82,7 +88,7 @@ export default function ProductionPage() {
     setToast(null);
     setPosting(true);
     try {
-      const result = await api.postProduction({ ...payload, simulate_failure: simulateFailure });
+      const result = await api.postProduction(payload);
       setToast(result.message);
       setOverrides({});
       refresh();
@@ -116,7 +122,16 @@ export default function ProductionPage() {
         />
       )}
 
-      {canWrite && (
+      {canWrite && !items.loading && options.length === 0 && (
+        <Card title="New production run">
+          <p className="small muted" style={{ margin: 0 }}>
+            There are no items yet. Add items under Inventory &amp; BOM, or import a workbook
+            from Administration → Data, before recording a production run.
+          </p>
+        </Card>
+      )}
+
+      {canWrite && options.length > 0 && (
       <Card title="New production run" subtitle="Components are suggested from the BOM and scaled automatically">
         <div className="form-row" style={{ marginBottom: 6 }}>
           <Field label="Item to produce">
@@ -278,15 +293,6 @@ export default function ProductionPage() {
               >
                 {posting ? "Posting…" : "Post production"}
               </button>
-              <label className="small muted" style={{ display: "flex", gap: 7, alignItems: "center" }}>
-                <input
-                  type="checkbox"
-                  style={{ width: "auto" }}
-                  checked={simulateFailure}
-                  onChange={(event) => setSimulateFailure(event.target.checked)}
-                />
-                Inject a failure mid-transaction, to show the rollback
-              </label>
             </div>
           </>
         )}

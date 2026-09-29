@@ -18,7 +18,6 @@ from app.modules.accounts.router import router as accounts_router
 from app.modules.approvals.router import router as approvals_router
 from app.modules.auth.router import router as auth_router
 from app.modules.data.router import router as data_router
-from app.modules.demo.router import router as demo_router
 from app.modules.inventory_ledger.router import router as inventory_router
 from app.modules.items_bom.router import router as items_router
 from app.modules.journal_entries.router import router as journal_router
@@ -35,7 +34,7 @@ from app.modules.vat_tax.router import router as vat_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Create tables and seed demo data on first boot."""
+    """Create tables and seed on first boot."""
     from app.core.security import using_ephemeral_secret
 
     if using_ephemeral_secret():
@@ -85,11 +84,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="RPCI Cloud Accounting & Production ERP (Demo)",
-    version="0.1.0",
+    title="RPCI Cloud Accounting & Production ERP",
+    version="1.0.0",
     description=(
-        "Demo build seeded from the client's own workbook: chart of accounts, "
-        "opening balances, production runs, sales, and live reports."
+        "Double-entry accounting and production for a resin manufacturer: chart of "
+        "accounts, opening balances, production runs, sales, payroll, and live reports."
     ),
     lifespan=lifespan,
 )
@@ -136,7 +135,6 @@ for router in (
     access_router,
     approvals_router,
     data_router,
-    demo_router,
 ):
     app.include_router(router, prefix="/api")
 
@@ -152,6 +150,11 @@ if _FRONTEND_DIST.is_dir():
         StaticFiles(directory=_FRONTEND_DIST / "assets"),
         name="assets",
     )
+
+    @app.get("/favicon.svg", include_in_schema=False)
+    def favicon() -> FileResponse:
+        """Serve the site icon, copied from the frontend's public directory."""
+        return FileResponse(_FRONTEND_DIST / "favicon.svg")
 
     @app.get("/{full_path:path}", include_in_schema=False)
     def serve_spa(full_path: str) -> FileResponse:
