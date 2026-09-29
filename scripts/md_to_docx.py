@@ -34,6 +34,7 @@ MUTED = RGBColor(0x64, 0x74, 0x8B)
 INLINE_PATTERN = re.compile(r"(\*\*.+?\*\*|`[^`]+`)")
 BULLET_PATTERN = re.compile(r"^(\s*)[-*]\s+(.*)$")
 NUMBER_PATTERN = re.compile(r"^(\s*)\d+\.\s+(.*)$")
+BLOCKQUOTE_PATTERN = re.compile(r"^>\s?(.*)$")
 TABLE_DIVIDER = re.compile(r"^\|[\s:|-]+\|$")
 
 
@@ -139,6 +140,16 @@ def add_code_block(document: Document, lines: list[str]) -> None:
         run.font.size = Pt(9)
 
 
+def add_note(document: Document, text: str) -> None:
+    """Render a blockquote as an indented, shaded callout paragraph."""
+    paragraph = document.add_paragraph()
+    paragraph.paragraph_format.left_indent = Pt(12)
+    paragraph.paragraph_format.space_before = Pt(4)
+    paragraph.paragraph_format.space_after = Pt(8)
+    shade(paragraph, CODE_FILL)
+    add_inline(paragraph, text)
+
+
 def add_list_item(document: Document, indent: int, text: str, numbered: bool) -> None:
     """Render a bullet or numbered list item, nesting by indent level."""
     if numbered:
@@ -158,7 +169,7 @@ def starts_block(text: str) -> bool:
     """
     if not text:
         return True
-    if text.startswith(("#", "```", "|")):
+    if text.startswith(("#", "```", "|", ">")):
         return True
     if text in {"---", "***", "___"}:
         return True
@@ -209,6 +220,16 @@ def convert(source: Path, destination: Path) -> None:
             paragraph.paragraph_format.space_after = Pt(8)
             add_bottom_border(paragraph)
             index += 1
+            continue
+
+        # Blockquote / callout
+        if stripped.startswith(">"):
+            parts: list[str] = []
+            while index < len(lines) and lines[index].strip().startswith(">"):
+                match = BLOCKQUOTE_PATTERN.match(lines[index].strip())
+                parts.append(match.group(1).strip() if match else "")
+                index += 1
+            add_note(document, " ".join(part for part in parts if part))
             continue
 
         # Headings. The document's `#` is the title, so `##` becomes Heading 1
