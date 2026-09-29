@@ -24,6 +24,9 @@ class SalesOrder(ReversibleMixin, Base):
     is_credit: Mapped[bool] = mapped_column(default=True, nullable=False)
     revenue: Mapped[Decimal] = mapped_column(Numeric(18, 4), default=Decimal("0"), nullable=False)
     cogs: Mapped[Decimal] = mapped_column(Numeric(18, 4), default=Decimal("0"), nullable=False)
+    vat_total: Mapped[Decimal] = mapped_column(
+        Numeric(18, 4), default=Decimal("0"), server_default="0", nullable=False
+    )
     journal_entry_id: Mapped[int | None] = mapped_column(
         ForeignKey("journal_entries.id"), nullable=True
     )
@@ -52,5 +55,8 @@ class SalesLine(Base):
     unit_cost: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
     line_revenue: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
     line_cogs: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
+    vat_amount: Mapped[Decimal] = mapped_column(
+        Numeric(18, 4), default=Decimal("0"), server_default="0", nullable=False
+    )
 
     order: Mapped[SalesOrder] = relationship(back_populates="lines")

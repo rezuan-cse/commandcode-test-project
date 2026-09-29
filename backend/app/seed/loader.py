@@ -10,11 +10,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
+from pathlib import Path
+from typing import BinaryIO
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.db import clear_all_data
 from app.core.enums import (
     AccountType,
     ItemCategory,
@@ -24,6 +27,7 @@ from app.core.enums import (
     Role,
     Segment,
 )
+from app.core.exceptions import DomainError
 from app.core.money import money, to_decimal
 from app.modules.accounts.models import Account
 from app.modules.inventory_ledger import service as ledger
@@ -65,6 +69,20 @@ DEMO_USERS = [
 def is_already_seeded(db: Session) -> bool:
     """True when the chart of accounts is already populated."""
     return db.execute(select(func.count()).select_from(Account)).scalar_one() > 0
+
+
+def _seed_counts(db: Session, data: WorkbookData) -> dict[str, int]:
+    """Counts for the seed report."""
+    return {
+        "accounts": len(data.accounts),
+        "items": len(data.items),
+        "bom_edges": len(data.bom),
+        "opening_balances": len(data.opening_balances),
+        "journal_entries": len(data.journal_entries),
+        "inventory_rows": db.execute(
+            select(func.count()).select_from(InventoryLedgerRow)
+        ).scalar_one(),
+    }
 
 
 def _load_accounts(db: Session, data: WorkbookData) -> None:
@@ -288,3 +306,38 @@ def seed_if_empty(db: Session) -> SeedReport:
         ).scalar_one(),
     }
     return SeedReport(seeded=True, counts=counts, warnings=data.warnings)
+
+
+def import_workbook(
+    db: Session, source: "str | Path | BinaryIO", *, replace: bool = True
+) -> SeedReport:
+    """Import a workbook from a path or an uploaded file.
+
+    ``replace`` empties the books first, which is the honest default: an import
+    is a fresh set of books, not a merge that could silently double-count. The
+    demo users and the configurable settings are restored afterwards, so the
+    instance stays sign-in-able and configured.
+    """
+    if not replace and is_already_seeded(db):
+        raise DomainError(
+            "The books already contain data. Import with replace to overwrite them."
+        )
+
+    data = load_workbook_data(source)  # type: ignore[arg-type]
+    if replace:
+        clear_all_data(db)
+
+    _load_accounts(db, data)
+    _load_items(db, data)
+    _load_bom(db, data)
+    _load_opening_balances(db, data)
+    _load_journal_entries(db, data)
+    _load_inventory(db, data)
+    ensure_demo_users(db)
+
+    from app.modules.settings import service as settings_service
+
+    settings_service.seed_defaults(db)
+
+    db.commit()
+    return SeedReport(seeded=True, counts=_seed_counts(db, data), warnings=data.warnings)

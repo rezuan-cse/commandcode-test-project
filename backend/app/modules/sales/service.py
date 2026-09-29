@@ -39,6 +39,7 @@ from app.modules.sales.schemas import (
     SaleRequest,
     SaleOut,
 )
+from app.modules.vat_tax import service as vat_tax
 
 
 def _account_name(db: Session, code: str) -> str:
@@ -57,7 +58,12 @@ def _price_lines(db: Session, payload: SaleRequest) -> list[SaleLinePreview]:
         position = ledger.position(db, item.code)
         qty = money(line.qty)
         unit_cost = position.avg_cost
-        revenue = money(qty * to_decimal(line.sale_price))
+        gross = money(qty * to_decimal(line.sale_price))
+        # When VAT is switched on, only the net part is revenue; the tax is
+        # carried separately so it never inflates margin.
+        revenue, vat = vat_tax.sale_split(
+            db, segment=item.segment.value, item_code=item.code, gross=gross
+        )
         cogs = money(qty * unit_cost)
         margin = money(revenue - cogs)
         priced.append(
@@ -68,6 +74,7 @@ def _price_lines(db: Session, payload: SaleRequest) -> list[SaleLinePreview]:
                 sale_price=to_decimal(line.sale_price),
                 unit_cost=unit_cost,
                 line_revenue=revenue,
+                vat_amount=vat,
                 line_cogs=cogs,
                 line_margin=margin,
                 on_hand=position.qty,
@@ -86,13 +93,14 @@ def _journal_preview(
     """Build the two-part journal entry: revenue side and COGS side."""
     entries: list[JournalLinePreview] = []
     revenue_total = money(sum((line.line_revenue for line in lines), ZERO))
+    vat_total = money(sum((line.vat_amount for line in lines), ZERO))
 
     entries.append(
         JournalLinePreview(
             account_code=DEFAULT_AR_ACCOUNT,
             account_name=_account_name(db, DEFAULT_AR_ACCOUNT),
             segment="Shared",
-            debit=revenue_total,
+            debit=money(revenue_total + vat_total),
             credit=ZERO,
             narration=f"Sale {order_no} receivable",
         )
@@ -111,6 +119,19 @@ def _journal_preview(
                 debit=ZERO,
                 credit=line.line_revenue,
                 narration=f"Sale {order_no}: {line.item_code}",
+            )
+        )
+
+    if vat_total > 0:
+        output = vat_tax.output_account(db)
+        entries.append(
+            JournalLinePreview(
+                account_code=output,
+                account_name=_account_name(db, output),
+                segment="Shared",
+                debit=ZERO,
+                credit=vat_total,
+                narration=f"Output VAT on {order_no}",
             )
         )
 
@@ -148,6 +169,7 @@ def _assemble(
 ) -> SalePreview:
     """Assemble revenue, COGS, margin, and the journal preview."""
     revenue = money(sum((line.line_revenue for line in lines), ZERO))
+    vat_total = money(sum((line.vat_amount for line in lines), ZERO))
     cogs = money(sum((line.line_cogs for line in lines), ZERO))
     gross = money(revenue - cogs)
     margin_pct = money(gross / revenue * 100) if revenue else ZERO
@@ -178,6 +200,8 @@ def _assemble(
         customer=payload.customer,
         lines=lines,
         revenue=revenue,
+        vat_total=vat_total,
+        grand_total=money(revenue + vat_total),
         cogs=cogs,
         gross_profit=gross,
         gross_margin_pct=margin_pct,
@@ -221,6 +245,7 @@ def post(db: Session, payload: SaleRequest) -> SalePostResult:
             customer=payload.customer,
             is_credit=payload.is_credit,
             revenue=preview_data.revenue,
+            vat_total=preview_data.vat_total,
             cogs=preview_data.cogs,
             posted_by=payload.posted_by,
         )
@@ -233,6 +258,7 @@ def post(db: Session, payload: SaleRequest) -> SalePostResult:
                     unit_cost=line.unit_cost,
                     line_revenue=line.line_revenue,
                     line_cogs=line.line_cogs,
+                    vat_amount=line.vat_amount,
                 )
             )
         repository.add_order(db, order)
@@ -303,6 +329,8 @@ def reverse(
     reason: str,
     posted_by: str,
     reversal_date: date | None = None,
+    bypass_approval: bool = False,
+    requested_by: str | None = None,
 ) -> SalesOrder:
     """Undo a posted sale, atomically.
 
@@ -315,6 +343,18 @@ def reverse(
     explainable to an accountant or an auditor afterwards.
     """
     order = get_order(db, order_id)
+    if not bypass_approval:
+        from app.modules.approvals import service as approvals
+
+        approvals.gate(
+            db,
+            source_type="sale",
+            source_id=order.id,
+            action="reverse",
+            amount=order.revenue,
+            reason=reason,
+            requested_by=requested_by or posted_by,
+        )
     when = reversal_date or order.sale_date
 
     try:

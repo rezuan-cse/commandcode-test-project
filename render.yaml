@@ -1,39 +1,46 @@
-# Render blueprint for the client demo.
+# Render blueprint for the client deployment.
+#
+# Service name is "rpci", so the public URL is https://rpci.onrender.com (Render
+# appends a suffix if that subdomain is already taken by another workspace).
+# The service tracks the "production" branch; push there to deploy.
 #
 # One Docker web service hosts both the API and the compiled interface, so the
 # client gets a single public HTTPS URL.
 #
 # About the free plan, and the choice you have to make:
 #
-#   * There is no persistent disk, so the SQLite file lives on the container's
-#     own filesystem. It survives while the instance is awake, and is recreated
-#     from the workbook when the instance restarts or wakes from sleep.
+#   * There is no persistent disk, so a SQLite file lives on the container's own
+#     filesystem. It survives while the instance is awake, and is recreated on
+#     the next boot when the instance restarts or wakes from sleep.
 #   * Free instances sleep after about 15 minutes of inactivity. The next visit
 #     takes roughly 30-60 seconds to wake up.
 #
 #   That suits a single guided session. It does NOT suit leaving the link with
 #   the client, because anything they post disappears once the instance sleeps.
 #
-# To make the data survive, point RPCI_DATABASE_URL at a hosted Postgres instead
-# (Neon has a free tier). That is the only change needed — see DEPLOYMENT.md,
-# option C. Set it in the Render dashboard:
+# To make the data survive, point RPCI_DATABASE_URL at a hosted Postgres (Neon
+# has a free tier). That is the only change needed — see DEPLOYMENT.md. Set it in
+# the Render dashboard, using the *direct* (non-pooler) connection string:
 #
 #   RPCI_DATABASE_URL = postgresql://user:pass@host/db?sslmode=require
 #
-# Visitors can always press "Reset demo data" on the Dashboard to restore the
-# workbook state, whichever database is in use.
+# An administrator can start the books over or import the client's workbook at
+# any time from Administration → Data.
 
 services:
   - type: web
-    name: rpci-demo
+    name: rpci
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free
+    branch: production
     healthCheckPath: /healthz
     autoDeploy: true
     envVars:
-      - key: RPCI_AUTO_SEED
-        value: "true"
+      # What a brand-new database starts with: fresh (starter chart of accounts),
+      # workbook (the sample workbook), or none.
+      - key: RPCI_SEED_MODE
+        value: "fresh"
       - key: RPCI_SEED_FROM_EXCEL_PATH
         value: "/app/RPCI Accounts.xlsx"
       # SQLite by default. Override this in the dashboard with a Postgres URL to

@@ -39,6 +39,7 @@ from app.modules.purchases.schemas import (
     PurchaseRequest,
     PurchaseOut,
 )
+from app.modules.vat_tax import service as vat_tax
 
 
 def _account_name(db: Session, code: str) -> str:
@@ -67,6 +68,9 @@ def _value_lines(db: Session, payload: PurchaseRequest) -> list[PurchaseLinePrev
                 qty=qty,
                 unit_cost=unit_cost,
                 line_value=value,
+                vat_amount=vat_tax.purchase_vat(
+                    db, segment=item.segment.value, item_code=item.code, net=value
+                ),
                 on_hand_before=position.qty,
                 avg_cost_before=position.avg_cost,
                 avg_cost_after=money(after),
@@ -97,16 +101,29 @@ def _journal_preview(
         )
 
     total = money(sum((line.line_value for line in lines), ZERO))
+    vat_total = money(sum((line.vat_amount for line in lines), ZERO))
     credit_account = (
         DEFAULT_AP_LOCAL_ACCOUNT if is_credit else DEFAULT_BANK_ACCOUNT
     )
+    if vat_total > 0:
+        input_vat = vat_tax.input_account(db)
+        entries.append(
+            JournalLinePreview(
+                account_code=input_vat,
+                account_name=_account_name(db, input_vat),
+                segment="Shared",
+                debit=vat_total,
+                credit=ZERO,
+                narration=f"Input VAT on purchase {order_no}",
+            )
+        )
     entries.append(
         JournalLinePreview(
             account_code=credit_account,
             account_name=_account_name(db, credit_account),
             segment="Shared",
             debit=ZERO,
-            credit=total,
+            credit=money(total + vat_total),
             narration=f"Purchase {order_no} {'on credit' if is_credit else 'paid'}",
         )
     )
@@ -121,6 +138,7 @@ def _assemble(
 ) -> PurchasePreview:
     """Assemble the purchase value and journal preview."""
     total = money(sum((line.line_value for line in lines), ZERO))
+    vat_total = money(sum((line.vat_amount for line in lines), ZERO))
     journal_lines = _journal_preview(db, lines, order_no, payload.is_credit)
     debits = money(sum((line.debit for line in journal_lines), ZERO))
     credits = money(sum((line.credit for line in journal_lines), ZERO))
@@ -128,6 +146,8 @@ def _assemble(
         supplier=payload.supplier,
         lines=lines,
         total_value=total,
+        vat_total=vat_total,
+        grand_total=money(total + vat_total),
         journal_lines=journal_lines,
         balanced=debits == credits,
         can_post=True,
@@ -155,6 +175,7 @@ def post(db: Session, payload: PurchaseRequest) -> PurchasePostResult:
             supplier=payload.supplier,
             is_credit=payload.is_credit,
             total_value=preview_data.total_value,
+            vat_total=preview_data.vat_total,
             posted_by=payload.posted_by,
         )
         for line in preview_data.lines:
@@ -164,6 +185,7 @@ def post(db: Session, payload: PurchaseRequest) -> PurchasePostResult:
                     qty=line.qty,
                     unit_cost=line.unit_cost,
                     line_value=line.line_value,
+                    vat_amount=line.vat_amount,
                 )
             )
         repository.add_order(db, order)
@@ -235,6 +257,8 @@ def reverse(
     reason: str,
     posted_by: str,
     reversal_date: date | None = None,
+    bypass_approval: bool = False,
+    requested_by: str | None = None,
 ) -> PurchaseOrder:
     """Undo a posted purchase, atomically.
 
@@ -247,6 +271,18 @@ def reverse(
     the ledger hold a balance that never existed.
     """
     order = get_order(db, order_id)
+    if not bypass_approval:
+        from app.modules.approvals import service as approvals
+
+        approvals.gate(
+            db,
+            source_type="purchase",
+            source_id=order.id,
+            action="reverse",
+            amount=order.total_value,
+            reason=reason,
+            requested_by=requested_by or posted_by,
+        )
     when = reversal_date or order.purchase_date
 
     try:

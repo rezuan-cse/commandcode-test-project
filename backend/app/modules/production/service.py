@@ -339,6 +339,8 @@ def reverse(
     reason: str,
     posted_by: str,
     reversal_date: date | None = None,
+    bypass_approval: bool = False,
+    requested_by: str | None = None,
 ) -> ProductionOrder:
     """Undo a posted production run, atomically.
 
@@ -353,6 +355,18 @@ def reverse(
     order = repository.get_order(db, order_id)
     if order is None:
         raise NotFoundError(f"Production order {order_id} not found")
+    if not bypass_approval:
+        from app.modules.approvals import service as approvals
+
+        approvals.gate(
+            db,
+            source_type="production",
+            source_id=order.id,
+            action="reverse",
+            amount=order.total_cost,
+            reason=reason,
+            requested_by=requested_by or posted_by,
+        )
     when = reversal_date or order.production_date
 
     try:

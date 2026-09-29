@@ -10,10 +10,15 @@ import ProductionPage from "./features/production/ProductionPage";
 import SalesPage from "./features/sales/SalesPage";
 import ReceiptPage from "./features/sales/ReceiptPage";
 import PurchasesPage from "./features/purchases/PurchasesPage";
+import EmployeesPage from "./features/payroll/EmployeesPage";
+import PayrollPage from "./features/payroll/PayrollPage";
+import PayslipPage from "./features/payroll/PayslipPage";
 import TrialBalancePage from "./features/reports/TrialBalancePage";
 import GeneralLedgerPage from "./features/reports/GeneralLedgerPage";
 import BalanceSheetPage from "./features/reports/BalanceSheetPage";
 import AccessPage from "./features/access/AccessPage";
+import ApprovalsPage from "./features/approvals/ApprovalsPage";
+import DataPage from "./features/data/DataPage";
 import SettingsPage from "./features/settings/SettingsPage";
 import LoginPage from "./features/auth/LoginPage";
 import SecurityPage from "./features/auth/SecurityPage";
@@ -61,6 +66,13 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Payroll",
+    items: [
+      { to: "/payroll/employees", text: "Employees", resource: "payroll" },
+      { to: "/payroll", text: "Payroll Runs", resource: "payroll", end: true },
+    ],
+  },
+  {
     label: "Reports",
     items: [
       { to: "/reports/trial-balance", text: "Trial Balance", resource: "reports" },
@@ -72,8 +84,10 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Administration",
     items: [
       { to: "/access", text: "Roles & Access" },
+      { to: "/approvals", text: "Approvals" },
       { to: "/security", text: "Security" },
       { to: "/settings", text: "Configuration" },
+      { to: "/data", text: "Data" },
     ],
   },
 ];
@@ -171,10 +185,15 @@ export default function App() {
             <Route path="/production" element={<ProductionPage />} />
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/sales/:id/receipt" element={<ReceiptPage />} />
+            <Route path="/payroll/employees" element={<EmployeesPage />} />
+            <Route path="/payroll" element={<PayrollPage />} />
+            <Route path="/payroll/runs/:id" element={<PayslipPage />} />
             <Route path="/reports/trial-balance" element={<TrialBalancePage />} />
             <Route path="/reports/general-ledger" element={<GeneralLedgerPage />} />
             <Route path="/reports/balance-sheet" element={<BalanceSheetPage />} />
             <Route path="/access" element={<AccessPage />} />
+            <Route path="/approvals" element={<ApprovalsPage />} />
+            <Route path="/data" element={<DataPage />} />
             <Route path="/security" element={<SecurityPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />

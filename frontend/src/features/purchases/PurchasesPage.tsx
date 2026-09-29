@@ -276,6 +276,18 @@ export default function PurchasesPage() {
                     <td>Purchase value</td>
                     <td className="numeric">{fmt(preview.total_value)}</td>
                   </tr>
+                  {Number(preview.vat_total) > 0 && (
+                    <>
+                      <tr>
+                        <td>Input VAT (recoverable)</td>
+                        <td className="numeric">{fmt(preview.vat_total)}</td>
+                      </tr>
+                      <tr>
+                        <td>Total payable</td>
+                        <td className="numeric">{fmt(preview.grand_total)}</td>
+                      </tr>
+                    </>
+                  )}
                   <tr>
                     <td>Settlement</td>
                     <td className="numeric">{onCredit ? "Supplier payable" : "Bank"}</td>

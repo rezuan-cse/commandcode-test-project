@@ -14,7 +14,7 @@ from app.modules.purchases.schemas import (
     PurchaseRequest,
     PurchaseOut,
 )
-from app.modules.users_roles.service import require
+from app.modules.users_roles.service import Principal, require
 
 router = APIRouter(prefix="/purchases", tags=["purchases"])
 
@@ -28,10 +28,11 @@ def list_orders(db: Session = Depends(get_db)) -> list[PurchaseOut]:
     return service.list_orders(db)
 
 
-@router.post("/{order_id}/reverse", response_model=PurchaseOut, dependencies=[CAN_WRITE])
+@router.post("/{order_id}/reverse", response_model=PurchaseOut)
 def reverse_purchase(
     order_id: int,
     payload: ReversalRequest,
+    principal: Principal = Depends(require("sales_purchase", write=True)),
     db: Session = Depends(get_db),
 ) -> PurchaseOut:
     """Undo a posted purchase.
@@ -45,6 +46,7 @@ def reverse_purchase(
         reason=payload.reason,
         posted_by=payload.posted_by,
         reversal_date=payload.reversal_date,
+        requested_by=principal.user.email,
     )
 
 

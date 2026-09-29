@@ -23,6 +23,9 @@ class PurchaseOrder(ReversibleMixin, Base):
     supplier: Mapped[str] = mapped_column(String(160), nullable=False)
     is_credit: Mapped[bool] = mapped_column(default=True, nullable=False)
     total_value: Mapped[Decimal] = mapped_column(Numeric(18, 4), default=Decimal("0"), nullable=False)
+    vat_total: Mapped[Decimal] = mapped_column(
+        Numeric(18, 4), default=Decimal("0"), server_default="0", nullable=False
+    )
     journal_entry_id: Mapped[int | None] = mapped_column(
         ForeignKey("journal_entries.id"), nullable=True
     )
@@ -49,5 +52,8 @@ class PurchaseLine(Base):
     qty: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
     unit_cost: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
     line_value: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
+    vat_amount: Mapped[Decimal] = mapped_column(
+        Numeric(18, 4), default=Decimal("0"), server_default="0", nullable=False
+    )
 
     order: Mapped[PurchaseOrder] = relationship(back_populates="lines")

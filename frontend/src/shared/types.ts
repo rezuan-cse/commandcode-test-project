@@ -236,6 +236,7 @@ export interface SaleLinePreview {
   sale_price: string;
   unit_cost: string;
   line_revenue: string;
+  vat_amount: string;
   line_cogs: string;
   line_margin: string;
   on_hand: string;
@@ -247,6 +248,8 @@ export interface SalePreview {
   customer: string;
   lines: SaleLinePreview[];
   revenue: string;
+  vat_total: string;
+  grand_total: string;
   cogs: string;
   gross_profit: string;
   gross_margin_pct: string;
@@ -269,6 +272,7 @@ export interface Sale extends Reversible {
   sale_date: string;
   customer: string;
   revenue: string;
+  vat_total: string;
   cogs: string;
   journal_entry_id: number | null;
   posted_by: string;
@@ -286,6 +290,7 @@ export interface SaleLine {
   qty: string;
   sale_price: string;
   line_revenue: string;
+  vat_amount: string;
 }
 
 /** A posted sale with its lines. */
@@ -307,6 +312,7 @@ export interface PurchaseLinePreview {
   qty: string;
   unit_cost: string;
   line_value: string;
+  vat_amount: string;
   on_hand_before: string;
   avg_cost_before: string;
   avg_cost_after: string;
@@ -316,6 +322,8 @@ export interface PurchasePreview {
   supplier: string;
   lines: PurchaseLinePreview[];
   total_value: string;
+  vat_total: string;
+  grand_total: string;
   journal_lines: JournalLinePreview[];
   balanced: boolean;
   can_post: boolean;
@@ -328,6 +336,7 @@ export interface Purchase extends Reversible {
   purchase_date: string;
   supplier: string;
   total_value: string;
+  vat_total: string;
   journal_entry_id: number | null;
   posted_by: string;
 }
@@ -408,9 +417,106 @@ export interface AuditEntry {
   created_at: string;
 }
 
+export type SettingValueType = "string" | "number" | "bool" | "enum" | "json";
+
 export interface Setting {
   key: string;
   value: string;
   description: string | null;
   confirmed_by_client: boolean;
+  /** Which Configuration section this belongs to. */
+  group: string;
+  label: string;
+  value_type: SettingValueType;
+  /** Allowed values when value_type is "enum". */
+  options: string[] | null;
+  sort_order: number;
+}
+
+export interface VatSummary {
+  date_from: string;
+  date_to: string;
+  output_vat: string;
+  input_vat: string;
+  net_payable: string;
+}
+
+export interface Employee {
+  code: string;
+  name: string;
+  email: string | null;
+  designation: string | null;
+  department: "office" | "factory";
+  joining_date: string | null;
+  bank_account: string | null;
+  mobile: string | null;
+  gross_salary: string;
+  is_active: boolean;
+}
+
+export interface PayrollLinePreview {
+  employee_code: string;
+  employee_name: string;
+  gross: string;
+  deductions: string;
+  net: string;
+  components: Record<string, string>;
+  deductions_detail: Record<string, string>;
+}
+
+export interface PayrollPreview {
+  period_start: string;
+  period_end: string;
+  pay_date: string;
+  lines: PayrollLinePreview[];
+  gross_total: string;
+  deductions_total: string;
+  net_total: string;
+  journal_lines: JournalLinePreview[];
+  balanced: boolean;
+  warnings: string[];
+}
+
+export interface PayrollRun extends Reversible {
+  id: number;
+  run_no: string;
+  period_start: string;
+  period_end: string;
+  pay_date: string;
+  gross_total: string;
+  deductions_total: string;
+  net_total: string;
+  journal_entry_id: number | null;
+  posted_by: string;
+}
+
+export interface PayrollDetail extends PayrollRun {
+  lines: PayrollLinePreview[];
+}
+
+export interface PayrollPostResult {
+  run: PayrollRun;
+  preview: PayrollPreview;
+  message: string;
+}
+
+export interface ApprovalRequest {
+  id: number;
+  source_type: string;
+  source_id: number;
+  action: string;
+  amount: string | null;
+  reason: string;
+  requested_by: string;
+  status: string;
+  decided_by: string | null;
+  decided_at: string | null;
+  note: string | null;
+  created_at: string;
+}
+
+export interface DataResult {
+  seeded: boolean;
+  counts: Record<string, number>;
+  message: string;
 }

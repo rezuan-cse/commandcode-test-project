@@ -34,6 +34,35 @@ puts the interface on Vercel or Netlify if you want that URL.
 
 ---
 
+## Production on the free tier, in short
+
+For a deployment you leave with the client, use **Option C** below: a Render web
+service (free plan) for the API and interface, plus a **Neon** free Postgres for
+the data, so nothing a client enters disappears when Render sleeps.
+
+1. Push the repository to GitHub.
+2. In Render, **New → Blueprint**, point it at the repository, and apply
+   `render.yaml`. That creates one Docker service serving the API and the
+   compiled interface on a single HTTPS URL.
+3. Create a free Neon Postgres project and copy the **direct** (non-pooler)
+   connection string. In the Render dashboard set `RPCI_DATABASE_URL` to it —
+   the URL is accepted unchanged (the app routes it to the `psycopg` driver).
+4. Keep `RPCI_JWT_SECRET` (the blueprint generates one) so sign-ins survive a
+   redeploy, and leave `RPCI_SEED_MODE=fresh` for a clean start.
+
+A new database starts from a standard starter chart of accounts with zero
+balances. An administrator imports the client's own workbook from
+**Administration → Data**, or restores the sample workbook there. The free Render
+instance sleeps after about 15 minutes of inactivity and takes 30–60 seconds to
+wake; the keep-alive workflow reduces that, and the Neon database keeps the data
+safe either way.
+
+Other free/open-source hosts work too — Fly.io, Koyeb and Railway run the same
+Docker image. The only things that matter are a running process and a persistent
+Postgres; the provider can be swapped without code changes.
+
+---
+
 ## The three options
 
 | | Option A | Option B | Option C |
@@ -75,10 +104,11 @@ the workbook is inside the image and the database seeds itself on first boot.
   inactivity and take 30–60 seconds to wake. Open the link yourself a minute
   before the client sees it, so their first impression is not a spinner.
 - **Posted data resets when the instance restarts.** There is no persistent disk
-  on the free plan, so the SQLite file is recreated from the workbook each time.
-  Every restart therefore opens on the client's real figures.
+  on the free plan, so the SQLite file is recreated from the configured starting
+  state each time (the starter chart of accounts, or the workbook if
+  `RPCI_SEED_MODE=workbook`).
 - **Nobody can permanently break the demo**, and each visitor gets a clean set of
-  books. Visitors can also press **Reset demo data** on the Dashboard.
+  books. Visitors can also press **Reset data** on the Dashboard.
 
 **If you need the data to stay put, use Option C below instead.**
 
@@ -197,9 +227,11 @@ would have gone.
 
 ### Clearing the data
 
-Because data now persists, the **Reset demo data** button on the Dashboard is how
-you return to the pristine workbook state. It empties the tables and re-imports;
-it takes well under a second.
+Because data now persists, the **Reset data** button on the Dashboard is how you
+return to the starting state the deployment is configured for (the starter chart
+of accounts, or the sample workbook). It empties the tables and re-seeds; it
+takes well under a second. An administrator can also import a workbook or start
+over from Administration → Data.
 
 ### Free tier notes
 
@@ -277,11 +309,11 @@ Set these on whichever host runs the API.
 | `RPCI_DATABASE_URL` | `sqlite:///<repo>/rpci_demo.db` | Where the books live |
 | `RPCI_JWT_SECRET` | *(random per process)* | Session signing key. **Set this** |
 | `RPCI_ACCESS_TOKEN_MINUTES` | `720` | How long a sign-in lasts |
-| `RPCI_AUTO_SEED` | `true` | Seed from the workbook on first boot |
-| `RPCI_SEED_FROM_EXCEL_PATH` | `<repo>/RPCI Accounts.xlsx` | Workbook to import |
+| `RPCI_SEED_MODE` | `fresh` | What a new database starts with: `fresh` (starter chart of accounts), `workbook`, or `none` |
+| `RPCI_SEED_FROM_EXCEL_PATH` | `<repo>/RPCI Accounts.xlsx` | Workbook available to import |
 | `RPCI_DEMO_PASSWORD` | `rpci` | Password for the seeded demo accounts |
 | `RPCI_CORS_ORIGINS` | `*` | Comma-separated allowed origins |
-| `RPCI_ALLOW_DEMO_RESET` | `true` | Allow an Admin to restore the workbook state |
+| `RPCI_ALLOW_DEMO_RESET` | `true` | Allow an Admin to start the books over |
 
 ### Set RPCI_JWT_SECRET
 

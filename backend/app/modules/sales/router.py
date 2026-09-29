@@ -15,7 +15,7 @@ from app.modules.sales.schemas import (
     SaleRequest,
     SaleOut,
 )
-from app.modules.users_roles.service import require
+from app.modules.users_roles.service import Principal, require
 
 router = APIRouter(prefix="/sales", tags=["sales"])
 
@@ -35,10 +35,11 @@ def get_order(order_id: int, db: Session = Depends(get_db)) -> SaleDetailOut:
     return service.get_order(db, order_id)
 
 
-@router.post("/{order_id}/reverse", response_model=SaleDetailOut, dependencies=[CAN_WRITE])
+@router.post("/{order_id}/reverse", response_model=SaleDetailOut)
 def reverse_sale(
     order_id: int,
     payload: ReversalRequest,
+    principal: Principal = Depends(require("sales_purchase", write=True)),
     db: Session = Depends(get_db),
 ) -> SaleDetailOut:
     """Undo a posted sale.
@@ -52,6 +53,7 @@ def reverse_sale(
         reason=payload.reason,
         posted_by=payload.posted_by,
         reversal_date=payload.reversal_date,
+        requested_by=principal.user.email,
     )
 
 

@@ -182,11 +182,11 @@ The menu on the left is grouped into five parts.
 
 This is the first screen. It shows the health of the business at a glance.
 
-**Top right — Reset demo data:**
+**Top right — Reset data:**
 
 A button in the top right of the page. Press it to put everything back to the
-original workbook figures. Anything you have entered is removed, and the demo
-looks exactly as it did the first time you opened it.
+starting state. Anything you have entered is removed, and the books look exactly
+as they did the first time you opened them.
 
 Nothing is permanently lost by exploring. If you are unsure whether something on
 screen is your doing or the original data, press this and start again.
@@ -1021,8 +1021,8 @@ On Production Entry, it can also mean the item has no recipe (BOM).
 
 ### "I want to start over"
 
-Press **Reset demo data** on the Dashboard. Everything goes back to the original
-workbook figures and anything you entered is removed.
+Press **Reset data** on the Dashboard. Everything goes back to the starting state
+and anything you entered is removed.
 
 If you are running the software yourself on your own computer, and it is keeping
 its data in a file, you can instead delete the `rpci_demo.db` file in the project

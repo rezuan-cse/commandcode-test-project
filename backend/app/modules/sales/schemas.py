@@ -39,6 +39,7 @@ class SaleLinePreview(BaseModel):
     sale_price: Decimal
     unit_cost: Decimal
     line_revenue: Decimal
+    vat_amount: Decimal = Decimal("0")
     line_cogs: Decimal
     line_margin: Decimal
     on_hand: Decimal
@@ -52,6 +53,8 @@ class SalePreview(BaseModel):
     customer: str
     lines: list[SaleLinePreview]
     revenue: Decimal
+    vat_total: Decimal = Decimal("0")
+    grand_total: Decimal = Decimal("0")
     cogs: Decimal
     gross_profit: Decimal
     gross_margin_pct: Decimal
@@ -71,6 +74,7 @@ class SaleOut(ReversalOut):
     sale_date: date
     customer: str
     revenue: Decimal
+    vat_total: Decimal = Decimal("0")
     cogs: Decimal
     journal_entry_id: int | None
     posted_by: str
@@ -85,6 +89,7 @@ class SaleLineOut(BaseModel):
     qty: Decimal
     sale_price: Decimal
     line_revenue: Decimal
+    vat_amount: Decimal = Decimal("0")
 
 
 class SaleDetailOut(SaleOut):

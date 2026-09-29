@@ -27,6 +27,10 @@ export default function ReceiptPage() {
 
   const order = sale.data;
   const company = readCompany(settings.data ?? []);
+  const receiptStyle = readSetting(settings.data ?? [], "sales.receipt_style");
+  const showVat = Number(order.vat_total) > 0;
+  const isTaxInvoice = showVat && receiptStyle === "tax_invoice";
+  const grandTotal = (Number(order.revenue) + Number(order.vat_total)).toFixed(4);
   const nameOf = (code: string) =>
     (items.data ?? []).find((item: Item) => item.code === code)?.name ?? code;
 
@@ -59,7 +63,7 @@ export default function ReceiptPage() {
             {company.phone && <p>{company.phone}</p>}
           </div>
           <div className="receipt-meta">
-            <h2>Sales Receipt</h2>
+            <h2>{isTaxInvoice ? "Tax Invoice" : "Sales Receipt"}</h2>
             <dl>
               <dt>Receipt no.</dt>
               <dd>{order.order_no}</dd>
@@ -103,19 +107,39 @@ export default function ReceiptPage() {
             ))}
           </tbody>
           <tfoot>
+            {showVat && (
+              <>
+                <tr>
+                  <td colSpan={3} className="receipt-total-label">
+                    Subtotal
+                  </td>
+                  <td className="numeric">{fmt(order.revenue)}</td>
+                </tr>
+                <tr>
+                  <td colSpan={3} className="receipt-total-label">
+                    VAT
+                  </td>
+                  <td className="numeric">{fmt(order.vat_total)}</td>
+                </tr>
+              </>
+            )}
             <tr>
               <td colSpan={3} className="receipt-total-label">
                 Total
               </td>
-              <td className="numeric receipt-total">{fmt(order.revenue)}</td>
+              <td className="numeric receipt-total">
+                {fmt(showVat ? grandTotal : order.revenue)}
+              </td>
             </tr>
           </tfoot>
         </table>
 
         <footer className="receipt-foot">
           <p>
-            Recorded by {order.posted_by}. This is a sales receipt, not a VAT tax
-            invoice.
+            Recorded by {order.posted_by}.{" "}
+            {isTaxInvoice
+              ? "This is a VAT tax invoice."
+              : "This is a sales receipt, not a VAT tax invoice."}
           </p>
           <p className="receipt-thanks">Thank you.</p>
         </footer>
@@ -133,14 +157,17 @@ interface CompanyDetails {
 
 /** Pull the company's document details out of the settings list. */
 function readCompany(settings: { key: string; value: string }[]): CompanyDetails {
-  const value = (key: string) => {
-    const found = settings.find((setting) => setting.key === key);
-    return (found?.value ?? "").replace(/^"|"$/g, "");
-  };
+  const value = (key: string) => readSetting(settings, key);
   return {
     name: value("company.name"),
     address: value("company.address"),
     phone: value("company.phone"),
     vatRegNo: value("company.vat_reg_no"),
   };
+}
+
+/** Read one setting's plain-string value, stripping the JSON quotes. */
+function readSetting(settings: { key: string; value: string }[], key: string): string {
+  const found = settings.find((setting) => setting.key === key);
+  return (found?.value ?? "").replace(/^"|"$/g, "");
 }

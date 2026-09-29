@@ -32,6 +32,7 @@ RESOURCES = [
     "items_bom",
     "production",
     "sales_purchase",
+    "payroll",
     "reports",
 ]
 
@@ -44,6 +45,7 @@ RESOURCE_LABELS: dict[str, str] = {
     "items_bom": "Inventory & BOM",
     "production": "Production Entry",
     "sales_purchase": "Purchase and Sales Entry",
+    "payroll": "Payroll",
     "reports": "Reports",
 }
 
@@ -85,6 +87,7 @@ MATRIX: dict[Role, dict[str, Access]] = {
         "items_bom": Access.VIEW,
         "production": Access.VIEW,
         "sales_purchase": Access.VIEW,
+        "payroll": Access.FULL,
         "reports": Access.FULL,
     },
     Role.STORE_PRODUCTION: {
@@ -93,6 +96,7 @@ MATRIX: dict[Role, dict[str, Access]] = {
         "items_bom": Access.FULL,
         "production": Access.FULL,
         "sales_purchase": Access.NONE,
+        "payroll": Access.NONE,
         "reports": Access.VIEW,
     },
     Role.SALES_STAFF: {
@@ -101,6 +105,7 @@ MATRIX: dict[Role, dict[str, Access]] = {
         "items_bom": Access.VIEW,
         "production": Access.NONE,
         "sales_purchase": Access.FULL,
+        "payroll": Access.NONE,
         "reports": Access.VIEW,
     },
     Role.OWNER_VIEWER: {
@@ -109,6 +114,7 @@ MATRIX: dict[Role, dict[str, Access]] = {
         "items_bom": Access.VIEW,
         "production": Access.VIEW,
         "sales_purchase": Access.VIEW,
+        "payroll": Access.NONE,
         "reports": Access.FULL,
     },
 }

@@ -15,18 +15,22 @@ from app.core.config import settings
 from app.core.db import SessionLocal, init_db
 from app.core.exceptions import DomainError
 from app.modules.accounts.router import router as accounts_router
+from app.modules.approvals.router import router as approvals_router
 from app.modules.auth.router import router as auth_router
+from app.modules.data.router import router as data_router
 from app.modules.demo.router import router as demo_router
 from app.modules.inventory_ledger.router import router as inventory_router
 from app.modules.items_bom.router import router as items_router
 from app.modules.journal_entries.router import router as journal_router
 from app.modules.opening_balances.router import router as opening_router
+from app.modules.payroll.router import router as payroll_router
 from app.modules.production.router import router as production_router
 from app.modules.purchases.router import router as purchases_router
 from app.modules.reports.router import router as reports_router
 from app.modules.sales.router import router as sales_router
 from app.modules.settings.router import router as settings_router
 from app.modules.users_roles.router import router as access_router
+from app.modules.vat_tax.router import router as vat_router
 
 
 @asynccontextmanager
@@ -42,13 +46,23 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
 
     init_db()
-    if settings.auto_seed:
+    # A brand-new database is populated according to RPCI_SEED_MODE: a standard
+    # starter chart of accounts (the default), the sample workbook, or nothing.
+    if settings.seed_mode == "workbook":
         from app.seed.loader import seed_if_empty
 
         with SessionLocal() as session:
             report = seed_if_empty(session)
             if report.seeded:
                 print(f"[seed] {report.summary()}")
+    elif settings.seed_mode == "fresh":
+        from app.seed.starter import seed_starter
+
+        with SessionLocal() as session:
+            added = seed_starter(session)
+            session.commit()
+            if added:
+                print(f"[seed] starter chart of accounts: {added} accounts")
 
     # Seed configurable settings defaults regardless of workbook data.
     from app.modules.settings import service as settings_service
@@ -113,11 +127,15 @@ for router in (
     items_router,
     inventory_router,
     production_router,
+    payroll_router,
     sales_router,
     purchases_router,
     reports_router,
+    vat_router,
     settings_router,
     access_router,
+    approvals_router,
+    data_router,
     demo_router,
 ):
     app.include_router(router, prefix="/api")

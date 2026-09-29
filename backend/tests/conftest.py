@@ -31,7 +31,8 @@ _TMP_DIR = Path(tempfile.mkdtemp(prefix="rpci-tests-"))
 os.environ["RPCI_DATABASE_URL"] = os.environ.get(
     "RPCI_TEST_DATABASE_URL", f"sqlite:///{_TMP_DIR / 'test.db'}"
 )
-os.environ["RPCI_AUTO_SEED"] = "false"
+# Tests seed exactly what they need, so startup seeding is off.
+os.environ["RPCI_SEED_MODE"] = "none"
 # A fixed signing key so tokens minted by tests are always verifiable.
 os.environ.setdefault("RPCI_JWT_SECRET", "test-secret-not-for-production")
 

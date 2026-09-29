@@ -19,6 +19,16 @@ PURCHASE_DATE = date(2026, 10, 15)
 AS_OF = date(2026, 10, 31)
 
 
+@pytest.fixture(autouse=True)
+def _workbook_mode(monkeypatch):
+    """These tests exercise the workbook-restoring reset, so pin the seed mode.
+
+    The default seed mode is "fresh" (a starter chart of accounts); the reset
+    follows whatever mode the deployment is configured with.
+    """
+    monkeypatch.setattr(settings, "seed_mode", "workbook")
+
+
 def _buy(db) -> None:
     """Post a purchase so there is something for the reset to remove."""
     purchases.post(

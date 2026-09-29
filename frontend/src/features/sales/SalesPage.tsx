@@ -249,6 +249,18 @@ export default function SalesPage() {
                       <td>Revenue</td>
                       <td className="numeric">{fmt(preview.revenue)}</td>
                     </tr>
+                    {Number(preview.vat_total) > 0 && (
+                      <>
+                        <tr>
+                          <td>VAT</td>
+                          <td className="numeric">{fmt(preview.vat_total)}</td>
+                        </tr>
+                        <tr>
+                          <td>Total payable</td>
+                          <td className="numeric">{fmt(preview.grand_total)}</td>
+                        </tr>
+                      </>
+                    )}
                     <tr>
                       <td>Cost of goods sold (at average cost)</td>
                       <td className="numeric">{fmt(preview.cogs)}</td>

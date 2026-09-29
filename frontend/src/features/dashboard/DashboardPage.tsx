@@ -61,7 +61,7 @@ export default function DashboardPage() {
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
         <button onClick={resetDemo} disabled={resetting}>
-          {resetting ? "Restoring…" : "Reset demo data"}
+          {resetting ? "Restoring…" : "Reset data"}
         </button>
       </div>
 

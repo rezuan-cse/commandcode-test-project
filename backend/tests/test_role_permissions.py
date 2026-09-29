@@ -18,25 +18,30 @@ from app.modules.users_roles.service import Access, access_for, is_allowed
 # Resource-level expectations, read side.
 EXPECTED_READ = {
     Role.ADMIN: {"accounts": True, "journal_entries": True, "items_bom": True,
-                 "production": True, "sales_purchase": True, "reports": True},
+                 "production": True, "sales_purchase": True, "payroll": True,
+                 "reports": True},
     Role.ACCOUNTANT: {"accounts": True, "journal_entries": True, "items_bom": True,
-                      "production": True, "sales_purchase": True, "reports": True},
+                      "production": True, "sales_purchase": True, "payroll": True,
+                      "reports": True},
     Role.STORE_PRODUCTION: {"accounts": False, "journal_entries": False, "items_bom": True,
-                            "production": True, "sales_purchase": False, "reports": True},
+                            "production": True, "sales_purchase": False, "payroll": False,
+                            "reports": True},
     Role.SALES_STAFF: {"accounts": False, "journal_entries": False, "items_bom": True,
-                       "production": False, "sales_purchase": True, "reports": True},
+                       "production": False, "sales_purchase": True, "payroll": False,
+                       "reports": True},
     Role.OWNER_VIEWER: {"accounts": True, "journal_entries": True, "items_bom": True,
-                        "production": True, "sales_purchase": True, "reports": True},
+                        "production": True, "sales_purchase": True, "payroll": False,
+                        "reports": True},
 }
 
 # Resources that expose a write operation. Reports are read-only by design —
 # every report is derived live — so they are excluded from the write matrix.
-WRITABLE_RESOURCES = ["accounts", "journal_entries", "items_bom", "production", "sales_purchase"]
+WRITABLE_RESOURCES = ["accounts", "journal_entries", "items_bom", "production", "sales_purchase", "payroll"]
 
 # Resources each role may write to.
 EXPECTED_WRITE = {
-    Role.ADMIN: {"accounts", "journal_entries", "items_bom", "production", "sales_purchase"},
-    Role.ACCOUNTANT: {"journal_entries"},
+    Role.ADMIN: {"accounts", "journal_entries", "items_bom", "production", "sales_purchase", "payroll"},
+    Role.ACCOUNTANT: {"journal_entries", "payroll"},
     Role.STORE_PRODUCTION: {"items_bom", "production"},
     Role.SALES_STAFF: {"sales_purchase"},
     Role.OWNER_VIEWER: set(),

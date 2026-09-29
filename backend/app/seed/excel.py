@@ -9,7 +9,7 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
 
 from openpyxl import load_workbook
 
@@ -237,10 +237,17 @@ def _parse_inventory(ws: Any, data: WorkbookData) -> None:
         )
 
 
-def load_workbook_data(path: str | Path) -> WorkbookData:
-    """Parse every relevant sheet of the client workbook."""
+def load_workbook_data(source: str | Path | BinaryIO) -> WorkbookData:
+    """Parse every relevant sheet of the client workbook.
+
+    ``source`` is a path, or a file-like object (an uploaded .xlsx read into
+    memory), which is what the import endpoint passes.
+    """
     data = WorkbookData()
-    wb = load_workbook(filename=str(path), data_only=True)
+    if hasattr(source, "read"):
+        wb = load_workbook(filename=source, data_only=True)
+    else:
+        wb = load_workbook(filename=str(source), data_only=True)
 
     _parse_accounts(wb["Chart of Accounts"], data)
     _parse_opening_balances(wb["Opening Balances"], data)

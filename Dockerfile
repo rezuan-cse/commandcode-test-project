@@ -30,9 +30,12 @@ COPY ["RPCI Accounts.xlsx", "./RPCI Accounts.xlsx"]
 COPY --from=frontend /build/dist ./frontend/dist
 
 # The demo stores its SQLite file here; mount a volume to persist it.
+# A new database starts from the standard starter chart of accounts. Set
+# RPCI_SEED_MODE=workbook to load the sample workbook instead, or import it from
+# Administration → Data at any time.
 ENV RPCI_DATABASE_URL="sqlite:////data/rpci_demo.db" \
     RPCI_SEED_FROM_EXCEL_PATH="/app/RPCI Accounts.xlsx" \
-    RPCI_AUTO_SEED="true" \
+    RPCI_SEED_MODE="fresh" \
     PORT=8000
 
 RUN mkdir -p /data

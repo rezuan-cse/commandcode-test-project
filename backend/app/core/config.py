@@ -22,7 +22,11 @@ class Settings(BaseSettings):
     database_url: str = f"sqlite:///{PROJECT_ROOT / 'rpci_demo.db'}"
     demo_password: str = "rpci"
     seed_from_excel_path: str = str(PROJECT_ROOT / "RPCI Accounts.xlsx")
-    auto_seed: bool = True
+    # What a brand-new, empty database starts with:
+    #   fresh    - a standard starter chart of accounts, no balances (default)
+    #   workbook - the client's sample workbook
+    #   none     - nothing; the books stay empty until data is entered or imported
+    seed_mode: str = "fresh"
     default_segment: str = "Shared"
     # When the interface is hosted on a different origin (Vercel, Netlify) the
     # browser needs permission to call this API. "*" is fine for a public demo
@@ -38,6 +42,12 @@ class Settings(BaseSettings):
     jwt_secret: str = ""
     # How long a signed-in session lasts before the user must sign in again.
     access_token_minutes: int = 720
+
+    @field_validator("seed_mode", mode="after")
+    @classmethod
+    def normalise_seed_mode(cls, value: str) -> str:
+        """Accept only the three known modes; anything else means the default."""
+        return value if value in {"fresh", "workbook", "none"} else "fresh"
 
     @field_validator("database_url", mode="after")
     @classmethod

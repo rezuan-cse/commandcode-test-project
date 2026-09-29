@@ -38,6 +38,7 @@ class PurchaseLinePreview(BaseModel):
     qty: Decimal
     unit_cost: Decimal
     line_value: Decimal
+    vat_amount: Decimal = Decimal("0")
     on_hand_before: Decimal
     avg_cost_before: Decimal
     avg_cost_after: Decimal
@@ -49,6 +50,8 @@ class PurchasePreview(BaseModel):
     supplier: str
     lines: list[PurchaseLinePreview]
     total_value: Decimal
+    vat_total: Decimal = Decimal("0")
+    grand_total: Decimal = Decimal("0")
     journal_lines: list[JournalLinePreview]
     balanced: bool
     can_post: bool
@@ -65,6 +68,7 @@ class PurchaseOut(ReversalOut):
     purchase_date: date
     supplier: str
     total_value: Decimal
+    vat_total: Decimal = Decimal("0")
     journal_entry_id: int | None
     posted_by: str
 

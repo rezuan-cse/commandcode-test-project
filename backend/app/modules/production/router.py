@@ -14,7 +14,7 @@ from app.modules.production.schemas import (
     ProductionRequest,
     ProductionRunOut,
 )
-from app.modules.users_roles.service import require
+from app.modules.users_roles.service import Principal, require
 
 router = APIRouter(prefix="/production", tags=["production"])
 
@@ -28,12 +28,11 @@ def list_orders(db: Session = Depends(get_db)) -> list[ProductionRunOut]:
     return service.list_orders(db)
 
 
-@router.post(
-    "/{order_id}/reverse", response_model=ProductionRunOut, dependencies=[CAN_WRITE]
-)
+@router.post("/{order_id}/reverse", response_model=ProductionRunOut)
 def reverse_run(
     order_id: int,
     payload: ReversalRequest,
+    principal: Principal = Depends(require("production", write=True)),
     db: Session = Depends(get_db),
 ) -> ProductionRunOut:
     """Undo a posted production run.
@@ -47,6 +46,7 @@ def reverse_run(
         reason=payload.reason,
         posted_by=payload.posted_by,
         reversal_date=payload.reversal_date,
+        requested_by=principal.user.email,
     )
 
 

@@ -37,3 +37,9 @@ class PermissionDeniedError(DomainError):
     """The acting role is not permitted to perform this action."""
 
     status_code = 403
+
+
+class ApprovalRequiredError(DomainError):
+    """The action is paused: a second person must approve it first."""
+
+    status_code = 409
