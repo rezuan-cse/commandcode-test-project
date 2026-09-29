@@ -261,8 +261,9 @@ the database it is using:
 
 **Fix it:**
 
-1. Create a free Neon Postgres project and copy the **direct** (non-pooler)
-   connection string.
+1. Create a free Neon Postgres project and copy its connection string. The
+   **direct** host is simplest; a **pooled** (`-pooler`) host also works, because
+   the app disables prepared statements when it talks to Postgres.
 2. In the Render dashboard, open the service → **Environment**, and set
    `RPCI_DATABASE_URL` to that string. The application accepts it unchanged;
    `postgresql://…?sslmode=require` is fine.

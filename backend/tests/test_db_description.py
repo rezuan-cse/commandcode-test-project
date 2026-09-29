@@ -25,3 +25,13 @@ def test_it_names_a_sqlite_file(monkeypatch) -> None:
     """A sqlite path is shown as-is, so an ephemeral file is obvious in the log."""
     monkeypatch.setattr(settings, "database_url", "sqlite:////data/rpci_demo.db")
     assert describe_database() == "sqlite file /data/rpci_demo.db"
+
+
+def test_it_marks_a_pooled_host(monkeypatch) -> None:
+    """A pooled (pgbouncer) host is called out, since it changes driver behaviour."""
+    monkeypatch.setattr(
+        settings,
+        "database_url",
+        "postgresql+psycopg://u:p@ep-x-pooler.c-11.us-east-1.aws.neon.tech/db?sslmode=require",
+    )
+    assert describe_database().endswith("(pooled)")

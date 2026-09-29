@@ -18,7 +18,17 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from app.core.config import settings
 
 _is_sqlite = settings.database_url.startswith("sqlite")
-_connect_args = {"check_same_thread": False} if _is_sqlite else {}
+if _is_sqlite:
+    _connect_args = {"check_same_thread": False}
+else:
+    # psycopg 3 prepares a statement on the server after it has been run a few
+    # times. A transaction-mode connection pooler (Neon's "-pooler" host, or
+    # pgbouncer) hands each statement to whichever backend is free, so it cannot
+    # follow a statement prepared on a different one — the symptom is an
+    # intermittent "prepared statement ... already exists". Disabling prepared
+    # statements keeps a pooled connection string working, and costs almost
+    # nothing next to the network round trip.
+    _connect_args = {"prepare_threshold": None}
 
 engine = create_engine(
     settings.database_url,
@@ -44,7 +54,9 @@ def describe_database() -> str:
     url = make_url(settings.database_url)
     if url.get_backend_name() == "sqlite":
         return f"sqlite file {url.database}"
-    return f"{url.get_backend_name()} database {url.database} on {url.host}"
+    host = url.host or "?"
+    pooled = " (pooled)" if "-pooler" in host else ""
+    return f"{url.get_backend_name()} database {url.database} on {host}{pooled}"
 
 
 class Base(DeclarativeBase):

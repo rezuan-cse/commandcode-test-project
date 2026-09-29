@@ -65,9 +65,10 @@ RPCI_DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
 
 Paste a hosted URL unchanged — the application rewrites `postgres://` and
 `postgresql://` to the installed `psycopg` driver, so no `+psycopg` suffix is
-needed. Use the provider's **direct** (non-pooler) host. Tables are created and
-seeded on first boot, and left alone afterwards. See
-[DEPLOYMENT.md](../../DEPLOYMENT.md), option C, and its *"All my data reset to
+needed. Either Neon host works: the **direct** host is simplest, and a **pooled**
+(`-pooler`) host is supported because the app disables prepared statements for
+Postgres. Tables are created and seeded on first boot, and left alone afterwards.
+See [DEPLOYMENT.md](../../DEPLOYMENT.md), option C, and its *"All my data reset to
 zero"* section.
 
 The suite runs against either engine:
