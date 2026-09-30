@@ -1006,19 +1006,49 @@ When a posting was a mistake, the system writes a **mirror entry**: every debit
 becomes a credit and every credit a debit, so the two entries cancel out. The
 original stays exactly as it was, marked as reversed, with the reason recorded.
 
-- Stock goes back at **exactly** the value it left at, so the arithmetic unwinds
+- Stock moves back at **exactly** the value it moved at, so the arithmetic unwinds
   precisely.
 - The original and the correction both remain on the record — which is what makes
   the history explainable afterwards.
 
-**When a reversal is refused:**
+### What each kind of reversal does to stock
 
-- The posting is **already reversed**.
-- The goods have since been **used or sold**. For example, a purchase whose stock
-  has already been consumed in production cannot be taken back, because that
-  would drive the quantity negative. The later transaction must be reversed
-  first. The message names the item and what is on hand.
-- An **approval** is required and has not been given (see 2.12).
+A reversal puts back exactly what a transaction took, or takes back exactly what it
+put in. The only thing that can stop it is not having the stock to move:
+
+| Reversing a… | Stock moves | Can it be refused? |
+|---|---|---|
+| **Sale** | goods come **back in** | **No.** Putting goods back can never overdraw stock, so a sale can always be reversed. |
+| **Purchase** | goods go **out** | **Yes** — only while you still hold at least as much of each item as the purchase delivered. |
+| **Production run** | the **output goes out first**, then the components come back in | **Yes** — only while the output is still on hand, i.e. none of what it made has been sold. Components always return freely. |
+| **Payroll run** | nothing (accounts only) | No. |
+
+A refusal always names the item and the quantity on hand, for example
+*"Cannot take 30 of FG-100: only 20 on hand."* The whole reversal is one
+transaction, so a refusal changes nothing at all.
+
+**"Already reversed"** and **"an approval is required"** are the other two
+reasons a reversal is stopped (see 2.12 for approvals).
+
+### The order to reverse in
+
+Undo in the **reverse order you did things** — the sale first, then the production
+run, then the purchase. Reversing in that order is exact: stock quantity, stock
+value and average cost all return precisely to where they started.
+
+The system allows a reversal whenever the stock permits it, but only unwinding in
+reverse order guarantees the figures land back exactly. Two things to know:
+
+- **A production run cannot be reversed while its output has been sold.** Reverse
+  the sale that consumed the output first.
+- **Reversing a purchase after some of it has been consumed is allowed if enough
+  remains, but it recalculates what is left.** The purchase is removed at exactly
+  the value it came in at, so the remaining units take a new average. If you want
+  the original figures back untouched, undo in reverse order instead.
+
+> Reversals are recorded in the order you make them, however old the transaction
+> they correct. The stock ledger lists rows in that order, so the running balance
+> always reads correctly.
 
 ---
 

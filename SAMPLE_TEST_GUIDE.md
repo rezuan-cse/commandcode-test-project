@@ -264,22 +264,42 @@ banner, and `FG-100` is back to **30 units** at **92**. Nothing is deleted — t
 original and its mirror entry both remain, and the mirror voucher is numbered
 `SALE-001-REV`.
 
-**Try a refusal.** Reversing the **purchase** from Step 1 is *allowed* here — you
-still hold 140 kg of `RM-100` against the 100 kg you bought, so the stock can go
-back without going negative. The rule is simple: a reversal is refused only when
-the quantity to take back is **more than you still hold**.
+### Why a reversal is sometimes refused
 
-To see a refusal, do it in this order instead:
+A reversal puts back exactly what a transaction took, or takes back exactly what
+it put in. The only thing that can stop it is not having the stock:
+
+- A **sale** gives goods **back** to you, so it can never run short. It can always
+  be reversed.
+- A **purchase** takes goods **out** of stock, so it can only be reversed while you
+  still hold at least as much of that item as the purchase delivered.
+- A **production run** takes the **output** out first, so it can only be reversed
+  while the output is still on hand — that is, while none of it has been sold. Its
+  components always come back freely.
+
+In this walkthrough, reversing the **purchase** from Step 1 is *allowed* — you
+still hold 140 kg of `RM-100` against the 100 kg you bought.
+
+### See a refusal for yourself
 
 1. Do **not** reverse the sale yet.
 2. With the sale still posted, try to reverse the **production run** from Step 2.
-3. It is refused, because the finished goods it produced have since been sold. The
-   message names the item and the quantity on hand.
-4. Reverse the sale first — then the production run can be reversed.
+3. It is refused with *"Cannot take 30 of FG-100: only 20 on hand."* — the run made
+   30, and 10 have been sold.
+4. Reverse the sale first; the production run can then be reversed.
+
+### The order to reverse in
+
+Undo things in the **reverse order you did them**: the sale first, then the
+production run, then the purchase. Done that way, every reversal is exact and the
+stock returns to precisely where it started.
+
+The system allows a reversal whenever the stock permits it, but only unwinding in
+reverse order guarantees the values land back exactly as they were.
 
 > Reversals are recorded in the order you make them, however old the transaction
-> they correct. The stock ledger shows them that way, so the running balance
-> always reads correctly.
+> they correct. The stock ledger lists them that way, so the running balance always
+> reads correctly.
 
 ---
 
