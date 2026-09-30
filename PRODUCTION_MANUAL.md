@@ -97,6 +97,12 @@ Three groups are limited by **who you are** rather than by an area permission:
 
 See "Which menus each role is offered" in 1.2 for the full grid.
 
+**On a narrow screen** — a phone or a small tablet — the menu folds away behind a
+**menu button** at the top left. Tap it to slide the menu out; tap an item to open
+that screen; tap anywhere outside the menu, or press Escape, to close it. Nothing
+is lost: the same items are there, and Store and Sales users see only the work they
+do.
+
 ---
 
 ## 1.2 Roles and permissions in plain English
@@ -110,8 +116,8 @@ system refuses it even if you reach the screen another way.
 |---|---|---|---|
 | **Admin** | Full control | Everything | Everything |
 | **Accountant** | Keeps the books | Journal entries, payroll | Everything else |
-| **Store/Production Staff** | Runs the warehouse and factory | Items, production runs | Reports |
-| **Sales Staff** | Handles buying and selling | Purchases, sales | Items, reports |
+| **Store/Production Staff** | Runs the warehouse and factory | Items, production runs | Nothing else |
+| **Sales Staff** | Handles buying and selling | Purchases, sales | Items |
 | **Owner/Viewer** | Watches, does not touch | Nothing | Everything |
 
 ### Which menus each role is offered
@@ -124,7 +130,7 @@ The sidebar only shows a group when the role may open something inside it.
 | **Ledger** — accounts, journal | Yes | Yes | — | — | Yes |
 | **Operations** — stock, buying, making, selling | Yes | Yes (read only) | Yes | Yes | Yes (read only) |
 | **Payroll** — employees, runs | Yes | Yes | — | — | Yes (read only) |
-| **Reports** — trial balance, ledger, balance sheet | Yes | Yes | Yes | Yes | Yes |
+| **Reports** — trial balance, ledger, balance sheet | Yes | Yes | — | — | Yes |
 | **Administration** — roles, approvals, configuration, data | Yes | — | — | — | Yes (read only) |
 | **My account** — your password and 2-FA | Yes | Yes | Yes | Yes | Yes |
 
@@ -135,6 +141,12 @@ Two of these are limited by **who you are**, not by an area permission:
 - The **Administration** group is offered to Admin and Owner only. Inside it, an
   owner can look but not change: saving a setting, issuing a password, disabling
   an account, importing or resetting data all remain administrator-only.
+
+**Store/Production and Sales see only the work they do.** Store staff get
+**Inventory & BOM** and **Production Entry**; sales staff get **Purchase Entry**
+and **Sales Entry**, plus a read-only look at items so they can pick what they are
+selling. Neither is offered the Dashboard, the ledger, payroll or the financial
+reports — only the screens their own job needs.
 
 **Every role keeps "My account"**, so anyone can change their own password and set
 up two-factor sign-in without asking an administrator.

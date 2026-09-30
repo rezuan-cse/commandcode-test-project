@@ -985,25 +985,71 @@ button:disabled {
 
 /* ---------- Responsive ---------- */
 
+/* The menu button and its backdrop only appear on a narrow screen (see below). */
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.nav-backdrop {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .shell {
     grid-template-columns: 1fr;
   }
 
-  .sidebar {
-    position: static;
-    height: auto;
-    padding: 14px;
+  /* On a narrow screen the menu is a drawer: off-canvas until the button opens it. */
+  .nav-toggle {
+    display: inline-flex;
   }
 
-  .sidebar nav {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(280px, 82vw);
+    height: 100vh;
+    padding: 18px 14px;
+    z-index: 40;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.3);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(15, 23, 42, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .nav-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .nav-group {
-    margin-bottom: 0;
+    margin-bottom: 14px;
   }
 
   .content {
@@ -1012,6 +1058,8 @@ button:disabled {
 
   .topbar {
     padding: 12px 14px;
+    align-items: center;
+    row-gap: 10px;
   }
 }
 

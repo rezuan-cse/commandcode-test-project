@@ -113,7 +113,7 @@ Yes = allowed. No = blocked.
 | Do a Purchase | Yes | **No** | **No** | Yes | **No** |
 | Do a Production | Yes | **No** | Yes | **No** | **No** |
 | Do a Sale | Yes | **No** | **No** | Yes | **No** |
-| See Reports | Yes | Yes | Yes | Yes | Yes |
+| See Reports | Yes | Yes | **No** | **No** | Yes |
 | Change Settings | Yes | **No** | **No** | **No** | **No** |
 
 ### Two things to check with the client
@@ -139,6 +139,14 @@ permission:
   — is shown to Admin and Owner. An owner may look but not change anything.
 - **My account** is shown to everyone, so any user can change their own password
   and set up two-factor sign-in without asking an administrator.
+
+**Store and Sales see only the work they do.** Store staff get Inventory & BOM
+and Production Entry; sales staff get Purchase Entry and Sales Entry, plus a
+read-only look at items. Neither sees the Dashboard or the financial reports.
+
+**On a phone or a small tablet**, the menu folds away behind a **menu button** at
+the top left. Tap it to open the menu, then tap what you want. Tap anywhere
+outside the menu — or press Escape — to close it.
 
 **Screens you may read but not change open without their form.** Purchase Entry,
 Production Entry and Sales Entry are like this for an Accountant: the screen

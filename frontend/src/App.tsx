@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./shared/AuthContext";
 import { useDemo } from "./shared/DemoContext";
@@ -28,6 +29,18 @@ export default function App() {
   const { user, checking, signOut, can } = useAuth();
   const { asOf, setAsOf, dateFrom, setDateFrom } = useDemo();
 
+  // On a narrow screen the menu is a drawer behind a hamburger button.
+  const [navOpen, setNavOpen] = useState(false);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setNavOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [navOpen]);
+
   // A stored token is verified against the server before anything renders, so
   // an expired session shows the sign-in screen rather than a broken dashboard.
   if (checking) {
@@ -55,7 +68,7 @@ export default function App() {
 
   return (
     <div className="shell">
-      <aside className="sidebar">
+      <aside className={`sidebar ${navOpen ? "open" : ""}`}>
         <div className="brand">
           <span className="brand-mark">RPCI</span>
           <span className="brand-sub">Accounting &amp; Production ERP</span>
@@ -70,6 +83,7 @@ export default function App() {
                   to={item.to}
                   end={item.end ?? false}
                   className={({ isActive }) => (isActive ? "nav-item active" : "nav-item")}
+                  onClick={() => setNavOpen(false)}
                 >
                   {item.text}
                 </NavLink>
@@ -79,8 +93,32 @@ export default function App() {
         </nav>
       </aside>
 
+      {/* Tapping outside the drawer closes it. */}
+      <div
+        className={`nav-backdrop ${navOpen ? "open" : ""}`}
+        onClick={() => setNavOpen(false)}
+        aria-hidden="true"
+      />
+
       <div className="main">
         <header className="topbar">
+          <button
+            type="button"
+            className="nav-toggle"
+            aria-label={navOpen ? "Close the menu" : "Open the menu"}
+            aria-expanded={navOpen}
+            onClick={() => setNavOpen((open) => !open)}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+              <path
+                d="M2 5h16M2 10h16M2 15h16"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+
           <div className="topbar-dates">
             <label className="inline-field">
               <span>Period from</span>

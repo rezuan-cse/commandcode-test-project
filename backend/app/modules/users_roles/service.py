@@ -97,7 +97,7 @@ MATRIX: dict[Role, dict[str, Access]] = {
         "production": Access.FULL,
         "sales_purchase": Access.NONE,
         "payroll": Access.NONE,
-        "reports": Access.VIEW,
+        "reports": Access.NONE,
     },
     Role.SALES_STAFF: {
         "accounts": Access.NONE,
@@ -106,7 +106,7 @@ MATRIX: dict[Role, dict[str, Access]] = {
         "production": Access.NONE,
         "sales_purchase": Access.FULL,
         "payroll": Access.NONE,
-        "reports": Access.VIEW,
+        "reports": Access.NONE,
     },
     Role.OWNER_VIEWER: {
         "accounts": Access.VIEW,

@@ -22,11 +22,11 @@ const MATRIX: Record<string, Record<string, Access>> = {
   },
   "Store/Production Staff": {
     accounts: "none", journal_entries: "none", items_bom: "full",
-    production: "full", sales_purchase: "none", payroll: "none", reports: "view",
+    production: "full", sales_purchase: "none", payroll: "none", reports: "none",
   },
   "Sales Staff": {
     accounts: "none", journal_entries: "none", items_bom: "view",
-    production: "none", sales_purchase: "full", payroll: "none", reports: "view",
+    production: "none", sales_purchase: "full", payroll: "none", reports: "none",
   },
   "Owner/Viewer": {
     accounts: "view", journal_entries: "view", items_bom: "view",
@@ -75,6 +75,21 @@ describe("Menu visibility", () => {
     expect(labels("Sales Staff")).not.toContain("Ledger");
     expect(labels("Accountant")).toContain("Ledger");
   });
+
+  it("keeps the financial reports away from the shop-floor roles", () => {
+    expect(labels("Store/Production Staff")).not.toContain("Reports");
+    expect(labels("Sales Staff")).not.toContain("Reports");
+    expect(labels("Accountant")).toContain("Reports");
+    expect(labels("Owner/Viewer")).toContain("Reports");
+  });
+
+  it("shows Store and Sales only the work they do", () => {
+    expect(labels("Store/Production Staff")).toEqual([
+      "Operations",
+      "My account",
+    ]);
+    expect(labels("Sales Staff")).toEqual(["Operations", "My account"]);
+  });
 });
 
 describe("Landing page", () => {
@@ -85,6 +100,11 @@ describe("Landing page", () => {
       const shown = visibleGroups(role, can(role)).flatMap((g) => g.items.map((i) => i.to));
       expect(shown).toContain(route);
     }
+  });
+
+  it("sends each role to its own working screen", () => {
+    expect(landingRoute("Store/Production Staff", can("Store/Production Staff"))).toBe("/inventory");
+    expect(landingRoute("Sales Staff", can("Sales Staff"))).toBe("/sales");
   });
 
   it("still lands the finance roles on the Dashboard", () => {

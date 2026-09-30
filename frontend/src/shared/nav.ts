@@ -113,19 +113,25 @@ export function visibleGroups(
 /**
  * Where a role should land after signing in.
  *
- * The Dashboard is no longer open to everyone, so the first menu item the role
- * can actually open is the safe landing place. Every role has "My account", so
- * there is always somewhere to go.
+ * The Dashboard is not open to every role, so the first menu item the role can
+ * actually open is the safe landing place. A role that works in one screen most of
+ * the day gets that screen instead of the first one alphabetically.
  */
 export function landingRoute(
   role: string,
   can: (resource: string, write?: boolean) => boolean,
 ): string {
-  for (const group of visibleGroups(role, can)) {
-    for (const item of group.items) return item.to;
-  }
-  return "/security";
+  const shown = visibleGroups(role, can).flatMap((group) => group.items.map((item) => item.to));
+  const preferred = PREFERRED_LANDING[role];
+  if (preferred && shown.includes(preferred)) return preferred;
+  return shown[0] ?? "/security";
 }
+
+/** Roles whose working screen is a better landing than the first menu item. */
+const PREFERRED_LANDING: Record<string, string> = {
+  "Store/Production Staff": "/inventory",
+  "Sales Staff": "/sales",
+};
 
 /** The menu group labels a role sees, from a permission map. */
 export function menuLabelsForRole(
