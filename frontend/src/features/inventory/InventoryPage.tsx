@@ -111,7 +111,7 @@ function ItemDetail({ code, onClose }: { code: string; onClose: () => void }) {
   return (
     <Card
       title={`${code} — stock ledger`}
-      subtitle="Movements in order, showing how the running balance is built"
+      subtitle="Movements in the order they were recorded, showing how the running balance is built"
       actions={<button onClick={onClose}>Close</button>}
     >
       {ledger.loading && <Spinner />}

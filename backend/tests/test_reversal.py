@@ -281,6 +281,76 @@ def test_the_books_balance_after_a_production_reversal(db) -> None:
     assert reports.balance_sheet(db, AS_OF).is_balanced is True
 
 
+# --- Back-dated corrections ----------------------------------------------
+
+
+def _inventory_variance(db):
+    """The GL-versus-stock-ledger gap the dashboard reports."""
+    check = next(
+        c for c in reports.integrity_report(db, AS_OF).checks if "inventory" in c.name.lower()
+    )
+    return check.value
+
+
+def test_a_reversal_dated_before_a_later_movement_reconciles(db) -> None:
+    """A correction posted against an older transaction must still unwind stock.
+
+    The running balance is built in the order rows were recorded, so a reversal
+    dated *before* rows recorded after it cannot be stranded behind them.
+
+    Regression: reversing a sale and then the production run it came from left
+    the stock ledger holding the reversal's value while the accounts let it go,
+    and the gap between the two widened by the whole reversal.
+
+    The baseline gap is the seeded workbook's own (its stock sheet was a memo that
+    never posted journals), so the assertion is that reversing does not widen it.
+    """
+    baseline = _inventory_variance(db)
+
+    purchased_codes = ["RMC-001", "RMC-002", "RMC-003", "RMC-004", "RMCD-005", "PKC-026"]
+    purchases.post(
+        db,
+        PurchaseRequest(
+            supplier="Rahman Traders",
+            purchase_date=date(2026, 10, 1),
+            lines=FILLER_COMPONENTS,
+        ),
+    )
+    after_purchase = {code: _position(db, code) for code in purchased_codes}
+
+    run = production.post(
+        db,
+        ProductionRequest(
+            output_item_code="TRD-018",
+            qty_produced=Decimal("10"),
+            production_date=date(2026, 10, 10),
+            labor_cost=Decimal("500"),
+            overhead_cost=Decimal("0"),
+        ),
+    ).order
+    sale = sales.post(
+        db,
+        SaleRequest(
+            customer="Karim Enterprise",
+            sale_date=date(2026, 10, 20),
+            lines=[SaleLineIn(item_code="TRD-018", qty=Decimal("4"), sale_price=Decimal("600"))],
+        ),
+    ).order
+
+    # Reverse the sale (recorded now, dated the 20th) and then the production run
+    # — whose reversal carries the 10th, earlier than rows already recorded.
+    sales.reverse(db, sale.id, reason="wrong quantity", posted_by="sales")
+    production.reverse(db, run.id, reason="wrong recipe", posted_by="store")
+    db.expire_all()
+
+    assert _inventory_variance(db) == baseline
+
+    # The run is undone: the output is gone and every component is back.
+    assert _position(db, "TRD-018").qty == 0
+    for code, position in after_purchase.items():
+        assert _position(db, code) == position, code
+
+
 # --- The ledger says what happened --------------------------------------
 
 

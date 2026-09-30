@@ -13,11 +13,19 @@ from app.modules.inventory_ledger.models import InventoryLedgerRow
 def rows_for_item(
     db: Session, item_code: str, *, as_of: date | None = None
 ) -> list[InventoryLedgerRow]:
-    """Return an item's ledger rows in movement order."""
+    """Return an item's ledger rows in the order they were recorded.
+
+    The running balance on each row is derived from the row recorded before it,
+    so **recording order — not the business date — is the order that makes the
+    balances add up**. A correction posted today against a transaction from last
+    week is recorded today and belongs at the end of that sequence. Ordering by
+    ``movement_date`` instead would strand a back-dated reversal behind rows
+    recorded after it, and the current position would silently ignore it.
+    """
     stmt = (
         select(InventoryLedgerRow)
         .where(InventoryLedgerRow.item_code == item_code)
-        .order_by(InventoryLedgerRow.movement_date, InventoryLedgerRow.id)
+        .order_by(InventoryLedgerRow.id)
     )
     if as_of is not None:
         stmt = stmt.where(InventoryLedgerRow.movement_date <= as_of)

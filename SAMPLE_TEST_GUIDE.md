@@ -264,9 +264,22 @@ banner, and `FG-100` is back to **30 units** at **92**. Nothing is deleted — t
 original and its mirror entry both remain, and the mirror voucher is numbered
 `SALE-001-REV`.
 
-**Try this too:** reverse the **purchase** from Step 1. It will be refused, because
-those materials have since been consumed in production — the message names the item
-and the quantity on hand.
+**Try a refusal.** Reversing the **purchase** from Step 1 is *allowed* here — you
+still hold 140 kg of `RM-100` against the 100 kg you bought, so the stock can go
+back without going negative. The rule is simple: a reversal is refused only when
+the quantity to take back is **more than you still hold**.
+
+To see a refusal, do it in this order instead:
+
+1. Do **not** reverse the sale yet.
+2. With the sale still posted, try to reverse the **production run** from Step 2.
+3. It is refused, because the finished goods it produced have since been sold. The
+   message names the item and the quantity on hand.
+4. Reverse the sale first — then the production run can be reversed.
+
+> Reversals are recorded in the order you make them, however old the transaction
+> they correct. The stock ledger shows them that way, so the running balance
+> always reads correctly.
 
 ---
 
