@@ -4,7 +4,8 @@ import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
 import { Card, ErrorBox, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
-import type { AuditEntry, UserRow } from "../../shared/types";
+import { menuLabelsForRole } from "../../shared/nav";
+import type { Access, AuditEntry, UserRow } from "../../shared/types";
 
 const ACCESS_LABEL: Record<string, string> = {
   full: "Full",
@@ -68,11 +69,53 @@ export default function AccessPage() {
         </Card>
       )}
 
+      {matrix.data && (
+        <Card
+          title="Menus by role"
+          subtitle="The menu groups each role is offered, from the same rules the sidebar uses"
+        >
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Role</th>
+                  <th>Menus offered</th>
+                </tr>
+              </thead>
+              <tbody>
+                {matrix.data.roles.map((row) => (
+                  <tr key={row.role}>
+                    <td className="name-cell">
+                      {row.role}
+                      {row.role === role && (
+                        <>
+                          {" "}
+                          <Pill tone="info">you</Pill>
+                        </>
+                      )}
+                    </td>
+                    <td>
+                      {menuLabelsForRole(row.role, row.access as Record<string, Access>).join(" · ")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="small muted" style={{ marginTop: 12, marginBottom: 0 }}>
+            <strong>Administration</strong> is offered to Admin and Owner/Viewer, and the{" "}
+            <strong>Dashboard</strong> to Admin, Owner/Viewer and Accountant. Every role keeps{" "}
+            <strong>My account</strong> so it can change its own password. Hiding a menu is a
+            convenience only — what a role may read or change is enforced by the server, and shown
+            in the permission matrix above.
+          </p>
+        </Card>
+      )}
+
       <div className="grid grid-2">
         <PermissionProbe />
         {isAdmin && <AccountsPanel onChanged={refreshUser} currentUserId={user?.id} />}
       </div>
-
       {isAdmin && <AuditPanel />}
     </>
   );

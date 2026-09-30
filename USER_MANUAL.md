@@ -98,7 +98,7 @@ There are five kinds of users. Each one sees and does different things.
 | **Accountant** | Keeps the accounts. Checks the numbers. |
 | **Store/Production Staff** | Makes the goods. Handles stock. |
 | **Sales Staff** | Sells the goods. |
-| **Owner/Viewer** | Looks at reports. Cannot change anything. |
+| **Owner/Viewer** | Looks at everything, including payroll. Cannot change anything. |
 
 ### The detail
 
@@ -130,6 +130,15 @@ Yes = allowed. No = blocked.
 
 **Screens you may not read are not in the menu.** Signed in as Store staff, you
 will not see Chart of Accounts or Journal Entries at all.
+
+Three of the menu groups are limited by **who you are**, not by an area
+permission:
+
+- The **Dashboard** (the Overview group) is shown to Admin, Accountant and Owner.
+- The **Administration** group — Roles & Access, Approvals, Configuration and Data
+  — is shown to Admin and Owner. An owner may look but not change anything.
+- **My account** is shown to everyone, so any user can change their own password
+  and set up two-factor sign-in without asking an administrator.
 
 **Screens you may read but not change open without their form.** Purchase Entry,
 Production Entry and Sales Entry are like this for an Accountant: the screen

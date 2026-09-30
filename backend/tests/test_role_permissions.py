@@ -30,7 +30,7 @@ EXPECTED_READ = {
                        "production": False, "sales_purchase": True, "payroll": False,
                        "reports": True},
     Role.OWNER_VIEWER: {"accounts": True, "journal_entries": True, "items_bom": True,
-                        "production": True, "sales_purchase": True, "payroll": False,
+                        "production": True, "sales_purchase": True, "payroll": True,
                         "reports": True},
 }
 

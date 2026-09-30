@@ -114,7 +114,7 @@ MATRIX: dict[Role, dict[str, Access]] = {
         "items_bom": Access.VIEW,
         "production": Access.VIEW,
         "sales_purchase": Access.VIEW,
-        "payroll": Access.NONE,
+        "payroll": Access.VIEW,
         "reports": Access.FULL,
     },
 }

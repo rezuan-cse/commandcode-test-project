@@ -82,14 +82,20 @@ disappears too.
 | **Reports** | **Trial Balance** | Every account with a non-zero balance, which must total to zero. |
 | **Reports** | **General Ledger** | Opening, movement and closing balance for every account. |
 | **Reports** | **Balance Sheet** | Assets, liabilities and equity, which must balance. |
-| **Administration** | **Roles & Access** | The permission table, a live permission test, and (for Admin) user accounts and the audit log. |
+| **Administration** | **Roles & Access** | The permission table, who sees which menus, a live permission test, and (for Admin) user accounts and the audit log. |
 | **Administration** | **Approvals** | Actions that are waiting for a second person to approve. |
-| **Administration** | **Security** | Your own password and two-factor settings. |
 | **Administration** | **Configuration** | Every rate, company detail and control switch, editable without a programmer. |
 | **Administration** | **Data** | Import a workbook, or start the books over. Admin only. |
+| **My account** | **Security** | Your own password and two-factor settings. |
 
-The five **Administration** items are available to anyone signed in, except
-**Data**, whose controls only work for an **Admin**.
+The **Operations** group is the one everybody works in; the others are narrower.
+Three groups are limited by **who you are** rather than by an area permission:
+
+- **Overview** (the Dashboard) — Admin, Accountant and Owner only.
+- **Administration** — Admin and Owner only; an owner may look but not change.
+- **My account** — everybody, so anyone can change their own password.
+
+See "Which menus each role is offered" in 1.2 for the full grid.
 
 ---
 
@@ -107,6 +113,31 @@ system refuses it even if you reach the screen another way.
 | **Store/Production Staff** | Runs the warehouse and factory | Items, production runs | Reports |
 | **Sales Staff** | Handles buying and selling | Purchases, sales | Items, reports |
 | **Owner/Viewer** | Watches, does not touch | Nothing | Everything |
+
+### Which menus each role is offered
+
+The sidebar only shows a group when the role may open something inside it.
+
+| Menu group | Admin | Accountant | Store / Production | Sales Staff | Owner / Viewer |
+|---|---|---|---|---|---|
+| **Overview** — Dashboard | Yes | Yes | — | — | Yes |
+| **Ledger** — accounts, journal | Yes | Yes | — | — | Yes |
+| **Operations** — stock, buying, making, selling | Yes | Yes (read only) | Yes | Yes | Yes (read only) |
+| **Payroll** — employees, runs | Yes | Yes | — | — | Yes (read only) |
+| **Reports** — trial balance, ledger, balance sheet | Yes | Yes | Yes | Yes | Yes |
+| **Administration** — roles, approvals, configuration, data | Yes | — | — | — | Yes (read only) |
+| **My account** — your password and 2-FA | Yes | Yes | Yes | Yes | Yes |
+
+Two of these are limited by **who you are**, not by an area permission:
+
+- The **Dashboard** sums up the whole business, so it is offered to Admin,
+  Accountant and Owner only.
+- The **Administration** group is offered to Admin and Owner only. Inside it, an
+  owner can look but not change: saving a setting, issuing a password, disabling
+  an account, importing or resetting data all remain administrator-only.
+
+**Every role keeps "My account"**, so anyone can change their own password and set
+up two-factor sign-in without asking an administrator.
 
 ### The access words you will see
 

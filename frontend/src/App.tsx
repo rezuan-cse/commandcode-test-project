@@ -22,75 +22,7 @@ import DataPage from "./features/data/DataPage";
 import SettingsPage from "./features/settings/SettingsPage";
 import LoginPage from "./features/auth/LoginPage";
 import SecurityPage from "./features/auth/SecurityPage";
-
-interface NavItem {
-  to: string;
-  text: string;
-  /** Resource required to see this item. Omit for anything any role may open. */
-  resource?: string;
-  /** Match the route exactly rather than as a prefix. */
-  end?: boolean;
-}
-
-interface NavGroup {
-  label: string;
-  items: NavItem[];
-}
-
-/**
- * Menu entries, each tagged with the resource it needs.
- *
- * An entry without a resource is available to anyone signed in. Entries whose
- * resource the role cannot read are hidden entirely, so the menu only offers
- * screens that will open.
- */
-const NAV_GROUPS: NavGroup[] = [
-  {
-    label: "Overview",
-    items: [{ to: "/", text: "Dashboard", end: true, resource: "reports" }],
-  },
-  {
-    label: "Ledger",
-    items: [
-      { to: "/accounts", text: "Chart of Accounts", resource: "accounts" },
-      { to: "/journal", text: "Journal Entries", resource: "journal_entries" },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
-      { to: "/inventory", text: "Inventory & BOM", resource: "items_bom" },
-      { to: "/purchases", text: "Purchase Entry", resource: "sales_purchase" },
-      { to: "/production", text: "Production Entry", resource: "production" },
-      { to: "/sales", text: "Sales Entry", resource: "sales_purchase" },
-    ],
-  },
-  {
-    label: "Payroll",
-    items: [
-      { to: "/payroll/employees", text: "Employees", resource: "payroll" },
-      { to: "/payroll", text: "Payroll Runs", resource: "payroll", end: true },
-    ],
-  },
-  {
-    label: "Reports",
-    items: [
-      { to: "/reports/trial-balance", text: "Trial Balance", resource: "reports" },
-      { to: "/reports/general-ledger", text: "General Ledger", resource: "reports" },
-      { to: "/reports/balance-sheet", text: "Balance Sheet", resource: "reports" },
-    ],
-  },
-  {
-    label: "Administration",
-    items: [
-      { to: "/access", text: "Roles & Access" },
-      { to: "/approvals", text: "Approvals" },
-      { to: "/security", text: "Security" },
-      { to: "/settings", text: "Configuration" },
-      { to: "/data", text: "Data" },
-    ],
-  },
-];
+import { landingRoute, visibleGroups as visibleNavGroups } from "./shared/nav";
 
 export default function App() {
   const { user, checking, signOut, can } = useAuth();
@@ -110,11 +42,16 @@ export default function App() {
 
   if (!user) return <LoginPage />;
 
-  // Drop menu items this role cannot read, and any group left empty.
-  const visibleGroups = NAV_GROUPS.map((group) => ({
-    ...group,
-    items: group.items.filter((item) => !item.resource || can(item.resource)),
-  })).filter((group) => group.items.length > 0);
+  // The menu this role is offered: an item is dropped when the role may not read
+  // its resource, or is outside the roles it is limited to.
+  const visibleGroups = visibleNavGroups(user.role, can);
+
+  // The Dashboard is not open to every role, so anyone who cannot see it lands on
+  // the first screen they can. Every role has "My account", so this always resolves.
+  const landing = landingRoute(user.role, can);
+  const dashboardVisible = visibleGroups.some((group) =>
+    group.items.some((item) => item.to === "/"),
+  );
 
   return (
     <div className="shell">
@@ -177,7 +114,10 @@ export default function App() {
 
         <main className="content">
           <Routes>
-            <Route path="/" element={<DashboardPage />} />
+            <Route
+              path="/"
+              element={dashboardVisible ? <DashboardPage /> : <Navigate to={landing} replace />}
+            />
             <Route path="/accounts" element={<AccountsPage />} />
             <Route path="/journal" element={<JournalPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
@@ -196,7 +136,7 @@ export default function App() {
             <Route path="/data" element={<DataPage />} />
             <Route path="/security" element={<SecurityPage />} />
             <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to={landing} replace />} />
           </Routes>
         </main>
       </div>

@@ -104,16 +104,32 @@ def test_an_empty_payroll_warns_rather_than_posting_nothing_quietly(db) -> None:
     assert any("no active employees" in w.lower() for w in preview.warnings)
 
 
-def test_only_admin_and_accountant_may_read_payroll(
+def test_only_admin_accountant_and_owner_may_read_payroll(
     client: TestClient, auth_headers
 ) -> None:
-    """Payroll is outside every other role's reach, enforced by the server."""
+    """Payroll is outside Store and Sales reach, enforced by the server."""
     for role, expected in [
         (Role.ADMIN, 200),
         (Role.ACCOUNTANT, 200),
+        (Role.OWNER_VIEWER, 200),
         (Role.STORE_PRODUCTION, 403),
         (Role.SALES_STAFF, 403),
-        (Role.OWNER_VIEWER, 403),
     ]:
         response = client.get("/api/payroll/employees", headers=auth_headers(role))
         assert response.status_code == expected, role.value
+
+
+def test_the_owner_may_read_but_not_change_payroll(
+    client: TestClient, auth_headers
+) -> None:
+    """The owner's payroll access is view only."""
+    owner = auth_headers(Role.OWNER_VIEWER)
+    assert client.get("/api/payroll/employees", headers=owner).status_code == 200
+    assert client.get("/api/payroll/runs", headers=owner).status_code == 200
+
+    created = client.post(
+        "/api/payroll/employees",
+        json={"code": "EMP-900", "name": "New Person", "department": "office", "gross_salary": "1000"},
+        headers=owner,
+    )
+    assert created.status_code == 403
