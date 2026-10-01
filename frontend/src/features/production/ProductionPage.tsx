@@ -330,7 +330,7 @@ export default function ProductionPage() {
         )}
         {runs.data && runs.data.length > 0 && (
           <div className="table-wrap">
-            <table>
+            <table className="table-cards">
               <thead>
                 <tr>
                   <th>Order</th>
@@ -352,16 +352,26 @@ export default function ProductionPage() {
                       {run.order_no}{" "}
                       {run.is_reversed && <ReversedBadge reason={run.reversal_reason} />}
                     </td>
-                    <td>{run.production_date}</td>
-                    <td className="muted small">{fmtDateTime(run.posted_at)}</td>
-                    <td>{run.output_item_code}</td>
-                    <td className="numeric">{fmtQty(run.qty_produced)}</td>
-                    <td className="numeric">{fmt(run.material_cost)}</td>
-                    <td className="numeric">
+                    <td data-label="Date">{run.production_date}</td>
+                    <td className="muted small" data-label="Posted">
+                      {fmtDateTime(run.posted_at)}
+                    </td>
+                    <td data-label="Output item">{run.output_item_code}</td>
+                    <td className="numeric" data-label="Qty">
+                      {fmtQty(run.qty_produced)}
+                    </td>
+                    <td className="numeric" data-label="Material">
+                      {fmt(run.material_cost)}
+                    </td>
+                    <td className="numeric" data-label="Labor + OH">
                       {fmt(Number(run.labor_cost) + Number(run.overhead_cost))}
                     </td>
-                    <td className="numeric">{fmt(run.total_cost)}</td>
-                    <td className="numeric">{fmt(run.unit_cost, 4)}</td>
+                    <td className="numeric" data-label="Total cost">
+                      {fmt(run.total_cost)}
+                    </td>
+                    <td className="numeric" data-label="Unit cost">
+                      {fmt(run.unit_cost, 4)}
+                    </td>
                     <td>
                       {canWrite && !run.is_reversed && (
                         <ReverseButton

@@ -375,7 +375,7 @@ export default function PurchasesPage() {
         )}
         {purchases.data && purchases.data.length > 0 && (
           <div className="table-wrap">
-            <table>
+            <table className="table-cards">
               <thead>
                 <tr>
                   <th>Order</th>
@@ -396,11 +396,17 @@ export default function PurchasesPage() {
                         <ReversedBadge reason={purchase.reversal_reason} />
                       )}
                     </td>
-                    <td>{purchase.purchase_date}</td>
-                    <td className="muted small">{fmtDateTime(purchase.posted_at)}</td>
-                    <td>{purchase.supplier}</td>
-                    <td className="numeric">{fmt(purchase.total_value)}</td>
-                    <td className="muted small">{purchase.posted_by}</td>
+                    <td data-label="Date">{purchase.purchase_date}</td>
+                    <td className="muted small" data-label="Posted">
+                      {fmtDateTime(purchase.posted_at)}
+                    </td>
+                    <td data-label="Supplier">{purchase.supplier}</td>
+                    <td className="numeric" data-label="Value">
+                      {fmt(purchase.total_value)}
+                    </td>
+                    <td className="muted small" data-label="Entered by">
+                      {purchase.posted_by}
+                    </td>
                     <td>
                       {canWrite && !purchase.is_reversed && (
                         <ReverseButton

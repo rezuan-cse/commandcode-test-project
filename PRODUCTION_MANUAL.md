@@ -558,6 +558,11 @@ delivery point, and it changes shape deliberately rather than just shrinking:
 - **Wide tables scroll sideways** within their card, with the page itself staying
   still, so the rest of the screen does not slide around while you look at a
   column.
+- **The purchase and production lists become cards** on a phone: one record per
+  card, with each figure labelled — because a ten-column table on a 360px screen is
+  not readable however well it scrolls. The wide reports keep their columns and
+  scroll instead. The card layout is applied screen by screen, on the lists
+  somebody reads on the floor rather than on a report being studied.
 
 Long lists and reports are easier to read on a laptop; the phone is for **entering**
 what happened while you are standing in front of it.

@@ -1299,3 +1299,84 @@ button:disabled {
     font-size: 20px;
   }
 }
+
+/* ---------- Stacked cards for a table on a phone ----------
+
+   Applied by adding `table-cards` to a `<table>`, so it is opt-in per screen: a
+   wide financial report keeps its columns and scrolls, while a list somebody reads
+   on the warehouse floor becomes one card per record.
+
+   Each cell carries its column heading in a `data-label` attribute, and the CSS
+   prints it. That is the only reason the markup has those attributes — the header
+   row is hidden here, so without them the figures would be unlabelled numbers in a
+   box. */
+@media (max-width: 700px) {
+  .table-cards,
+  .table-cards thead,
+  .table-cards tbody,
+  .table-cards tr,
+  .table-cards td {
+    display: block;
+    width: auto;
+  }
+
+  /* The headings become the per-cell labels, so the header row is redundant. */
+  .table-cards thead {
+    display: none;
+  }
+
+  /* One record, one card. */
+  .table-cards tr {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+
+  /* Label on the left, value on the right, so the eye can run down the values. */
+  .table-cards td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 14px;
+    padding: 5px 0;
+    border: none;
+  }
+
+  .table-cards td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* The first cell is the card's heading — the voucher number — not a field. */
+  .table-cards td:first-child {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+
+  /* A cell with nothing to label, such as the actions column, shows its content
+     only — and an empty one collapses instead of leaving a gap. */
+  .table-cards td:not([data-label]) {
+    justify-content: flex-end;
+    padding-top: 8px;
+  }
+
+  .table-cards td:first-child::before,
+  .table-cards td:not([data-label])::before {
+    content: none;
+  }
+
+  .table-cards td:empty {
+    display: none;
+  }
+}
