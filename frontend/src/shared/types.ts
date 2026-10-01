@@ -128,6 +128,27 @@ export interface Item {
   value_on_hand: string;
 }
 
+export type PartyKind = "Customer" | "Supplier" | "Customer and Supplier";
+
+export interface Party {
+  code: string;
+  name: string;
+  kind: PartyKind;
+  contact_person: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  credit_days: number | null;
+  is_active: boolean;
+}
+
+export interface PartyImportResult {
+  created: number;
+  already_known: number;
+  codes: string[];
+  linked: number;
+}
+
 export interface BomComponent {
   parent_code: string;
   component_code: string;

@@ -25,9 +25,11 @@ export default function PurchasesPage() {
   const { user, can, level } = useAuth();
   const canWrite = can("sales_purchase", true);
   const items = useAsync(() => api.items(), []);
+  const parties = useAsync(() => api.parties(), []);
   const purchases = useAsync(() => api.purchases(), []);
 
   const [supplier, setSupplier] = useState("Raw Material Supplier");
+  const [partyCode, setPartyCode] = useState("");
   const [date, setDate] = useState(asOf);
   const [onCredit, setOnCredit] = useState(true);
   const [lines, setLines] = useState<DraftLine[]>([
@@ -54,9 +56,18 @@ export default function PurchasesPage() {
     }
   }, [options, lines]);
 
+  // Active suppliers, including the firms that both supply us and buy from us.
+  const suppliers = (parties.data ?? []).filter(
+    (party) => party.is_active && party.kind !== "Customer",
+  );
+  const chosen = suppliers.find((party) => party.code === partyCode);
+
   const payload = useMemo(
     () => ({
-      supplier,
+      // The record's own name wins when a supplier was chosen, so the name on the
+      // purchase and the supplier it belongs to cannot disagree.
+      supplier: chosen?.name ?? supplier,
+      party_code: partyCode || null,
       purchase_date: date,
       is_credit: onCredit,
       lines: lines
@@ -67,7 +78,7 @@ export default function PurchasesPage() {
           unit_cost: line.unit_cost || "0",
         })),
     }),
-    [supplier, date, onCredit, lines],
+    [supplier, chosen, partyCode, date, onCredit, lines],
   );
 
   useEffect(() => {
@@ -141,7 +152,25 @@ export default function PurchasesPage() {
       >
         <div className="form-row" style={{ marginBottom: 14 }}>
           <Field label="Supplier">
-            <input value={supplier} onChange={(event) => setSupplier(event.target.value)} />
+            {suppliers.length > 0 ? (
+              <select
+                value={partyCode}
+                onChange={(event) => setPartyCode(event.target.value)}
+              >
+                <option value="">Choose a supplier…</option>
+                {suppliers.map((party) => (
+                  <option key={party.code} value={party.code}>
+                    {party.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                value={supplier}
+                placeholder="No suppliers yet — add one under Customers & Suppliers"
+                onChange={(event) => setSupplier(event.target.value)}
+              />
+            )}
           </Field>
           <Field label="Purchase date">
             <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />

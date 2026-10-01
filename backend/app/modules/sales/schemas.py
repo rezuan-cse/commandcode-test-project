@@ -26,6 +26,9 @@ class SaleRequest(BaseModel):
     customer: str = Field(min_length=1)
     sale_date: date
     is_credit: bool = True
+    # The customer as a record. When given, the name recorded is the party's own,
+    # so the displayed name and the identity behind it cannot drift apart.
+    party_code: str | None = None
     lines: list[SaleLineIn] = Field(min_length=1)
     simulate_failure: bool = False
 

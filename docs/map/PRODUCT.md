@@ -6,7 +6,8 @@ Design/rule docs are in `docs/guides/`.
 | Task | Where | Notes |
 |---|---|---|
 | Ledger core: chart of accounts, opening balances, journal entries | `backend/app/modules/{accounts,opening_balances,journal_entries}/` | `models · schemas · repository · service · router`. Balance rule enforced in `journal_entries/service.py`. |
-| Inventory costing, items, BOM | `backend/app/modules/{inventory_ledger,items_bom}/` | Weighted average + append-only ledger. Costs keep 8 dp. |
+| Inventory costing, items, BOM | `backend/app/modules/{inventory_ledger,items_bom}/` | Weighted average + append-only ledger. Costs keep 8 dp. Items have CRUD; deletion is refused once anything refers to the item. |
+| Customers and suppliers | `backend/app/modules/parties/` | One list, typed customer/supplier/both. Sales and purchases link to a record (`party_code`) while keeping the name text, so history reads unchanged. `POST /parties/import-existing` adopts names already on posted transactions and links them. |
 | Purchases / production / sales posting | `backend/app/modules/{purchases,production,sales}/service.py` | Each `post()` is one atomic transaction that writes stock + a balanced journal entry. |
 | Corrections (reverse, never edit/delete) | `backend/app/modules/journal_entries/service.py::reverse_for_transaction` + each module's `reverse()` | Mirror entry with a `-REV` voucher; guarded against double-reverse. |
 | Reports (GL, TB, P&L, Balance Sheet, integrity) | `backend/app/modules/reports/` | Live queries, never stored twice. |

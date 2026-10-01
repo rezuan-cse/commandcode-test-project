@@ -14,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../../shared/api", () => ({
   api: {
     items: vi.fn(),
+    parties: vi.fn(),
     sales: vi.fn(),
     previewSale: vi.fn(),
     postSale: vi.fn(),
@@ -79,6 +80,7 @@ const FILLER = {
 
 const mocked = api as unknown as {
   items: ReturnType<typeof vi.fn>;
+  parties: ReturnType<typeof vi.fn>;
   sales: ReturnType<typeof vi.fn>;
   previewSale: ReturnType<typeof vi.fn>;
 };
@@ -101,6 +103,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   session.permissions = { sales_purchase: "full", items_bom: "view", reports: "view" };
   mocked.items.mockResolvedValue([BAG, FILLER]);
+  // No customer records, so the page falls back to the free-text box these tests
+  // were written against.
+  mocked.parties.mockResolvedValue([]);
   mocked.sales.mockResolvedValue([]);
   mocked.previewSale.mockResolvedValue({
     customer: "Local Customer",

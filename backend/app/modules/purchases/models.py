@@ -21,6 +21,11 @@ class PurchaseOrder(ReversibleMixin, Base):
     order_no: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
     purchase_date: Mapped[date] = mapped_column(Date, nullable=False)
     supplier: Mapped[str] = mapped_column(String(160), nullable=False)
+    # Who the purchase was made from, as a record. Additive and nullable, with
+    # `supplier` kept as the name shown, for the same reason as on a sale.
+    party_code: Mapped[str | None] = mapped_column(
+        ForeignKey("parties.code"), nullable=True, index=True
+    )
     is_credit: Mapped[bool] = mapped_column(default=True, nullable=False)
     total_value: Mapped[Decimal] = mapped_column(Numeric(18, 4), default=Decimal("0"), nullable=False)
     vat_total: Mapped[Decimal] = mapped_column(

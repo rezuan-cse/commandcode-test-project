@@ -22,6 +22,7 @@ from app.modules.inventory_ledger.router import router as inventory_router
 from app.modules.items_bom.router import router as items_router
 from app.modules.journal_entries.router import router as journal_router
 from app.modules.opening_balances.router import router as opening_router
+from app.modules.parties.router import router as parties_router
 from app.modules.payroll.router import router as payroll_router
 from app.modules.production.router import router as production_router
 from app.modules.purchases.router import router as purchases_router
@@ -132,6 +133,7 @@ for router in (
     journal_router,
     items_router,
     inventory_router,
+    parties_router,
     production_router,
     payroll_router,
     sales_router,

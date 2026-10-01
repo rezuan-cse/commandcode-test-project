@@ -84,6 +84,7 @@ disappears too.
 | **Overview** | **Dashboard** | The front page: profit and loss by segment, position at a glance, and the data-integrity checks. |
 | **Ledger** | **Chart of Accounts** | The list of every account the books are kept in. |
 | **Ledger** | **Journal Entries** | Every voucher in the system, typed or automatic. |
+| **Operations** | **Customers & Suppliers** | The list of firms you trade with — customers, suppliers, or both. |
 | **Operations** | **Inventory & BOM** | Items, quantity on hand, average cost, and the recipe (BOM) list. |
 | **Operations** | **Purchase Entry** | Record goods you buy in. |
 | **Operations** | **Production Entry** | Record a production run that makes something. |
@@ -163,7 +164,10 @@ you are — and an administrator can grant either to one person:
 **Inventory & BOM** and **Production Entry**; sales staff get **Purchase Entry**
 and **Sales Entry**, plus a read-only look at items so they can pick what they are
 selling. Neither is offered the Dashboard, the ledger, payroll or the financial
-reports — only the screens their own job needs.
+reports — only the screens their own job needs. Both may also maintain
+**Customers & Suppliers**, because a sale or a purchase needs a partner that
+exists in the list — an administrator can narrow that to read-only if the list
+should be controlled centrally.
 
 **Every role keeps "My account"**, so anyone can change their own password and set
 up two-factor sign-in without asking an administrator.
@@ -450,6 +454,32 @@ Every voucher in the system.
   to the moment it was posted.
 - **Show lines** expands the entry to its lines: **Account, Segment, Narration,
   Debit, Credit**, with a **Total** row.
+
+### Customers & Suppliers
+
+One list of the firms you trade with, with a **Type** of *Customer*, *Supplier*, or
+*Customer and Supplier*. A single list is deliberate: the same firm often buys from
+you and supplies you, and one record means one spelling of its name.
+
+- Fields: **Code**, **Name**, **Type**, **Contact person**, **Phone**, **Email**,
+  **Address**, **Credit days**, **Active**. **Credit days** blank means no terms
+  were agreed — which is not the same as zero, so leave it blank unless you know.
+- Filters: **Search name or code**, **All types**, and an **Active only** tick. The
+  card's heading counts what is shown and how many are inactive.
+- **Adopt existing names** — see below.
+- **Add customer or supplier** opens the form. The **Code** is fixed once saved,
+  because sales and purchases point at it. **Edit** on a row opens the same form.
+  **Delete** works only while nothing refers to the record; otherwise the server
+  refuses and tells you to set it **inactive** instead.
+- **Sales Entry** and **Purchase Entry** pick the customer or supplier from this
+  list. If the list is empty those screens fall back to a plain text box, so a sale
+  can still be recorded before the list is set up.
+- **Adopt existing names** is for a business that has already been trading. The
+  customer and supplier names already sitting on your posted sales and purchases
+  are your real trading partners, so they are turned into records in one step — each
+  one then claims the transactions carrying its name. It is safe to press more than
+  once: names that already have a record are counted and left alone.
+
 
 ### Inventory & BOM
 
@@ -1976,6 +2006,44 @@ else works from there.
 
 ---
 
+## Test Case 26 — Add a customer, then sell to them
+
+- **User Persona:** **Sales Staff** or **Admin**.
+- **Objective:** Create a customer record, sell to it, and see that the sale cannot
+  drift away from the record.
+- **Prerequisites:** Signed in as Sales Staff or Admin; sample data loaded (Test Case
+  8) so there is stock to sell.
+- **Steps:**
+  1. Open **Customers & Suppliers**.
+  2. Click **Add customer or supplier**. Fill in **Code** `CUS-100`, **Name**
+     `Karim Enterprise`, **Type** `Customer`. Save.
+  3. Open **Sales Entry**. Look at the **Customer** field.
+  4. Choose `Karim Enterprise`, pick an item with stock, and post the sale.
+  5. Back on **Customers & Suppliers**, click **Edit** on `CUS-100`, change the name
+     to `Karim Enterprise Ltd`, and save.
+  6. Open **Sales Entry** and look at the posted sale you just made.
+  7. Try to **Delete** `CUS-100`.
+- **Expected Behaviour:** In step 3 the **Customer** box is a dropdown of your
+  customer records, not a free-text box. In step 6 the sale still shows the name it
+  was **posted under** — a posted document keeps the name it was issued with, and it
+  is the customer **code** behind it that ties the two together. In step 7 the delete
+  is **refused**, with a message saying how many transactions name the record and
+  telling you to set it inactive instead.
+- **Actual Results & Calculation Explanation:** The sale stores the customer's
+  **code**, which is what makes the sale belong to a specific firm rather than to a
+  spelling of its name. The name is kept on the sale as well, as the document was
+  issued under it. So renaming a customer corrects the **master list** and every
+  report built from it — a balance, a statement, an ageing list — while a posted
+  invoice keeps the name it was printed with, which is what an auditor expects to
+  see. The code, not the name, is the identity, which is why the code is fixed after
+  creation and why two firms may share a name without becoming one. Deletion is
+  refused once any transaction refers to the record: the count is taken across sales
+  and purchases, and removing the record would leave those transactions pointing at
+  nothing. Setting it **inactive** keeps the history readable and simply stops it
+  being offered on new transactions.
+
+---
+
 ## A short checklist before you go live
 
 1. **Configuration → Company details** — set and **Confirm** the name, address and
@@ -2001,4 +2069,8 @@ else works from there.
 11. **Item master** — add your real products under **Inventory & BOM**, or import
     your workbook, before the first purchase, production run or sale. Nothing can
     be bought, made or sold until its item exists.
+12. **Customers & Suppliers** — if you have been trading already, press **Adopt
+    existing names** to turn the names on your posted transactions into records in
+    one step. Otherwise add your main customers and suppliers by hand. Sales and
+    purchases pick from this list.
 

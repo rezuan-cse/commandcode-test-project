@@ -21,6 +21,13 @@ class SalesOrder(ReversibleMixin, Base):
     order_no: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
     sale_date: Mapped[date] = mapped_column(Date, nullable=False)
     customer: Mapped[str] = mapped_column(String(160), nullable=False)
+    # Who the sale was made to, as a record. Nullable, and additive: sales posted
+    # before the customer list existed carry the name in `customer` and no link,
+    # so nothing has to be rewritten to introduce this. `customer` stays the name
+    # shown everywhere, so the two can never disagree about what to display.
+    party_code: Mapped[str | None] = mapped_column(
+        ForeignKey("parties.code"), nullable=True, index=True
+    )
     is_credit: Mapped[bool] = mapped_column(default=True, nullable=False)
     revenue: Mapped[Decimal] = mapped_column(Numeric(18, 4), default=Decimal("0"), nullable=False)
     cogs: Mapped[Decimal] = mapped_column(Numeric(18, 4), default=Decimal("0"), nullable=False)

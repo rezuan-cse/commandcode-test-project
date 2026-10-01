@@ -49,9 +49,16 @@ class ItemCategory(str, enum.Enum):
     IMPORTED_GOODS = "Imported Goods"
 
 
+class PartyKind(str, enum.Enum):
+    """Whether a trading partner buys from us, sells to us, or does both."""
+
+    CUSTOMER = "Customer"
+    SUPPLIER = "Supplier"
+    BOTH = "Customer and Supplier"
+
+
 class MovementType(str, enum.Enum):
     """Inventory ledger movement kinds."""
-
     OPENING = "Opening Stock"
     PURCHASE_IN = "Purchase-In"
     PRODUCTION_IN = "Production-In"

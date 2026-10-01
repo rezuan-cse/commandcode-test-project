@@ -16,6 +16,7 @@ export const RESOURCE_LABELS: Record<string, string> = {
   accounts: "Chart of Accounts",
   journal_entries: "Journal Entries",
   items_bom: "Inventory & BOM",
+  parties: "Customers & Suppliers",
   production: "Production Entry",
   sales_purchase: "Purchase and Sales Entry",
   payroll: "Payroll",

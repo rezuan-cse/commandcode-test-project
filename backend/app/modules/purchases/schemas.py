@@ -26,6 +26,8 @@ class PurchaseRequest(BaseModel):
     supplier: str = Field(min_length=1)
     purchase_date: date
     is_credit: bool = True
+    # The supplier as a record; see SaleRequest.party_code.
+    party_code: str | None = None
     lines: list[PurchaseLineIn] = Field(min_length=1)
     simulate_failure: bool = False
 

@@ -16,6 +16,8 @@ import type {
   IntegrityReport,
   InventoryRow,
   Item,
+  Party,
+  PartyImportResult,
   JournalEntry,
   LoginResponse,
   PayrollDetail,
@@ -156,6 +158,28 @@ export const api = {
     request<{ message: string }>(`/items/${encodeURIComponent(code)}`, {
       method: "DELETE",
     }),
+
+  parties: (search?: string) =>
+    request<Party[]>(
+      `/parties${search ? `?search=${encodeURIComponent(search)}` : ""}`,
+    ),
+
+  createParty: (payload: unknown) =>
+    request<Party>("/parties", { method: "POST", body: JSON.stringify(payload) }),
+
+  updateParty: (code: string, payload: unknown) =>
+    request<Party>(`/parties/${encodeURIComponent(code)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
+  deleteParty: (code: string) =>
+    request<{ message: string }>(`/parties/${encodeURIComponent(code)}`, {
+      method: "DELETE",
+    }),
+
+  importParties: () =>
+    request<PartyImportResult>("/parties/import-existing", { method: "POST" }),
 
   bom: (code: string) => request<BomComponent[]>(`/items/${code}/bom`),
 

@@ -29,6 +29,7 @@ from app.modules.journal_entries import repository as journal_repo
 from app.modules.journal_entries import service as journal_service
 from app.modules.journal_entries.models import JournalEntry
 from app.modules.journal_entries.schemas import JournalLineIn
+from app.modules.parties import service as parties_service
 from app.modules.production.schemas import JournalLinePreview
 from app.modules.sales import repository
 from app.modules.sales.models import SalesLine, SalesOrder
@@ -228,6 +229,18 @@ def _assert_available(lines: list[SaleLinePreview]) -> None:
         raise InsufficientStockError("; ".join(short))
 
 
+def _party_name(db: Session, party_code: str | None, fallback: str) -> str:
+    """The name to record: the party's own, when one was chosen.
+
+    Taking the name from the record rather than from the form means the two can
+    never disagree. A customer renamed in the master list does not leave old sales
+    displaying a name the list no longer uses.
+    """
+    if not party_code:
+        return fallback
+    return parties_service.get_party(db, party_code).name
+
+
 def post(
     db: Session, payload: SaleRequest, *, posted_by: str = "system"
 ) -> SalePostResult:
@@ -249,7 +262,8 @@ def post(
         order = SalesOrder(
             order_no=order_no,
             sale_date=payload.sale_date,
-            customer=payload.customer,
+            customer=_party_name(db, payload.party_code, payload.customer),
+            party_code=payload.party_code,
             is_credit=payload.is_credit,
             revenue=preview_data.revenue,
             vat_total=preview_data.vat_total,

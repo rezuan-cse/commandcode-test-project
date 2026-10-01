@@ -22,9 +22,11 @@ export default function SalesPage() {
   const { user, can, level } = useAuth();
   const canWrite = can("sales_purchase", true);
   const items = useAsync(() => api.items(), []);
+  const parties = useAsync(() => api.parties(), []);
   const sales = useAsync(() => api.sales(), []);
 
   const [customer, setCustomer] = useState("Local Customer");
+  const [partyCode, setPartyCode] = useState("");
   const [date, setDate] = useState(asOf);
   const [lines, setLines] = useState<DraftLine[]>([
     { item_code: "", qty: "1", sale_price: "0" },
@@ -36,6 +38,12 @@ export default function SalesPage() {
 
   const sellable = (items.data ?? []).filter((item) => Number(item.qty_on_hand) > 0);
   const options = sellable.length > 0 ? sellable : items.data ?? [];
+
+  // Active customers, including the firms that both buy from us and supply us.
+  const customers = (parties.data ?? []).filter(
+    (party) => party.is_active && party.kind !== "Supplier",
+  );
+  const chosen = customers.find((party) => party.code === partyCode);
 
   /**
    * Default the asking price to the item's average cost, so switching item
@@ -55,7 +63,10 @@ export default function SalesPage() {
 
   const payload = useMemo(
     () => ({
-      customer,
+      // The record's own name is used when a customer was chosen, so the name on
+      // the sale and the customer it belongs to cannot disagree.
+      customer: chosen?.name ?? customer,
+      party_code: partyCode || null,
       sale_date: date,
       is_credit: true,
       lines: lines
@@ -66,7 +77,7 @@ export default function SalesPage() {
           sale_price: line.sale_price || "0",
         })),
     }),
-    [customer, date, lines],
+    [customer, chosen, partyCode, date, lines],
   );
 
   useEffect(() => {
@@ -137,7 +148,25 @@ export default function SalesPage() {
       <Card title="New sale" subtitle="Inventory is valued at average cost automatically">
         <div className="form-row" style={{ marginBottom: 14 }}>
           <Field label="Customer">
-            <input value={customer} onChange={(event) => setCustomer(event.target.value)} />
+            {customers.length > 0 ? (
+              <select
+                value={partyCode}
+                onChange={(event) => setPartyCode(event.target.value)}
+              >
+                <option value="">Choose a customer…</option>
+                {customers.map((party) => (
+                  <option key={party.code} value={party.code}>
+                    {party.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                value={customer}
+                placeholder="No customers yet — add one under Customers & Suppliers"
+                onChange={(event) => setCustomer(event.target.value)}
+              />
+            )}
           </Field>
           <Field label="Sale date">
             <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />

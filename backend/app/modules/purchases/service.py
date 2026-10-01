@@ -30,6 +30,7 @@ from app.modules.journal_entries import repository as journal_repo
 from app.modules.journal_entries import service as journal_service
 from app.modules.journal_entries.models import JournalEntry
 from app.modules.journal_entries.schemas import JournalLineIn
+from app.modules.parties import service as parties_service
 from app.modules.production.schemas import JournalLinePreview
 from app.modules.purchases import repository
 from app.modules.purchases.models import PurchaseLine, PurchaseOrder
@@ -161,6 +162,17 @@ def preview(db: Session, payload: PurchaseRequest) -> PurchasePreview:
     return _assemble(db, payload, _value_lines(db, payload), "PUR-NEW")
 
 
+def _party_name(db: Session, party_code: str | None, fallback: str) -> str:
+    """The name to record: the party's own, when one was chosen.
+
+    See the note on the sales version: taking the name from the record keeps the
+    displayed name and the identity behind it from drifting apart.
+    """
+    if not party_code:
+        return fallback
+    return parties_service.get_party(db, party_code).name
+
+
 def post(
     db: Session, payload: PurchaseRequest, *, posted_by: str = "system"
 ) -> PurchasePostResult:
@@ -179,7 +191,8 @@ def post(
         order = PurchaseOrder(
             order_no=order_no,
             purchase_date=payload.purchase_date,
-            supplier=payload.supplier,
+            supplier=_party_name(db, payload.party_code, payload.supplier),
+            party_code=payload.party_code,
             is_credit=payload.is_credit,
             total_value=preview_data.total_value,
             vat_total=preview_data.vat_total,
