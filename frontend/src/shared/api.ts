@@ -16,6 +16,7 @@ import type {
   IntegrityReport,
   InventoryRow,
   Item,
+  LowStock,
   OutstandingInvoice,
   Party,
   PartyImportResult,
@@ -145,6 +146,8 @@ export const api = {
   balanceSheet: (asOf: string) => request<BalanceSheet>(`/reports/balance-sheet?as_of=${asOf}`),
 
   integrity: (asOf: string) => request<IntegrityReport>(`/reports/integrity?as_of=${asOf}`),
+
+  lowStock: (asOf: string) => request<LowStock>(`/reports/low-stock?as_of=${asOf}`),
 
   pnlComparison: (periods: {
     period_1_from: string;

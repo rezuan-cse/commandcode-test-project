@@ -19,6 +19,7 @@ class ItemOut(BaseModel):
     category: ItemCategory
     segment: Segment
     uom: str
+    reorder_level: Decimal | None = None
     is_active: bool
     qty_on_hand: Decimal
     avg_cost: Decimal
@@ -33,6 +34,7 @@ class ItemIn(BaseModel):
     category: ItemCategory
     segment: Segment
     uom: str = Field(min_length=1, max_length=16)
+    reorder_level: Decimal | None = Field(default=None, ge=0)
     is_active: bool = True
 
 
@@ -47,6 +49,7 @@ class ItemUpdate(BaseModel):
     category: ItemCategory | None = None
     segment: Segment | None = None
     uom: str | None = Field(default=None, min_length=1, max_length=16)
+    reorder_level: Decimal | None = Field(default=None, ge=0)
     is_active: bool | None = None
 
 

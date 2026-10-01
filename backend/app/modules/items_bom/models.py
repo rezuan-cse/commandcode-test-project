@@ -23,6 +23,13 @@ class Item(Base):
     )
     segment: Mapped[Segment] = mapped_column(enum_col(Segment), nullable=False)
     uom: Mapped[str] = mapped_column(String(16), nullable=False)
+    # The quantity at which the item wants reordering. Nullable on purpose: most
+    # items will not have one, and a made-up default would put every item on the
+    # low-stock list on the day the field was introduced. Blank means "not watched",
+    # which is a different statement from "reorder at zero".
+    reorder_level: Mapped[Decimal | None] = mapped_column(
+        Numeric(18, 4), nullable=True
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 

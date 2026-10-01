@@ -124,6 +124,32 @@ class PnlComparisonOut(BaseModel):
     segments: list[SegmentComparison]
 
 
+class LowStockRow(BaseModel):
+    """An item at or below its reorder level, and the cost of topping it back up."""
+
+    code: str
+    name: str
+    category: str
+    segment: str
+    uom: str
+    qty_on_hand: Decimal
+    reorder_level: Decimal
+    shortfall: Decimal
+    avg_cost: Decimal
+    value_on_hand: Decimal
+    # What the shortfall would cost at the current average cost — the figure that
+    # turns a reorder list into a purchase decision.
+    reorder_value: Decimal
+
+
+class LowStockOut(BaseModel):
+    """The reorder list, most needed first."""
+
+    as_of: date
+    rows: list[LowStockRow]
+    total_reorder_value: Decimal
+
+
 class BalanceSheetOut(BaseModel):
     """Balance sheet as of a date, with the balancing check."""
 

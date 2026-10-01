@@ -19,6 +19,8 @@ from app.modules.reports.schemas import (
     GeneralLedgerOut,
     IntegrityCheck,
     IntegrityReport,
+    LowStockOut,
+    LowStockRow,
     PeriodSpan,
     PnlComparisonOut,
     PnlLineComparison,
@@ -322,6 +324,54 @@ def pnl_comparison(
         total=total,
         segments=segments,
     )
+
+
+def low_stock(db: Session, *, as_of: date) -> LowStockOut:
+    """Items at or below the level they want reordering at.
+
+    **Only items that carry a reorder level are considered.** A blank level means
+    "not watched", which is deliberately different from a level of zero — an item
+    with no level is never on this list however little stock is left, and an item
+    with a level of zero appears only when it has run out. Making blank mean zero
+    would have put every item in the system on the list on the day the field
+    arrived, which is how a useful report gets ignored.
+
+    Inactive items are left out: a discontinued line is not something to reorder.
+    """
+    rows: list[LowStockRow] = []
+    total = ZERO
+
+    for item in items_repo.list_items(db):
+        if item.reorder_level is None or not item.is_active:
+            continue
+        position = ledger.position(db, item.code)
+        level = money(item.reorder_level)
+        if position.qty > level:
+            continue
+
+        shortfall = money(level - position.qty)
+        reorder_value = money(shortfall * position.avg_cost)
+        total = money(total + reorder_value)
+        rows.append(
+            LowStockRow(
+                code=item.code,
+                name=item.name,
+                category=item.category.value,
+                segment=item.segment.value,
+                uom=item.uom,
+                qty_on_hand=position.qty,
+                reorder_level=level,
+                shortfall=shortfall,
+                avg_cost=position.avg_cost,
+                value_on_hand=position.value,
+                reorder_value=reorder_value,
+            )
+        )
+
+    # Biggest gap first: the item most likely to run out reads at the top, rather
+    # than the list arriving in code order and having to be scanned.
+    rows.sort(key=lambda row: (-row.shortfall, row.code))
+    return LowStockOut(as_of=as_of, rows=rows, total_reorder_value=total)
 
 
 def balance_sheet(db: Session, as_of: date) -> BalanceSheetOut:

@@ -92,6 +92,7 @@ disappears too.
 | **Operations** | **Sales Entry** | Record goods you sell. |
 | **Payroll** | **Employees** | The list of staff and their gross salary. |
 | **Payroll** | **Payroll Runs** | Pay staff for a period and print payslips. |
+| **Reports** | **Low Stock** | Items at or below the level they want reordering at, and the cost to top up. |
 | **Reports** | **Period Comparison** | Two periods side by side, with the movement between them. |
 | **Reports** | **Trial Balance** | Every account with a non-zero balance, which must total to zero. |
 | **Reports** | **General Ledger** | Opening, movement and closing balance for every account. |
@@ -569,12 +570,18 @@ what happened while you are standing in front of it.
   that item's movement history: **Date, Type, Reference, In qty, In value, Out
   qty, Out value, Balance qty, Balance value, Avg cost**.
 - **Item master** — **Add item** opens a form: **Code, Name, Unit, Category,
-  Segment, Active**. The **Code** is fixed once saved, because every other record
-  in the system points at it; everything else can be corrected afterwards with
-  **Edit**. A **Delete** button removes an item that has no history at all — once
-  it has been bought, sold, made or consumed the server refuses, and its message
-  says to set the item **inactive** instead. That keeps the history intact and
-  simply takes the item out of the pickers.
+  Segment, Reorder level, Active**. The **Code** is fixed once saved, because
+  every other record in the system points at it; everything else can be corrected
+  afterwards with **Edit**. A **Delete** button removes an item that has no history
+  at all — once it has been bought, sold, made or consumed the server refuses, and
+  its message says to set the item **inactive** instead. That keeps the history
+  intact and simply takes the item out of the pickers.
+- **Reorder level** is the quantity at which the item wants reordering. It is
+  **optional**, and blank means **not watched** — which is deliberately different
+  from a level of zero. An item with no level never appears on the Low Stock report
+  however little is left; an item with a level of zero appears only when it has run
+  out. Setting a level also puts a red **reorder** tag beside the item's code in
+  this list when stock reaches it.
 - **BOM explosion** — type a **Target quantity** and press **Explode BOM** to see
   the full component list with **Level, Component, Category, Per unit, Required,
   Avg cost, Estimated cost**, and an **Estimated material cost** total.
@@ -1470,6 +1477,27 @@ from the same arithmetic, so they cannot disagree. If a number here looks wrong,
 the answer is in the postings, not in the report.
 
 
+### Low Stock
+
+The reorder list: every item at or below the level it wants reordering at, **biggest
+gap first**, so the item most likely to run out reads at the top.
+
+- Columns: **Code, Item, Unit, On hand, Reorder at, Shortfall, Avg cost, Cost to
+  restock**, with a total in the last column.
+- **Shortfall** is `reorder level − quantity on hand`: how much to order to get back
+  to the level.
+- **Cost to restock** is that shortfall at the item's current average cost. It is an
+  **estimate for sizing the order**, not a quotation — a supplier's price on the day
+  will differ.
+- An item with **none left** is tagged, so an outage is visible at a glance.
+- **Export CSV** writes the list, ready to send to a supplier or work through.
+
+**Items appear here only if they carry a reorder level.** A blank level means the
+item is not being watched; it is not the same as a level of zero. If the list is
+empty, nothing is at its level — not that the report is broken. A discontinued
+(inactive) item is never listed: it is not something to reorder.
+
+
 # Section 3 — End-to-End User Test Cases
 
 These exercises walk through the system the way a real user would. Each one lists
@@ -2250,6 +2278,38 @@ else works from there.
   something. For a **margin**, which is already a percentage, a percentage change of
   it would be meaningless, so the difference is reported in points instead. Both
   blanks are the report refusing to state something untrue.
+
+---
+
+## Test Case 30 — Set a reorder level and read the reorder list
+
+- **User Persona:** **Store/Production Staff** or **Admin**.
+- **Objective:** Put an item on the watch list, see it appear when stock runs low,
+  and see it leave again when the goods arrive.
+- **Prerequisites:** Test Case 8 done, so there are items and some stock.
+- **Steps:**
+  1. Open **Reports → Low Stock** and note what is on it.
+  2. Open **Inventory & BOM**, click **Edit** on an item that has stock, and read its
+     **On hand**.
+  3. Set **Reorder level** to **more than** its quantity on hand (for example, twice
+     as much) and click **Save item**.
+  4. Go back to **Reports → Low Stock**.
+  5. Read the **Shortfall** and **Cost to restock** for that item.
+  6. Back on **Inventory & BOM**, clear the **Reorder level** and save.
+  7. Return to **Low Stock**.
+- **Expected Behaviour:** In step 4 the item is now listed, and a red **reorder** tag
+  sits beside its code in the Inventory list. In step 5 the shortfall is the
+  difference between the level and the quantity on hand multiplied out at average
+  cost. In step 7 it has gone from the list again, even though its stock has not
+  changed.
+- **Actual Results & Calculation Explanation:** The report compares each item's
+  **ledger quantity** with its reorder level and lists those at or below it, ordered
+  by the size of the gap. The quantity is read from the stock ledger rather than
+  stored, so the list cannot disagree with the Inventory screen. Clearing the level
+  removes the item from the list because **blank means not watched**, not zero —
+  which is why an item with no level never appears, however little is left, and why
+  the report did not put every item in the system on the list the day the field was
+  introduced.
 
 ---
 

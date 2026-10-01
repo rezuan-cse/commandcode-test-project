@@ -34,6 +34,7 @@ interface ItemDraft {
   category: string;
   segment: string;
   uom: string;
+  reorder_level: string;
   is_active: boolean;
   isNew: boolean;
 }
@@ -44,6 +45,7 @@ const BLANK: ItemDraft = {
   category: "Raw Material",
   segment: "Shared",
   uom: "kg",
+  reorder_level: "",
   is_active: true,
   isNew: true,
 };
@@ -75,6 +77,7 @@ export default function InventoryPage() {
       category: item.category,
       segment: item.segment,
       uom: item.uom,
+      reorder_level: item.reorder_level ?? "",
       is_active: item.is_active,
       isNew: false,
     });
@@ -90,6 +93,9 @@ export default function InventoryPage() {
         category: draft.category,
         segment: draft.segment,
         uom: draft.uom,
+        // Blank stays blank: "not watched" is a real answer, and is not a level of
+        // zero, which would put the item on the reorder list as soon as it emptied.
+        reorder_level: draft.reorder_level === "" ? null : draft.reorder_level,
         is_active: draft.is_active,
       };
       if (draft.isNew) {
@@ -230,6 +236,13 @@ export default function InventoryPage() {
                             <Pill tone="warn">inactive</Pill>
                           </>
                         )}
+                        {item.reorder_level !== null &&
+                          Number(item.qty_on_hand) <= Number(item.reorder_level) && (
+                            <>
+                              {" "}
+                              <Pill tone="negative">reorder</Pill>
+                            </>
+                          )}
                       </td>
                       <td className="name-cell">{item.name}</td>
                       <td>{item.category}</td>
@@ -333,6 +346,20 @@ function ItemForm({
               </option>
             ))}
           </select>
+        </Field>
+        <Field
+          label="Reorder level"
+          hint="Leave blank not to watch this item; it appears on the Low Stock report at or below the level"
+        >
+          <input
+            className="numeric"
+            inputMode="decimal"
+            value={draft.reorder_level}
+            placeholder="blank = not watched"
+            onChange={(event) =>
+              onChange({ ...draft, reorder_level: event.target.value })
+            }
+          />
         </Field>
         <Field label="Active" hint="Inactive items stay in the history but leave the pickers">
           <Toggle

@@ -13,6 +13,7 @@ from app.modules.reports.schemas import (
     BalanceSheetOut,
     GeneralLedgerOut,
     IntegrityReport,
+    LowStockOut,
     PnlComparisonOut,
     PnlOut,
     TrialBalanceOut,
@@ -68,6 +69,18 @@ def pnl_comparison(
         period_2_from=period_2_from,
         period_2_to=period_2_to,
     )
+
+
+@router.get("/low-stock", response_model=LowStockOut, dependencies=[CAN_READ])
+def low_stock(
+    as_of: date = Query(...), db: Session = Depends(get_db)
+) -> LowStockOut:
+    """Items at or below their reorder level, most needed first.
+
+    Only items carrying a reorder level are listed; a blank level means the item is
+    not watched.
+    """
+    return service.low_stock(db, as_of=as_of)
 
 
 @router.get("/balance-sheet", response_model=BalanceSheetOut, dependencies=[CAN_READ])

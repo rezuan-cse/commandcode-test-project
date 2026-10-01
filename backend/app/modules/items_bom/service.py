@@ -30,6 +30,7 @@ def _item_out(db: Session, item: Item) -> ItemOut:
         category=item.category,
         segment=item.segment,
         uom=item.uom,
+        reorder_level=item.reorder_level,
         is_active=item.is_active,
         qty_on_hand=position.qty,
         avg_cost=position.avg_cost,
@@ -76,6 +77,7 @@ def create_item(db: Session, payload: ItemIn) -> ItemOut:
             category=payload.category,
             segment=payload.segment,
             uom=payload.uom.strip(),
+            reorder_level=payload.reorder_level,
             is_active=payload.is_active,
         ),
     )
@@ -96,6 +98,8 @@ def update_item(db: Session, code: str, payload: ItemUpdate) -> ItemOut:
         item.name = supplied["name"].strip()
     if supplied.get("uom") is not None:
         item.uom = supplied["uom"].strip()
+    if "reorder_level" in supplied:
+        item.reorder_level = supplied["reorder_level"]
     if supplied.get("category") is not None:
         item.category = supplied["category"]
     if supplied.get("segment") is not None:

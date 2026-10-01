@@ -18,6 +18,7 @@ import PayrollPage from "./features/payroll/PayrollPage";
 import PayslipPage from "./features/payroll/PayslipPage";
 import TrialBalancePage from "./features/reports/TrialBalancePage";
 import PnlComparisonPage from "./features/reports/PnlComparisonPage";
+import LowStockPage from "./features/reports/LowStockPage";
 import GeneralLedgerPage from "./features/reports/GeneralLedgerPage";
 import BalanceSheetPage from "./features/reports/BalanceSheetPage";
 import AccessPage from "./features/access/AccessPage";
@@ -173,6 +174,7 @@ export default function App() {
             <Route path="/payroll/runs/:id" element={<PayslipPage />} />
             <Route path="/reports/trial-balance" element={<TrialBalancePage />} />
             <Route path="/reports/pnl-comparison" element={<PnlComparisonPage />} />
+            <Route path="/reports/low-stock" element={<LowStockPage />} />
             <Route path="/reports/general-ledger" element={<GeneralLedgerPage />} />
             <Route path="/reports/balance-sheet" element={<BalanceSheetPage />} />
             <Route path="/access" element={<AccessPage />} />

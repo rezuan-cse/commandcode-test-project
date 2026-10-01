@@ -144,10 +144,32 @@ export interface Item {
   category: string;
   segment: Segment;
   uom: string;
+  /** Blank means the item is not watched, which is not the same as a level of zero. */
+  reorder_level: string | null;
   is_active: boolean;
   qty_on_hand: string;
   avg_cost: string;
   value_on_hand: string;
+}
+
+export interface LowStockRow {
+  code: string;
+  name: string;
+  category: string;
+  segment: string;
+  uom: string;
+  qty_on_hand: string;
+  reorder_level: string;
+  shortfall: string;
+  avg_cost: string;
+  value_on_hand: string;
+  reorder_value: string;
+}
+
+export interface LowStock {
+  as_of: string;
+  rows: LowStockRow[];
+  total_reorder_value: string;
 }
 
 export type PartyKind = "Customer" | "Supplier" | "Customer and Supplier";
