@@ -140,7 +140,7 @@ function SettingInput({
 }) {
   if (setting.value_type === "bool") {
     return (
-      <label className="inline-field">
+      <label className="check-row">
         <input
           type="checkbox"
           checked={value === "true"}

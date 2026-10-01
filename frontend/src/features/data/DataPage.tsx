@@ -71,7 +71,7 @@ export default function DataPage() {
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
             />
           </label>
-          <label className="inline-field">
+          <label className="check-row">
             <input
               type="checkbox"
               checked={replace}

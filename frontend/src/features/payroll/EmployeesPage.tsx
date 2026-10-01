@@ -41,6 +41,7 @@ export default function EmployeesPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [activeOnly, setActiveOnly] = useState(false);
 
   useEffect(() => {
     setError(null);
@@ -78,6 +79,9 @@ export default function EmployeesPage() {
       setSaving(false);
     }
   }
+
+  const rows = (employees.data ?? []).filter((row) => !activeOnly || row.is_active);
+  const resigned = (employees.data ?? []).filter((row) => !row.is_active).length;
 
   return (
     <>
@@ -173,7 +177,7 @@ export default function EmployeesPage() {
           </div>
           <div className="form-row" style={{ marginBottom: 14 }}>
             <Field label="Status">
-              <label className="inline-field">
+              <label className="check-row">
                 <input
                   type="checkbox"
                   checked={draft.is_active}
@@ -213,7 +217,22 @@ export default function EmployeesPage() {
         </Card>
       )}
 
-      <Card title="Staff" subtitle="Select a row to edit">
+      <Card
+        title="Staff"
+        subtitle={
+          resigned > 0
+            ? `Select a row to edit · ${resigned} resigned`
+            : "Select a row to edit"
+        }
+      >
+        <label className="check-row" style={{ marginBottom: 12 }}>
+          <input
+            type="checkbox"
+            checked={activeOnly}
+            onChange={(event) => setActiveOnly(event.target.checked)}
+          />
+          <span>Show active staff only</span>
+        </label>
         {employees.loading && <Spinner />}
         {employees.error && <ErrorBox message={employees.error} />}
         {employees.data && employees.data.length === 0 && (
@@ -221,7 +240,13 @@ export default function EmployeesPage() {
             No employees yet.
           </p>
         )}
-        {employees.data && employees.data.length > 0 && (
+        {employees.data && employees.data.length > 0 && rows.length === 0 && (
+          <p className="small muted" style={{ margin: 0 }}>
+            No active staff. Untick the box above to see everyone, including those
+            who have resigned.
+          </p>
+        )}
+        {rows.length > 0 && (
           <div className="table-wrap">
             <table>
               <thead>
@@ -231,13 +256,14 @@ export default function EmployeesPage() {
                   <th>Department</th>
                   <th>Designation</th>
                   <th>Joining date</th>
+                  <th>Leaving date</th>
                   <th>Mobile</th>
                   <th className="numeric">Gross</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {employees.data.map((row) => (
+                {rows.map((row) => (
                   <tr
                     key={row.code}
                     onClick={() => canWrite && setDraft(row)}
@@ -248,15 +274,13 @@ export default function EmployeesPage() {
                     <td>{row.department}</td>
                     <td className="muted small">{row.designation ?? "—"}</td>
                     <td className="muted small">{row.joining_date ?? "—"}</td>
+                    <td className="muted small">{row.left_on ?? "—"}</td>
                     <td className="muted small">{row.mobile ?? "—"}</td>
                     <td className="numeric">{fmt(row.gross_salary)}</td>
                     <td>
                       <Pill tone={row.is_active ? "positive" : "warn"}>
                         {row.is_active ? "active" : "resigned"}
                       </Pill>
-                      {!row.is_active && row.left_on && (
-                        <div className="muted small">left {row.left_on}</div>
-                      )}
                     </td>
                   </tr>
                 ))}

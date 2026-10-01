@@ -521,8 +521,9 @@ toolbar.
 - **Add an employee:** **Code**, **Name**, **Department** (Office or Factory),
   **Designation**, **Personal email**, **Mobile**, **Joining date**, **Bank
   account**, **Gross salary**, and **Status**.
-- **Staff** table: **Code, Name, Department, Designation, Joining date, Mobile,
-  Gross, Status**.
+- **Staff** table: **Code, Name, Department, Designation, Joining date, Leaving
+  date, Mobile, Gross, Status**. **Show active staff only** hides those who have
+  left; the card's subtitle counts them.
 - **When someone leaves,** select their row, switch **Status** to *Resigned* and
   save. A **Leaving date** appears, defaulting to today. They stay on the list with
   their joining and leaving dates and keep every payslip they were paid; payroll
