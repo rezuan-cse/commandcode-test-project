@@ -510,6 +510,30 @@ a journal entry.
   against it is held for that customer or supplier, not lost. **Apply** puts it
   against invoices later — which is exactly what a deposit or an advance is.
 
+### Exporting a list or a report to Excel
+
+Every list and report with an **Export CSV** button writes the rows on screen to a
+file. **CSV** opens directly in Excel (or Google Sheets, or LibreOffice), so there
+is nothing to install.
+
+- The file is named after the screen and, for a report, the date it covers —
+  `trial-balance-2026-10-31.csv`, `customers-and-suppliers.csv`.
+- **Figures are written as stored**, not as displayed: `1234.0000` rather than
+  `1,234.00`. That is deliberate — a formatted number reaches Excel as *text* and
+  will not add up, which is the one thing an accountant needs it to do.
+- The export contains **exactly what the screen is showing**, including any filter
+  or search you have applied. So to export one segment's accounts, filter first.
+- A customer or supplier name containing a comma — `Karim & Sons, Ltd` — is quoted
+  properly, so the columns cannot shift and put a figure under the wrong heading.
+- Long lists are capped by the same limit the screen uses (the transaction lists
+  show the most recent 200 rows, the journal up to 1,000). For a month-end export
+  that is normally well beyond what you need; if you ever need the whole history in
+  one file, that is a change worth asking for.
+
+**Where the button is:** Trial Balance, General Ledger, Balance Sheet, Inventory,
+Customers & Suppliers, and both the outstanding-invoice and receipts lists on
+Receipts & Payments.
+
 
 ### Inventory & BOM
 

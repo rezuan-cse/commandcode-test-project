@@ -3,7 +3,8 @@ import { api } from "../../shared/api";
 import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
 import { PermissionNotice } from "../../shared/PermissionNotice";
-import { Card, ErrorBox, Field, Pill, Spinner, Toggle } from "../../shared/ui";
+import { csvFilename } from "../../shared/csv";
+import { Card, ErrorBox, ExportButton, Field, Pill, Spinner, Toggle } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { Party, PartyKind } from "../../shared/types";
 
@@ -258,6 +259,21 @@ export default function PartiesPage() {
                 Add customer or supplier
               </button>
             )}
+            <ExportButton
+              filename={csvFilename("customers-and-suppliers")}
+              rows={rows}
+              columns={[
+                { header: "Code", value: (row) => row.code },
+                { header: "Name", value: (row) => row.name },
+                { header: "Type", value: (row) => row.kind },
+                { header: "Contact", value: (row) => row.contact_person },
+                { header: "Phone", value: (row) => row.phone },
+                { header: "Email", value: (row) => row.email },
+                { header: "Address", value: (row) => row.address },
+                { header: "Credit days", value: (row) => row.credit_days },
+                { header: "Status", value: (row) => (row.is_active ? "active" : "inactive") },
+              ]}
+            />
           </div>
         }
       >

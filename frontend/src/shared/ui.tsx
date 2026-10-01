@@ -2,6 +2,8 @@
 
 import { useState, type ReactNode } from "react";
 
+import { downloadCsv, toCsv, type CsvColumn } from "./csv";
+
 export function Card({
   title,
   subtitle,
@@ -59,6 +61,43 @@ export function Pill({
   tone?: "neutral" | "positive" | "negative" | "warn" | "info";
 }) {
   return <span className={`pill pill-${tone}`}>{children}</span>;
+}
+
+/**
+ * A button that downloads the rows it is given as a CSV file.
+ *
+ * The screen decides which columns and which values: a list passes its loaded
+ * rows, a report passes its own. Figures are written as they are stored rather
+ * than as displayed, so they sum in Excel — see `shared/csv.ts`.
+ *
+ * What it exports is exactly what the screen holds. Where a list is capped by the
+ * API's page limit, the file is capped with it, so the button says so rather than
+ * quietly producing a short file.
+ */
+export function ExportButton<T>({
+  filename,
+  columns,
+  rows,
+}: {
+  filename: string;
+  columns: CsvColumn<T>[];
+  rows: T[] | null | undefined;
+}) {
+  const data = rows ?? [];
+  return (
+    <button
+      type="button"
+      onClick={() => downloadCsv(filename, toCsv(columns, data))}
+      disabled={data.length === 0}
+      title={
+        data.length === 0
+          ? "Nothing to export yet"
+          : `Download these ${data.length} row(s) as a CSV file, which opens in Excel`
+      }
+    >
+      Export CSV
+    </button>
+  );
 }
 
 /**

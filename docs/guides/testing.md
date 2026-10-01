@@ -31,6 +31,7 @@ cd frontend && npm test
 | File | Covers |
 |---|---|
 | `shared/format.test.ts` | Money, quantity, and percentage formatting, including the rounding cases from the worked example |
+| `shared/csv.test.ts` | CSV escaping: commas and quotes in a customer name stay in one cell, a stored amount is written unformatted so it still sums in Excel, and an empty export still has headings |
 | `features/sales/SalesPage.test.tsx` | The sale price follows the chosen item, a typed price is never overwritten, and a view-only role sees no form |
 | `features/sales/ReceiptPage.test.tsx` | The receipt itemises the posted lines and totals and does not claim to be a VAT invoice |
 

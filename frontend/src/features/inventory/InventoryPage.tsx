@@ -3,7 +3,8 @@ import { api } from "../../shared/api";
 import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
 import { fmt, fmtQty } from "../../shared/format";
-import { Card, Empty, ErrorBox, Field, Pill, Spinner, Toggle } from "../../shared/ui";
+import { csvFilename } from "../../shared/csv";
+import { Card, Empty, ErrorBox, ExportButton, Field, Pill, Spinner, Toggle } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { BomExplosion, Item } from "../../shared/types";
 
@@ -178,6 +179,21 @@ export default function InventoryPage() {
                 Add item
               </button>
             )}
+            <ExportButton
+              filename={csvFilename("inventory")}
+              rows={filtered}
+              columns={[
+                { header: "Code", value: (row) => row.code },
+                { header: "Item", value: (row) => row.name },
+                { header: "Category", value: (row) => row.category },
+                { header: "Segment", value: (row) => row.segment },
+                { header: "Unit", value: (row) => row.uom },
+                { header: "Qty on hand", value: (row) => row.qty_on_hand },
+                { header: "Avg cost", value: (row) => row.avg_cost },
+                { header: "Value", value: (row) => row.value_on_hand },
+                { header: "Active", value: (row) => (row.is_active ? "yes" : "no") },
+              ]}
+            />
           </div>
         }
       >

@@ -4,7 +4,16 @@ import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
 import { fmt } from "../../shared/format";
 import { PermissionNotice } from "../../shared/PermissionNotice";
-import { Card, Empty, ErrorBox, Field, Pill, Spinner } from "../../shared/ui";
+import { csvFilename } from "../../shared/csv";
+import {
+  Card,
+  Empty,
+  ErrorBox,
+  ExportButton,
+  Field,
+  Pill,
+  Spinner,
+} from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type {
   OutstandingInvoice,
@@ -485,14 +494,31 @@ export default function PaymentsPage() {
         title="Outstanding invoices"
         subtitle="What customers owe you, and what you owe suppliers"
         actions={
-          canWrite ? (
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => start("Receipt")}>Receive money</button>
-              <button className="primary" onClick={() => start("Payment")}>
-                Pay supplier
-              </button>
-            </div>
-          ) : null
+          <div style={{ display: "flex", gap: 8 }}>
+            {canWrite && (
+              <>
+                <button onClick={() => start("Receipt")}>Receive money</button>
+                <button className="primary" onClick={() => start("Payment")}>
+                  Pay supplier
+                </button>
+              </>
+            )}
+            <ExportButton
+              filename={csvFilename("outstanding-invoices")}
+              rows={invoices}
+              columns={[
+                { header: "Type", value: (row) => row.kind },
+                { header: "Date", value: (row) => row.invoice_date },
+                { header: "Invoice", value: (row) => row.invoice_no },
+                { header: "Customer or supplier", value: (row) => row.party_name },
+                { header: "Account code", value: (row) => row.party_code },
+                { header: "Total", value: (row) => row.total },
+                { header: "Settled", value: (row) => row.paid },
+                { header: "Outstanding", value: (row) => row.outstanding },
+                { header: "Reversed", value: (row) => (row.is_reversed ? "yes" : "") },
+              ]}
+            />
+          </div>
         }
       >
         {outstanding.loading && <Spinner />}
@@ -554,6 +580,24 @@ export default function PaymentsPage() {
       <Card
         title="Receipts & payments"
         subtitle="Money in and out, newest first"
+        actions={
+          <ExportButton
+            filename={csvFilename("receipts-and-payments")}
+            rows={payments.data}
+            columns={[
+              { header: "Date", value: (row) => row.pay_date },
+              { header: "Voucher", value: (row) => row.voucher_no },
+              { header: "Type", value: (row) => row.direction },
+              { header: "Customer or supplier", value: (row) => row.party_name },
+              { header: "Amount", value: (row) => row.amount },
+              { header: "On account", value: (row) => row.on_account },
+              { header: "Reference", value: (row) => row.reference },
+              { header: "Note", value: (row) => row.memo },
+              { header: "Recorded by", value: (row) => row.posted_by },
+              { header: "Reversed", value: (row) => (row.is_reversed ? "yes" : "") },
+            ]}
+          />
+        }
       >
         {payments.loading && <Spinner />}
         {payments.error && <ErrorBox message={payments.error} />}

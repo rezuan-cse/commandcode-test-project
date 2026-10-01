@@ -1,7 +1,8 @@
 import { api } from "../../shared/api";
 import { useDemo } from "../../shared/DemoContext";
 import { fmt } from "../../shared/format";
-import { Card, ErrorBox, Pill, Spinner } from "../../shared/ui";
+import { csvFilename } from "../../shared/csv";
+import { Card, ErrorBox, ExportButton, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 
 export default function GeneralLedgerPage() {
@@ -27,14 +28,32 @@ export default function GeneralLedgerPage() {
         <Card
           title={`${data.date_from} → ${data.date_to}`}
           actions={
-            <Pill
-              tone={
-                data.total_period_debit === data.total_period_credit ? "positive" : "negative"
-              }
-            >
-              period debits {fmt(data.total_period_debit)} = credits{" "}
-              {fmt(data.total_period_credit)}
-            </Pill>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <Pill
+                tone={
+                  data.total_period_debit === data.total_period_credit ? "positive" : "negative"
+                }
+              >
+                period debits {fmt(data.total_period_debit)} = credits{" "}
+                {fmt(data.total_period_credit)}
+              </Pill>
+              <ExportButton
+                filename={csvFilename(`general-ledger-${data.date_from}-to-${data.date_to}`)}
+                rows={data.accounts}
+                columns={[
+                  { header: "Account", value: (row) => row.account_code },
+                  { header: "Name", value: (row) => row.account_name },
+                  { header: "Type", value: (row) => row.account_type },
+                  { header: "Segment", value: (row) => row.segment },
+                  { header: "Opening Dr", value: (row) => row.opening_debit },
+                  { header: "Opening Cr", value: (row) => row.opening_credit },
+                  { header: "Period Dr", value: (row) => row.period_debit },
+                  { header: "Period Cr", value: (row) => row.period_credit },
+                  { header: "Closing Dr", value: (row) => row.closing_debit },
+                  { header: "Closing Cr", value: (row) => row.closing_credit },
+                ]}
+              />
+            </div>
           }
         >
           <div className="table-wrap">

@@ -1,7 +1,8 @@
 import { api } from "../../shared/api";
 import { useDemo } from "../../shared/DemoContext";
 import { fmt } from "../../shared/format";
-import { Card, ErrorBox, Pill, Spinner } from "../../shared/ui";
+import { csvFilename } from "../../shared/csv";
+import { Card, ErrorBox, ExportButton, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { TrialBalanceRow } from "../../shared/types";
 
@@ -25,9 +26,29 @@ export default function BalanceSheetPage() {
         <Card
           title={`As of ${data.as_of}`}
           actions={
-            <Pill tone={data.is_balanced ? "positive" : "negative"}>
-              {data.is_balanced ? "assets = liabilities + equity" : `out by ${fmt(data.check)}`}
-            </Pill>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <Pill tone={data.is_balanced ? "positive" : "negative"}>
+                {data.is_balanced ? "assets = liabilities + equity" : `out by ${fmt(data.check)}`}
+              </Pill>
+              <ExportButton
+                filename={csvFilename("balance-sheet", data.as_of)}
+                // One sheet, in reading order, with the side each account is on —
+                // which is how a balance sheet is read on paper.
+                rows={[
+                  ...data.assets.map((row) => ({ ...row, side: "Asset" })),
+                  ...data.liabilities.map((row) => ({ ...row, side: "Liability" })),
+                  ...data.equity_accounts.map((row) => ({ ...row, side: "Equity" })),
+                ]}
+                columns={[
+                  { header: "Side", value: (row) => row.side },
+                  { header: "Account", value: (row) => row.account_code },
+                  { header: "Name", value: (row) => row.account_name },
+                  { header: "Segment", value: (row) => row.segment },
+                  { header: "Debit", value: (row) => row.debit },
+                  { header: "Credit", value: (row) => row.credit },
+                ]}
+              />
+            </div>
           }
         >
           <div className="table-wrap">

@@ -1,7 +1,8 @@
 import { api } from "../../shared/api";
 import { useDemo } from "../../shared/DemoContext";
 import { fmt } from "../../shared/format";
-import { Card, ErrorBox, Pill, Spinner } from "../../shared/ui";
+import { csvFilename } from "../../shared/csv";
+import { Card, ErrorBox, ExportButton, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 
 export default function TrialBalancePage() {
@@ -23,9 +24,23 @@ export default function TrialBalancePage() {
         <Card
           title={`As of ${data.as_of}`}
           actions={
-            <Pill tone={data.balanced ? "positive" : "negative"}>
-              {data.balanced ? "balanced" : `out by ${fmt(data.difference)}`}
-            </Pill>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <Pill tone={data.balanced ? "positive" : "negative"}>
+                {data.balanced ? "balanced" : `out by ${fmt(data.difference)}`}
+              </Pill>
+              <ExportButton
+                filename={csvFilename("trial-balance", data.as_of)}
+                rows={data.rows}
+                columns={[
+                  { header: "Account", value: (row) => row.account_code },
+                  { header: "Name", value: (row) => row.account_name },
+                  { header: "Type", value: (row) => row.account_type },
+                  { header: "Segment", value: (row) => row.segment },
+                  { header: "Debit", value: (row) => row.debit },
+                  { header: "Credit", value: (row) => row.credit },
+                ]}
+              />
+            </div>
           }
         >
           <div className="table-wrap">
