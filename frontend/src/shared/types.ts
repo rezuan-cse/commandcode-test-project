@@ -68,6 +68,28 @@ export interface TrialBalance {
   balanced: boolean;
 }
 
+export interface PnlLineComparison {
+  metric: string;
+  period_1: string;
+  period_2: string;
+  change: string;
+  /** Empty when the earlier period had nothing in it: there is no such percentage. */
+  change_pct: string | null;
+  is_percentage: boolean;
+}
+
+export interface SegmentComparison {
+  segment: string;
+  lines: PnlLineComparison[];
+}
+
+export interface PnlComparison {
+  period_1: { date_from: string; date_to: string };
+  period_2: { date_from: string; date_to: string };
+  total: SegmentComparison;
+  segments: SegmentComparison[];
+}
+
 export interface SegmentPnlRow {
   segment: string;
   revenue: string;

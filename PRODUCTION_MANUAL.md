@@ -92,6 +92,7 @@ disappears too.
 | **Operations** | **Sales Entry** | Record goods you sell. |
 | **Payroll** | **Employees** | The list of staff and their gross salary. |
 | **Payroll** | **Payroll Runs** | Pay staff for a period and print payslips. |
+| **Reports** | **Period Comparison** | Two periods side by side, with the movement between them. |
 | **Reports** | **Trial Balance** | Every account with a non-zero balance, which must total to zero. |
 | **Reports** | **General Ledger** | Opening, movement and closing balance for every account. |
 | **Reports** | **Balance Sheet** | Assets, liabilities and equity, which must balance. |
@@ -1439,6 +1440,36 @@ the **Dashboard**: the **trial balance difference must read `0.0000`** and the
 account balances must match what you expect for that date.
 
 
+### Period Comparison
+
+Two periods side by side, with the movement between them — the answer to *"how does
+this month compare with the last one?"* without a spreadsheet.
+
+- **Which periods to compare:** four dates. It opens on **last month against this
+  month**, worked out from the date the rest of the system is showing.
+- **Period 1 is the earlier one**, and the change is period 2 minus period 1. That
+  is the reading most people expect; if you set them the other way round the signs
+  simply reverse.
+- **Headline** — the whole business: **Revenue, Cost of goods sold, Gross profit,
+  Gross margin %, Operating expenses, Other income, Net profit**, each in both
+  periods with the change and the percentage change.
+- **By segment** — the same figures for each part of the business, so a segment can
+  be read straight across.
+- **Change %** is shown as a coloured pill: green for a rise, red for a fall. It is
+  **blank** in two cases, both deliberate:
+  - when the earlier period had **nothing in it** — there is no percentage change
+    from zero, and showing one would be inventing a figure;
+  - for **Gross margin %**, which is already a percentage. Comparing it with a
+    percentage change would be meaningless, so the change is shown in points
+    instead.
+- **Export CSV** writes one row per segment per figure, with the period dates in the
+  column headings, ready to total.
+
+**One thing worth knowing:** this report and the Dashboard's profit figures come
+from the same arithmetic, so they cannot disagree. If a number here looks wrong,
+the answer is in the postings, not in the report.
+
+
 # Section 3 — End-to-End User Test Cases
 
 These exercises walk through the system the way a real user would. Each one lists
@@ -2187,6 +2218,38 @@ else works from there.
   the money already moved, and allocating only decides which invoice it clears. That
   is why a deposit shows in the customer's balance from the moment it is received
   rather than being parked somewhere until someone remembers it.
+
+---
+
+## Test Case 29 — Compare this month with last month
+
+- **User Persona:** **Owner/Viewer** or **Admin**.
+- **Objective:** Read how the business is moving, and see why one figure has no
+  percentage against it.
+- **Prerequisites:** Sample data loaded (Test Case 8), and at least one sale posted
+  in each of two different months.
+- **Steps:**
+  1. Open **Reports → Period Comparison**.
+  2. Read the dates it opened on, and the **Headline** table.
+  3. Note the **Revenue** row: both periods, the **Change**, and the coloured
+     **Change %**.
+  4. Set **Period 1** to a range you know had **no sales at all** — a quiet week, or
+     a month before the business started.
+  5. Read the **Revenue** row again.
+  6. Look at the **Gross margin %** row in the same table.
+  7. Set the periods back to two ordinary months and click **Export CSV**.
+- **Expected Behaviour:** In step 3 a rise shows a green pill and a fall a red one.
+  In step 5 the **Change %** is **blank** while the **Change** still shows the full
+  amount. In step 6 the margin's change is shown in **points**, with no percentage.
+  Step 7 downloads a file whose column headings name the two date ranges.
+- **Actual Results & Calculation Explanation:** The report runs the ordinary profit
+  and loss twice — once per period — and subtracts one from the other, so it cannot
+  disagree with the Dashboard. The percentage change is `(period 2 − period 1) ÷
+  period 1 × 100`. When period 1 is **zero** that division has no answer, so no
+  percentage is given: showing "100%" or an enormous figure would be inventing
+  something. For a **margin**, which is already a percentage, a percentage change of
+  it would be meaningless, so the difference is reported in points instead. Both
+  blanks are the report refusing to state something untrue.
 
 ---
 

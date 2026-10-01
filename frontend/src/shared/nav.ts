@@ -61,6 +61,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Reports",
     items: [
+      { to: "/reports/pnl-comparison", text: "Period Comparison", resource: "reports" },
       { to: "/reports/trial-balance", text: "Trial Balance", resource: "reports" },
       { to: "/reports/general-ledger", text: "General Ledger", resource: "reports" },
       { to: "/reports/balance-sheet", text: "Balance Sheet", resource: "reports" },

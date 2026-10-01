@@ -13,6 +13,7 @@ from app.modules.reports.schemas import (
     BalanceSheetOut,
     GeneralLedgerOut,
     IntegrityReport,
+    PnlComparisonOut,
     PnlOut,
     TrialBalanceOut,
 )
@@ -49,6 +50,24 @@ def pnl(
 ) -> PnlOut:
     """Profit and loss by segment."""
     return service.pnl_by_segment(db, date_from, date_to)
+
+
+@router.get("/pnl-comparison", response_model=PnlComparisonOut, dependencies=[CAN_READ])
+def pnl_comparison(
+    period_1_from: date = Query(...),
+    period_1_to: date = Query(...),
+    period_2_from: date = Query(...),
+    period_2_to: date = Query(...),
+    db: Session = Depends(get_db),
+) -> PnlComparisonOut:
+    """Profit and loss for two periods side by side, with the movement between them."""
+    return service.pnl_comparison(
+        db,
+        period_1_from=period_1_from,
+        period_1_to=period_1_to,
+        period_2_from=period_2_from,
+        period_2_to=period_2_to,
+    )
 
 
 @router.get("/balance-sheet", response_model=BalanceSheetOut, dependencies=[CAN_READ])

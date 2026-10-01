@@ -8,6 +8,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.core.enums import AccountType, Segment
+from app.core.exceptions import DomainError
 from app.core.money import money, to_decimal, ZERO
 from app.modules.inventory_ledger import service as ledger
 from app.modules.items_bom import repository as items_repo
@@ -18,7 +19,11 @@ from app.modules.reports.schemas import (
     GeneralLedgerOut,
     IntegrityCheck,
     IntegrityReport,
+    PeriodSpan,
+    PnlComparisonOut,
+    PnlLineComparison,
     PnlOut,
+    SegmentComparison,
     SegmentPnlRow,
     TrialBalanceOut,
     TrialBalanceRow,
@@ -205,6 +210,117 @@ def pnl_by_segment(db: Session, date_from: date, date_to: date) -> PnlOut:
         operating_expenses=expenses,
         other_income=other_income,
         net_profit=net_profit,
+    )
+
+
+def _comparison_line(
+    metric: str, first: Decimal, second: Decimal, *, percentage: bool = False
+) -> PnlLineComparison:
+    """One figure in both periods, with the movement between them.
+
+    A percentage change against a period with nothing in it is left empty rather
+    than reported as an enormous number. The absolute change is always given.
+    """
+    change = money(second - first)
+    return PnlLineComparison(
+        metric=metric,
+        period_1=money(first),
+        period_2=money(second),
+        change=change,
+        change_pct=None if (percentage or not first) else money(change / first * 100),
+        is_percentage=percentage,
+    )
+
+
+def _segment_comparison(rows: list[SegmentPnlRow], name: str) -> SegmentComparison:
+    """The four figures a segment is judged on, in both periods."""
+    first, second = rows
+    return SegmentComparison(
+        segment=name,
+        lines=[
+            _comparison_line("Revenue", first.revenue, second.revenue),
+            _comparison_line("Cost of goods sold", first.cogs, second.cogs),
+            _comparison_line("Gross profit", first.gross_profit, second.gross_profit),
+            _comparison_line(
+                "Gross margin %",
+                first.gross_margin_pct,
+                second.gross_margin_pct,
+                percentage=True,
+            ),
+        ],
+    )
+
+
+def pnl_comparison(
+    db: Session,
+    *,
+    period_1_from: date,
+    period_1_to: date,
+    period_2_from: date,
+    period_2_to: date,
+) -> PnlComparisonOut:
+    """Profit and loss for two periods, side by side.
+
+    Built from two ordinary P&L runs rather than a second set of queries, so the
+    figures here cannot disagree with the figures on the P&L screen — there is only
+    one piece of arithmetic behind both.
+
+    By convention period 1 is the earlier one and the change is period 2 minus
+    period 1, which is what a reader expects when comparing a month with the month
+    before it.
+    """
+    for label, start, end in (
+        ("First period", period_1_from, period_1_to),
+        ("Second period", period_2_from, period_2_to),
+    ):
+        if start > end:
+            raise DomainError(
+                f"{label} starts on {start.isoformat()} and ends on "
+                f"{end.isoformat()}, which is before it starts."
+            )
+
+    first = pnl_by_segment(db, period_1_from, period_1_to)
+    second = pnl_by_segment(db, period_2_from, period_2_to)
+
+    by_segment = {row.segment: row for row in second.segments}
+    segments: list[SegmentComparison] = []
+    for row in first.segments:
+        other = by_segment.get(row.segment)
+        if other is None:
+            continue
+        segments.append(_segment_comparison([row, other], row.segment))
+
+    total = SegmentComparison(
+        segment="All segments",
+        lines=[
+            _comparison_line(
+                "Revenue", first.total_revenue, second.total_revenue
+            ),
+            _comparison_line("Cost of goods sold", first.total_cogs, second.total_cogs),
+            _comparison_line(
+                "Gross profit", first.total_gross_profit, second.total_gross_profit
+            ),
+            _comparison_line(
+                "Gross margin %",
+                first.gross_margin_pct,
+                second.gross_margin_pct,
+                percentage=True,
+            ),
+            _comparison_line(
+                "Operating expenses",
+                first.operating_expenses,
+                second.operating_expenses,
+            ),
+            _comparison_line("Other income", first.other_income, second.other_income),
+            _comparison_line("Net profit", first.net_profit, second.net_profit),
+        ],
+    )
+
+    return PnlComparisonOut(
+        period_1=PeriodSpan(date_from=period_1_from, date_to=period_1_to),
+        period_2=PeriodSpan(date_from=period_2_from, date_to=period_2_to),
+        total=total,
+        segments=segments,
     )
 
 

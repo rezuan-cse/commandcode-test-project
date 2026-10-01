@@ -20,6 +20,7 @@ cd backend && .venv/bin/python -m pytest tests -q
 | `test_item_master.py` | Adding, correcting and deleting items over HTTP: the code is normalised and fixed, a duplicate is refused, an item with history cannot be deleted, and a view-only role cannot write |
 | `test_parties.py` | Customer and supplier records: the recorded name comes from the record not the form, adopting existing names claims their history and is safe to repeat, a partner with history cannot be deleted, and the "both" type appears in both lists |
 | `test_payments.py` | Receipts and payments: a receipt settles an invoice in full or in part, an invoice cannot be overpaid, money with no invoice is held on account and applied later, reversing a receipt puts the invoice back to unpaid, the direction must match the invoice type, and the trial balance still agrees |
+| `test_reports_comparison.py` | Period comparison: the movement between two months, a fall reported as negative, no percentage change against a period with nothing in it, a margin compared in points, and the figures agreeing with the plain P&L |
 
 The interface has its own tests, because the figures shown on screen must round
 the same way the ledger does:

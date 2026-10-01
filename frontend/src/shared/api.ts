@@ -21,6 +21,7 @@ import type {
   PartyImportResult,
   Payment,
   PaymentPreview,
+  PnlComparison,
   JournalEntry,
   LoginResponse,
   PayrollDetail,
@@ -144,6 +145,17 @@ export const api = {
   balanceSheet: (asOf: string) => request<BalanceSheet>(`/reports/balance-sheet?as_of=${asOf}`),
 
   integrity: (asOf: string) => request<IntegrityReport>(`/reports/integrity?as_of=${asOf}`),
+
+  pnlComparison: (periods: {
+    period_1_from: string;
+    period_1_to: string;
+    period_2_from: string;
+    period_2_to: string;
+  }) =>
+    request<PnlComparison>(
+      "/reports/pnl-comparison?" +
+        new URLSearchParams(periods as Record<string, string>).toString(),
+    ),
 
   items: (search?: string) =>
     request<Item[]>(`/items${search ? `?search=${encodeURIComponent(search)}` : ""}`),

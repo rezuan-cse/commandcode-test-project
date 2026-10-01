@@ -82,6 +82,48 @@ class PnlOut(BaseModel):
     net_profit: Decimal
 
 
+class PeriodSpan(BaseModel):
+    """One of the two periods being compared."""
+
+    date_from: date
+    date_to: date
+
+
+class PnlLineComparison(BaseModel):
+    """One figure in both periods, with the movement between them.
+
+    ``change_pct`` is **empty, not zero**, when the earlier period had nothing in
+    it: a percentage change against zero is not a number, and reporting one would
+    be inventing it. The absolute change is still given, because "nothing last
+    time, 4,000 this time" is exactly what the reader needs to see.
+    """
+
+    metric: str
+    period_1: Decimal
+    period_2: Decimal
+    change: Decimal
+    change_pct: Decimal | None = None
+    # True for a figure that is already a percentage (a margin), where a percentage
+    # *change* would be meaningless. The change shown is then in points.
+    is_percentage: bool = False
+
+
+class SegmentComparison(BaseModel):
+    """One segment's comparison, or the company total in the same shape."""
+
+    segment: str
+    lines: list[PnlLineComparison]
+
+
+class PnlComparisonOut(BaseModel):
+    """Two periods side by side, with the movement between them."""
+
+    period_1: PeriodSpan
+    period_2: PeriodSpan
+    total: SegmentComparison
+    segments: list[SegmentComparison]
+
+
 class BalanceSheetOut(BaseModel):
     """Balance sheet as of a date, with the balancing check."""
 
