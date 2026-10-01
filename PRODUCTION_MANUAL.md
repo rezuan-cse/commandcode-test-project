@@ -541,6 +541,25 @@ credit with its voucher, account, segment and narration — ready to sort and to
 in Excel. That is the general-ledger listing, and it is the file to hand over if
 the books are ever examined.
 
+### Using it on a phone
+
+The system works on a phone for entering a purchase or a production run at the
+delivery point, and it changes shape deliberately rather than just shrinking:
+
+- **The menu becomes a ☰ drawer**, opened from the top-left of any screen.
+- **One field per line.** On a laptop the fields sit two or three to a row; on a
+  phone each gets its own full-width line, because a field too narrow to read what
+  you typed is how a quantity gets entered wrong.
+- **Bigger buttons and inputs** — sized for a thumb rather than a mouse. The small
+  action buttons inside a table stay compact on purpose, or the rows would become
+  unusably tall.
+- **Wide tables scroll sideways** within their card, with the page itself staying
+  still, so the rest of the screen does not slide around while you look at a
+  column.
+
+Long lists and reports are easier to read on a laptop; the phone is for **entering**
+what happened while you are standing in front of it.
+
 
 ### Inventory & BOM
 

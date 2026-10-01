@@ -1227,3 +1227,75 @@ button:disabled {
   padding: 14px 16px;
   margin: 0 0 16px;
 }
+
+/* ---------- Narrow screens: entering data on a phone ----------
+
+   This is not about making the desktop layout smaller. It is about the warehouse
+   floor, where somebody is holding a phone in one hand and a delivery note in the
+   other. Three things matter there, and everything below is one of them:
+
+   1. One field per line. The form grid fits three inputs side by side on a laptop,
+      which on a phone leaves each one too narrow to read what you typed — the
+      commonest way a quantity gets entered wrong.
+   2. Tap targets big enough for a thumb, at least 42px.
+   3. Tables that scroll sideways without losing the page, rather than squashing
+      every column to nothing.
+
+   The menu already becomes a drawer at 900px (see above); this picks up from
+   there. */
+@media (max-width: 700px) {
+  .content {
+    padding: 16px 14px 48px;
+  }
+
+  /* 1. One field per line, full width. */
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* 2. Thumbs, not cursors. */
+  .card input,
+  .card select,
+  .card button {
+    min-height: 42px;
+    font-size: 15px; /* under 16px iOS zooms the whole page on focus */
+  }
+
+  /* Except inside a table, where rows would become unusably tall — an action
+     button there stays compact on purpose. */
+  .table-wrap button,
+  .row-actions button {
+    min-height: 0;
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  /* Long labels and the filter row wrap instead of pushing the card wide. */
+  .card-head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .card-head > div {
+    flex-wrap: wrap;
+  }
+
+  /* 3. Sideways scrolling that behaves: momentum on touch, and the page itself
+     never scrolls sideways with it. */
+  .table-wrap {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+}
+
+@media (max-width: 420px) {
+  /* On the smallest phones give the labels, not the padding, the room. */
+  .content {
+    padding: 12px 10px 40px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+}
