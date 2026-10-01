@@ -1,14 +1,12 @@
 /**
  * The menu, and who sees which part of it.
  *
- * One definition, used by the sidebar and by the "Menus by role" table on Roles
- * & Access, so the two can never disagree. Two kinds of rule apply to an item:
+ * Every item is governed by a `resource` — the same one the server enforces — so
+ * the menu only offers screens the person may actually open, and an administrator
+ * can grant any of them to an individual through the per-user access editor.
  *
- *  - `resource` — the same resource the server enforces, so the menu only offers
- *    screens the role may read.
- *  - `roles` — for items that are not governed by a resource (the Dashboard and
- *    the Administration group). The server is still the boundary for what those
- *    screens can actually do; this only decides who is offered them.
+ * One definition, used by the sidebar and by the "Menus by role" table on Roles &
+ * Access, so the two can never disagree.
  */
 
 import type { Access } from "./types";
@@ -16,10 +14,8 @@ import type { Access } from "./types";
 export interface NavItem {
   to: string;
   text: string;
-  /** Resource required to see this item. Omit for anything signed-in roles may open. */
+  /** Resource required to see this item. Omit for anything a signed-in role may open. */
   resource?: string;
-  /** Roles allowed to see this item, when it is not governed by a resource. */
-  roles?: string[];
   /** Match the route exactly rather than as a prefix. */
   end?: boolean;
 }
@@ -29,18 +25,13 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-/** The Dashboard summarises the financials, so it is limited to the finance roles. */
-export const OVERVIEW_ROLES = ["Admin", "Owner/Viewer", "Accountant"];
-
-/** Configuration, data and user administration: the manager and the owner. */
-export const ADMINISTRATION_ROLES = ["Admin", "Owner/Viewer"];
-
 export const NAV_GROUPS: NavGroup[] = [
   {
+    // The Dashboard sums up the whole business, which is what the `reports`
+    // permission already covers. Store and Sales have none, so it is hidden for
+    // them — and an administrator can grant it to one person if they want to.
     label: "Overview",
-    items: [
-      { to: "/", text: "Dashboard", end: true, roles: OVERVIEW_ROLES },
-    ],
+    items: [{ to: "/", text: "Dashboard", end: true, resource: "reports" }],
   },
   {
     label: "Ledger",
@@ -74,54 +65,48 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    // Configuration, data and account management. The area is a permission, so it
+    // can be granted; the actions inside remain administrator-only.
     label: "Administration",
     items: [
-      { to: "/access", text: "Roles & Access", roles: ADMINISTRATION_ROLES },
-      { to: "/approvals", text: "Approvals", roles: ADMINISTRATION_ROLES },
-      { to: "/settings", text: "Configuration", roles: ADMINISTRATION_ROLES },
-      { to: "/data", text: "Data", roles: ADMINISTRATION_ROLES },
+      { to: "/access", text: "Roles & Access", resource: "administration" },
+      { to: "/approvals", text: "Approvals", resource: "administration" },
+      { to: "/settings", text: "Configuration", resource: "administration" },
+      { to: "/data", text: "Data", resource: "administration" },
     ],
   },
   {
+    // Everyone keeps this, so nobody depends on an administrator to change a
+    // password or set up two-factor sign-in.
     label: "My account",
     items: [{ to: "/security", text: "Security" }],
   },
 ];
 
-/** Whether one role sees one menu item. */
-export function itemVisible(
-  item: NavItem,
-  role: string,
-  can: (resource: string, write?: boolean) => boolean,
-): boolean {
-  if (item.roles && !item.roles.includes(role)) return false;
-  if (item.resource && !can(item.resource)) return false;
-  return true;
+type Can = (resource: string, write?: boolean) => boolean;
+
+/** Whether a person with these permissions sees one menu item. */
+export function itemVisible(item: NavItem, can: Can): boolean {
+  return !item.resource || can(item.resource);
 }
 
-/** The menu groups and items a role sees. */
-export function visibleGroups(
-  role: string,
-  can: (resource: string, write?: boolean) => boolean,
-): NavGroup[] {
+/** The menu groups and items a person sees. */
+export function visibleGroups(can: Can): NavGroup[] {
   return NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => itemVisible(item, role, can)),
+    items: group.items.filter((item) => itemVisible(item, can)),
   })).filter((group) => group.items.length > 0);
 }
 
 /**
  * Where a role should land after signing in.
  *
- * The Dashboard is not open to every role, so the first menu item the role can
- * actually open is the safe landing place. A role that works in one screen most of
- * the day gets that screen instead of the first one alphabetically.
+ * The Dashboard is not open to every role, so the first menu item the person can
+ * open is the safe landing place. A role that works in one screen most of the day
+ * gets that screen instead of the first one in the menu.
  */
-export function landingRoute(
-  role: string,
-  can: (resource: string, write?: boolean) => boolean,
-): string {
-  const shown = visibleGroups(role, can).flatMap((group) => group.items.map((item) => item.to));
+export function landingRoute(role: string, can: Can): string {
+  const shown = visibleGroups(can).flatMap((group) => group.items.map((item) => item.to));
   const preferred = PREFERRED_LANDING[role];
   if (preferred && shown.includes(preferred)) return preferred;
   return shown[0] ?? "/security";
@@ -133,11 +118,9 @@ const PREFERRED_LANDING: Record<string, string> = {
   "Sales Staff": "/sales",
 };
 
-/** The menu group labels a role sees, from a permission map. */
-export function menuLabelsForRole(
-  role: string,
-  access: Record<string, Access>,
-): string[] {
-  const can = (resource: string) => access[resource] === "view" || access[resource] === "full";
-  return visibleGroups(role, can).map((group) => group.label);
+/** The menu group labels a set of permissions entitles someone to. */
+export function menuLabels(access: Record<string, Access>): string[] {
+  const can: Can = (resource) =>
+    access[resource] === "view" || access[resource] === "full";
+  return visibleGroups(can).map((group) => group.label);
 }

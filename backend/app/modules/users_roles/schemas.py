@@ -26,9 +26,54 @@ class UserOut(BaseModel):
     is_active: bool
     is_2fa_enabled: bool = False
     last_login_at: dt.datetime | None = None
-    # Access level per resource, so the interface can hide what the role cannot
-    # use. Empty for a list of other users, populated for the signed-in one.
+    created_at: dt.datetime | None = None
+    updated_at: dt.datetime | None = None
+    # Access level per resource, so the interface can hide what this person may
+    # not use. Always the effective level: the role's, plus any grant an
+    # administrator has recorded against them.
     permissions: dict[str, str] = {}
+
+
+class UserCreate(BaseModel):
+    """Add an account. Leave the password out to have one generated."""
+
+    email: str = Field(min_length=3, max_length=160)
+    full_name: str = Field(min_length=1, max_length=160)
+    role: Role
+    password: str | None = Field(default=None, min_length=8, max_length=200)
+
+
+class UserUpdate(BaseModel):
+    """Change an account. Only the fields given are altered."""
+
+    email: str | None = Field(default=None, min_length=3, max_length=160)
+    full_name: str | None = Field(default=None, min_length=1, max_length=160)
+    role: Role | None = None
+
+
+class UserCreatedOut(BaseModel):
+    """The new account, plus its password when one was generated."""
+
+    user: UserOut
+    password: str | None = None
+    message: str
+
+
+class UserPermissionsOut(BaseModel):
+    """What one person may do: the role's default and their own exceptions."""
+
+    user_id: int
+    role: Role
+    resources: list[str]
+    role_defaults: dict[str, str]
+    overrides: dict[str, str]
+    effective: dict[str, str]
+
+
+class PermissionsUpdate(BaseModel):
+    """Set a person's access. Anything not listed is reset to their role default."""
+
+    access: dict[str, str]
 
 
 class RoleAccessRow(BaseModel):

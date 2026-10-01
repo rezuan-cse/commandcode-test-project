@@ -17,4 +17,5 @@ from app.modules.users_roles.models import (  # noqa: F401
     AdminAuditLog,
     RecoveryCode,
     User,
+    UserPermission,
 )

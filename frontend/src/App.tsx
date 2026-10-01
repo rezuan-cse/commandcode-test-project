@@ -55,9 +55,9 @@ export default function App() {
 
   if (!user) return <LoginPage />;
 
-  // The menu this role is offered: an item is dropped when the role may not read
-  // its resource, or is outside the roles it is limited to.
-  const visibleGroups = visibleNavGroups(user.role, can);
+  // The menu this person is offered, from the access that actually applies to
+  // them: their role's defaults plus any grant an administrator has recorded.
+  const visibleGroups = visibleNavGroups(can);
 
   // The Dashboard is not open to every role, so anyone who cannot see it lands on
   // the first screen they can. Every role has "My account", so this always resolves.

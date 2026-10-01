@@ -377,8 +377,28 @@ export interface UserRow {
   is_active: boolean;
   is_2fa_enabled: boolean;
   last_login_at: string | null;
-  /** Access level per resource: "none", "view" or "full". */
+  /** When the account was added, and when it was last changed. */
+  created_at: string | null;
+  updated_at: string | null;
+  /** Effective access per resource: the role's default plus any per-user grant. */
   permissions: Record<string, Access>;
+}
+
+/** What one person may do, and where that differs from their role. */
+export interface UserPermissions {
+  user_id: number;
+  role: string;
+  resources: string[];
+  role_defaults: Record<string, Access>;
+  overrides: Record<string, Access>;
+  effective: Record<string, Access>;
+}
+
+/** A newly created account, with its password when one was generated. */
+export interface UserCreated {
+  user: UserRow;
+  password: string | null;
+  message: string;
 }
 
 /** Step one of sign-in. Either a session, or a request for the second factor. */

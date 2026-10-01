@@ -1073,3 +1073,13 @@ button:disabled {
     padding: 8px 10px;
   }
 }
+
+/* An inset panel inside a card: used for the add/edit forms and the per-user
+   access editor on Roles & Access. */
+.sub-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 14px 16px;
+  margin: 0 0 16px;
+}

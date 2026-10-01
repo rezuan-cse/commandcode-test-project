@@ -65,13 +65,20 @@ def list_users(db: Session) -> list[User]:
 
 
 def _session(db: Session, user: User) -> SessionResponse:
-    """Issue a session token and record the sign-in time."""
+    """Issue a session token and record the sign-in time.
+
+    The user is serialised with their effective access — the role's defaults plus
+    any grant an administrator has recorded against them — so the interface knows
+    straight away which menus to offer.
+    """
+    from app.modules.users_roles import service as access_service
+
     user.last_login_at = _now()
     db.commit()
     return SessionResponse(
         access_token=create_token(user.id, user.role.value),
         expires_in_minutes=settings.access_token_minutes,
-        user=UserOut.model_validate(user),
+        user=access_service.to_user_out(db, user),
     )
 
 

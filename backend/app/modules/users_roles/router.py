@@ -20,10 +20,15 @@ from app.modules.users_roles.schemas import (
     AdminActionOut,
     AuditEntryOut,
     PasswordIssuedOut,
+    PermissionsUpdate,
     ResetPasswordRequest,
     RoleMatrixOut,
     SetActiveRequest,
+    UserCreate,
+    UserCreatedOut,
     UserOut,
+    UserPermissionsOut,
+    UserUpdate,
 )
 
 router = APIRouter(prefix="/access", tags=["users-roles"])
@@ -57,9 +62,85 @@ def list_roles() -> list[str]:
 
 
 @router.get("/users", response_model=list[UserOut], dependencies=[ADMIN_ONLY])
-def list_users(db: Session = Depends(get_db)) -> list[User]:
-    """List user accounts. Admin only."""
-    return auth_repository.list_users(db)
+def list_users(db: Session = Depends(get_db)) -> list[UserOut]:
+    """List user accounts, with the access each one actually has. Admin only."""
+    return [
+        service.to_user_out(db, user) for user in auth_repository.list_users(db)
+    ]
+
+
+@router.post("/users", response_model=UserCreatedOut, status_code=201, dependencies=[ADMIN_ONLY])
+def create_user(
+    payload: UserCreate,
+    actor: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserCreatedOut:
+    """Add an account. Admin only.
+
+    A generated password is returned once, so it can be handed over. One supplied
+    by the administrator is not echoed back.
+    """
+    user, password = administration.create_user(db, actor, payload)
+    return UserCreatedOut(
+        user=service.to_user_out(db, user),
+        password=password,
+        message=(
+            f"{user.full_name} can now sign in."
+            if password is None
+            else "Give this password to the user. It is shown once and is not "
+            "stored anywhere in readable form."
+        ),
+    )
+
+
+@router.patch("/users/{user_id}", response_model=UserOut, dependencies=[ADMIN_ONLY])
+def update_user(
+    user_id: int,
+    payload: UserUpdate,
+    actor: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserOut:
+    """Change an account's name, email or role. Admin only."""
+    user = administration.update_user(db, actor, user_id, payload)
+    return service.to_user_out(db, user)
+
+
+@router.delete("/users/{user_id}", response_model=AdminActionOut, dependencies=[ADMIN_ONLY])
+def delete_user(
+    user_id: int,
+    actor: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> AdminActionOut:
+    """Remove an account. Admin only."""
+    return AdminActionOut(message=administration.delete_user(db, actor, user_id))
+
+
+@router.get(
+    "/users/{user_id}/permissions",
+    response_model=UserPermissionsOut,
+    dependencies=[ADMIN_ONLY],
+)
+def get_user_permissions(
+    user_id: int, db: Session = Depends(get_db)
+) -> UserPermissionsOut:
+    """One person's access: their role's default, their grants, and the result."""
+    return UserPermissionsOut(**administration.user_permissions(db, user_id))
+
+
+@router.put(
+    "/users/{user_id}/permissions",
+    response_model=AdminActionOut,
+    dependencies=[ADMIN_ONLY],
+)
+def set_user_permissions(
+    user_id: int,
+    payload: PermissionsUpdate,
+    actor: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> AdminActionOut:
+    """Grant or deny one person areas, on top of their role. Admin only."""
+    administration.set_user_permissions(db, actor, user_id, payload)
+    return AdminActionOut(message="Access updated.")
 
 
 @router.post(

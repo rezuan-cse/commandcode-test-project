@@ -49,8 +49,16 @@ class User(Base):
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )
+    # Bumped by the database whenever the row changes, so the admin screen can
+    # show when an account was created and when it was last altered.
+    updated_at: Mapped[dt.datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     recovery_codes: Mapped[list["RecoveryCode"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", lazy="selectin"
+    )
+    permission_overrides: Mapped[list["UserPermission"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", lazy="selectin"
     )
 
@@ -59,20 +67,28 @@ class User(Base):
         """True when the account can be signed into with a password."""
         return bool(self.password_hash)
 
-    @property
-    def permissions(self) -> dict[str, str]:
-        """This user's access level for each resource.
 
-        Derived, never stored, and returned with the user so the interface can
-        hide menus and forms the role cannot use. The server still enforces every
-        request; this only stops the interface offering actions that will be
-        refused.
+class UserPermission(Base):
+    """One person's access to one area, where it differs from their role.
 
-        Imported inside the property because the service module imports this one.
-        """
-        from app.modules.users_roles.service import permissions_for
+    The role supplies the default. A row here records only the exception an
+    administrator has granted or denied, so a change to the permission matrix
+    still flows through to everybody who has not been singled out.
 
-        return permissions_for(self.role)
+    A row is removed when the access is set back to what the role already gives,
+    which keeps "no row" meaning "follow the role".
+    """
+
+    __tablename__ = "user_permissions"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    resource: Mapped[str] = mapped_column(String(40), primary_key=True)
+    # "none", "view" or "full", matching users_roles.service.Access.
+    access: Mapped[str] = mapped_column(String(8), nullable=False)
+
+    user: Mapped[User] = relationship(back_populates="permission_overrides")
 
 
 class RecoveryCode(Base):

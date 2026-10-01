@@ -45,9 +45,13 @@ def login_totp(
 
 
 @router.get("/me", response_model=UserOut)
-def me(user: User = Depends(get_current_user)) -> UserOut:
-    """Return the signed-in user."""
-    return UserOut.model_validate(user)
+def me(
+    user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> UserOut:
+    """Return the signed-in user, with the access that applies to them."""
+    from app.modules.users_roles import service as access_service
+
+    return access_service.to_user_out(db, user)
 
 
 @router.post("/2fa/setup", response_model=TotpSetupResponse)

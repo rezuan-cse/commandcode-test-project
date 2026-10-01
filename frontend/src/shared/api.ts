@@ -39,6 +39,8 @@ import type {
   TotpEnableResponse,
   TotpSetupResponse,
   TrialBalance,
+  UserCreated,
+  UserPermissions,
   UserRow,
   VatSummary,
 } from "./types";
@@ -305,6 +307,30 @@ export const api = {
     }),
 
   users: () => request<UserRow[]>("/access/users"),
+
+  createUser: (payload: { email: string; full_name: string; role: string; password?: string }) =>
+    request<UserCreated>("/access/users", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  updateUser: (userId: number, payload: { email?: string; full_name?: string; role?: string }) =>
+    request<UserRow>(`/access/users/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
+  deleteUser: (userId: number) =>
+    request<{ message: string }>(`/access/users/${userId}`, { method: "DELETE" }),
+
+  userPermissions: (userId: number) =>
+    request<UserPermissions>(`/access/users/${userId}/permissions`),
+
+  setUserPermissions: (userId: number, access: Record<string, string>) =>
+    request<{ message: string }>(`/access/users/${userId}/permissions`, {
+      method: "PUT",
+      body: JSON.stringify({ access }),
+    }),
 
   // --- Account administration (Admin only) ------------------------------
 

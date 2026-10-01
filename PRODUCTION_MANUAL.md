@@ -89,13 +89,17 @@ disappears too.
 | **My account** | **Security** | Your own password and two-factor settings. |
 
 The **Operations** group is the one everybody works in; the others are narrower.
-Three groups are limited by **who you are** rather than by an area permission:
+Three groups depend on permissions rather than on your job:
 
-- **Overview** (the Dashboard) — Admin, Accountant and Owner only.
-- **Administration** — Admin and Owner only; an owner may look but not change.
-- **My account** — everybody, so anyone can change their own password.
+- **Overview** (the Dashboard) — shown where the **Reports** permission is held,
+  which by default means Admin, Accountant and Owner.
+- **Administration** — its own **Administration** permission, held by Admin and
+  Owner; an owner may look but not change anything.
+- **My account** — held by everybody, so anyone can change their own password.
 
-See "Which menus each role is offered" in 1.2 for the full grid.
+An administrator can **grant or deny any of these areas to one person** on Roles
+& Access, without changing their role. See "Which menus each role is offered" in
+1.2 for the defaults.
 
 **On a narrow screen** — a phone or a small tablet — the menu folds away behind a
 **menu button** at the top left. Tap it to slide the menu out; tap an item to open
@@ -134,13 +138,15 @@ The sidebar only shows a group when the role may open something inside it.
 | **Administration** — roles, approvals, configuration, data | Yes | — | — | — | Yes (read only) |
 | **My account** — your password and 2-FA | Yes | Yes | Yes | Yes | Yes |
 
-Two of these are limited by **who you are**, not by an area permission:
+Two of these are narrow because of the permission behind them, not because of who
+you are — and an administrator can grant either to one person:
 
-- The **Dashboard** sums up the whole business, so it is offered to Admin,
-  Accountant and Owner only.
-- The **Administration** group is offered to Admin and Owner only. Inside it, an
-  owner can look but not change: saving a setting, issuing a password, disabling
-  an account, importing or resetting data all remain administrator-only.
+- The **Dashboard** is shown where **Reports** is held. That is what makes it
+  Admin, Accountant and Owner, since Store and Sales hold no reports.
+- The **Administration** group is shown where its own **Administration** permission
+  is held: Admin and Owner. Inside it, an owner can look but not change — saving a
+  setting, issuing a password, removing an account, importing or resetting data all
+  remain administrator-only.
 
 **Store/Production and Sales see only the work they do.** Store staff get
 **Inventory & BOM** and **Production Entry**; sales staff get **Purchase Entry**
@@ -526,12 +532,22 @@ pay**, and each person's component and deduction breakdown. A **Print** button.
 
 ### Roles & Access
 
-- **Permission matrix** — a role-by-area table showing **Full**, **View** or **—**.
-- **Live permission probe** — calls the real API as you, proving the rule comes
-  from the server.
-- **User accounts** (Admin only) — **Reset 2FA**, **Reset password**, **Disable**
-  or **Enable** per person. You cannot act on your own account here.
-- **Administrative actions** (Admin only) — the audit log.
+- **Permission matrix** — a role-by-area table showing **Full**, **View** or **—**,
+  which is what each role gets by default.
+- **Menus by role** — which menu groups each role is offered, from the same rules
+  the sidebar uses.
+- **User accounts** (Admin only) — every account with its role, second factor,
+  status, and when it was **created** and **last updated**. From here an
+  administrator can:
+  - **Add user** — name, email, role, and a password (leave it blank and one is
+    generated and shown once).
+  - **Edit** — correct a name, email or role.
+  - **Access** — grant or deny any area to that one person on top of their role.
+    Anything left on *Follow the role* is not stored, so a later change to the role
+    still reaches them.
+  - **Reset 2FA**, **Reset password**, **Disable** / **Enable**, and **Delete**.
+  - You cannot act on your own account here; use the Security page.
+- **Administrative actions** (Admin only) — the audit log, newest first.
 
 ### Security
 
