@@ -56,6 +56,23 @@ services:
         sync: false
       - key: RPCI_ALLOW_DATA_RESET
         value: "true"
+      # The accounts that sign in are the client's own, not the seeded demo set.
+      #
+      # Accounts that already exist are never touched by this, so turning it off
+      # does not remove the five @rpci.demo logins already in the database — they
+      # stay usable until an administrator deletes them from Roles & Access. It
+      # only stops new ones being created, which is what matters for a fresh
+      # deployment holding real books. Make your own administrator first with:
+      #
+      #   backend/.venv/bin/python scripts/create_user.py --email you@example.com \
+      #       --name "Your Name" --role admin
+      - key: RPCI_SEED_DEMO_USERS
+        value: "false"
+      # Sign-in throttling: five wrong passwords lock the account for 15 minutes.
+      - key: RPCI_LOGIN_MAX_ATTEMPTS
+        value: "5"
+      - key: RPCI_LOGIN_LOCKOUT_MINUTES
+        value: "15"
       - key: RPCI_CORS_ORIGINS
         value: "*"
       # Session signing key. Render generates it once and keeps it, so sign-ins

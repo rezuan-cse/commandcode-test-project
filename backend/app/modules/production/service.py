@@ -247,11 +247,16 @@ def _write_ledger_movements(
     )
 
 
-def post(db: Session, payload: ProductionRequest) -> ProductionPostResult:
+def post(
+    db: Session, payload: ProductionRequest, *, posted_by: str = "system"
+) -> ProductionPostResult:
     """Post a production run atomically.
 
     Either every ledger row and the journal entry commit together, or nothing
     does. ``simulate_failure`` exists purely to let the demo prove the rollback.
+
+    ``posted_by`` is the signed-in user, supplied by the router out of the
+    session rather than trusted from the payload.
     """
     try:
         components = _resolve_components(db, payload)
@@ -276,7 +281,7 @@ def post(db: Session, payload: ProductionRequest) -> ProductionPostResult:
             material_cost=preview_data.material_cost,
             total_cost=preview_data.total_cost,
             unit_cost=preview_data.unit_cost,
-            posted_by=payload.posted_by,
+            posted_by=posted_by,
         )
         for component in preview_data.components:
             order.lines.append(
@@ -290,6 +295,7 @@ def post(db: Session, payload: ProductionRequest) -> ProductionPostResult:
             )
         repository.add_order(db, order)
 
+        journal_service.assert_books_open(db, payload.production_date)
         entry = journal_service.build_entry(
             voucher_no=order_no,
             entry_date=payload.production_date,
@@ -306,7 +312,7 @@ def post(db: Session, payload: ProductionRequest) -> ProductionPostResult:
             source=JournalSource.PRODUCTION,
             narration=f"Auto-posted from production order {order_no}",
             reference=order_no,
-            posted_by=payload.posted_by,
+            posted_by=posted_by,
         )
         journal_repo.add_entry(db, entry)
         order.journal_entry_id = entry.id

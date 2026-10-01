@@ -22,9 +22,22 @@
 All are prefixed `RPCI_`. Full table with defaults: [../guides/deployment.md](../guides/deployment.md).
 
 `RPCI_DATABASE_URL`, `RPCI_JWT_SECRET`, `RPCI_ACCESS_TOKEN_MINUTES`,
-`RPCI_UTC_OFFSET_HOURS`, `RPCI_DEMO_PASSWORD`, `RPCI_SEED_MODE`,
+`RPCI_UTC_OFFSET_HOURS`, `RPCI_DEMO_PASSWORD`, `RPCI_SEED_DEMO_USERS`,
+`RPCI_LOGIN_MAX_ATTEMPTS`, `RPCI_LOGIN_LOCKOUT_MINUTES`, `RPCI_SEED_MODE`,
 `RPCI_SEED_FROM_EXCEL_PATH`, `RPCI_CORS_ORIGINS`, `RPCI_ALLOW_DATA_RESET`,
 `RPCI_DEFAULT_SEGMENT`.
+
+## Accounts and backups
+
+| Task | Command | Notes |
+|---|---|---|
+| Make the first administrator | `backend/.venv/bin/python scripts/create_user.py` | Needed when `RPCI_SEED_DEMO_USERS=false`; prints the password once. |
+| Back up | `backend/.venv/bin/python scripts/backup_db.py --out <dir>` | SQLite or Postgres, any host. Run nightly. |
+| Restore (prove it) | `backend/.venv/bin/python scripts/restore_db.py <archive> --scratch <url>` | Restores into a scratch database instead. |
+| Restore (live) | `... restore_db.py <archive> --yes` | Destructive; stop the app first. |
+
+A data reset and a workbook import both keep the **user accounts** — only the
+books are replaced — so neither can lock everybody out.
 
 Rules the configuration follows: no secret or real value in a router; the app reads only
 `RPCI_`-prefixed variables; a Supabase/Neon URL is pasted unchanged (the app rewrites

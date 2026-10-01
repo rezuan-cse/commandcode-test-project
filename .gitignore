@@ -12,6 +12,11 @@ venv/
 *.sqlite
 *.sqlite3
 
+# Database backups. These contain the client's real books and must never be
+# committed — keep them off the machine that hosts the database.
+backups/
+*.dump
+
 # Node
 node_modules/
 frontend/dist/

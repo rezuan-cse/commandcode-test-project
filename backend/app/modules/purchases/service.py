@@ -161,8 +161,14 @@ def preview(db: Session, payload: PurchaseRequest) -> PurchasePreview:
     return _assemble(db, payload, _value_lines(db, payload), "PUR-NEW")
 
 
-def post(db: Session, payload: PurchaseRequest) -> PurchasePostResult:
-    """Post a purchase atomically: raise stock, credit payable or bank."""
+def post(
+    db: Session, payload: PurchaseRequest, *, posted_by: str = "system"
+) -> PurchasePostResult:
+    """Post a purchase atomically: raise stock, credit payable or bank.
+
+    ``posted_by`` is the signed-in user, supplied by the router out of the
+    session rather than trusted from the payload.
+    """
     try:
         priced = _value_lines(db, payload)
         order_no = next_voucher(
@@ -177,7 +183,7 @@ def post(db: Session, payload: PurchaseRequest) -> PurchasePostResult:
             is_credit=payload.is_credit,
             total_value=preview_data.total_value,
             vat_total=preview_data.vat_total,
-            posted_by=payload.posted_by,
+            posted_by=posted_by,
         )
         for line in preview_data.lines:
             order.lines.append(
@@ -191,6 +197,7 @@ def post(db: Session, payload: PurchaseRequest) -> PurchasePostResult:
             )
         repository.add_order(db, order)
 
+        journal_service.assert_books_open(db, payload.purchase_date)
         entry = journal_service.build_entry(
             voucher_no=order_no,
             entry_date=payload.purchase_date,
@@ -207,7 +214,7 @@ def post(db: Session, payload: PurchaseRequest) -> PurchasePostResult:
             source=JournalSource.PURCHASE,
             narration=f"Auto-posted from purchase order {order_no}",
             reference=order_no,
-            posted_by=payload.posted_by,
+            posted_by=posted_by,
         )
         journal_repo.add_entry(db, entry)
         order.journal_entry_id = entry.id

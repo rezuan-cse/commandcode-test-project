@@ -65,7 +65,6 @@ class PayrollRequest(BaseModel):
     period_start: date
     period_end: date
     pay_date: date
-    posted_by: str = "payroll"
 
 
 class PayrollPreview(BaseModel):

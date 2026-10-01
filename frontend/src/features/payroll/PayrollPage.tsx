@@ -43,7 +43,6 @@ export default function PayrollPage() {
       period_start: periodStart,
       period_end: periodEnd,
       pay_date: payDate,
-      posted_by: "Payroll",
     }),
     [periodStart, periodEnd, payDate],
   );

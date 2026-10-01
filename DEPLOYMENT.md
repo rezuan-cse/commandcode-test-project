@@ -345,8 +345,45 @@ Set these on whichever host runs the API.
 | `RPCI_SEED_MODE` | `fresh` | What a new database starts with: `fresh` (starter chart of accounts), `workbook`, or `none` |
 | `RPCI_SEED_FROM_EXCEL_PATH` | `<repo>/RPCI Accounts.xlsx` | Workbook available to import |
 | `RPCI_DEMO_PASSWORD` | `rpci` | Password for the seeded demo accounts |
+| `RPCI_SEED_DEMO_USERS` | `true` | Create one account per role at startup. **Set `false` for real books** |
+| `RPCI_LOGIN_MAX_ATTEMPTS` | `5` | Wrong passwords before the account locks |
+| `RPCI_LOGIN_LOCKOUT_MINUTES` | `15` | How long that lock lasts |
 | `RPCI_CORS_ORIGINS` | `*` | Comma-separated allowed origins |
 | `RPCI_ALLOW_DATA_RESET` | `true` | Allow an Admin to start the books over |
+
+### The first administrator, and removing the demo accounts
+
+With `RPCI_SEED_DEMO_USERS=false` a fresh database has **no accounts at all**, so
+create one from the command line before signing in:
+
+```bash
+backend/.venv/bin/python scripts/create_user.py \
+    --email admin@resinovabd.com --name "Md. Sarwar Hossain" --role admin
+```
+
+It prints a strong password once. Every later account is better made from
+**Roles & Access**, where the role and the individual menu grants are set together.
+
+`RPCI_SEED_DEMO_USERS` only stops demo accounts being *created*. Any that already
+exist stay until an administrator deletes them from **Administration → Roles &
+Access → User accounts**, which is the step that actually removes the exposure of
+a shared `rpci` password.
+
+### Back up the database
+
+These are the client's books, and a free hosting tier usually has no automated
+backup of its own.
+
+```bash
+backend/.venv/bin/python scripts/backup_db.py --out /mnt/backups --keep 30
+backend/.venv/bin/python scripts/restore_db.py <archive> --scratch <scratch-url>
+```
+
+Both work against SQLite or Postgres on any host, cloud or on-prem, so the same
+two commands survive a move. Run the backup nightly (cron, a systemd timer, or
+Task Scheduler), keep the output off the machine running the database, and
+**restore one into a scratch database at least once** — a backup that has never
+been restored is a guess. Full detail: [docs/guides/deployment.md](docs/guides/deployment.md).
 
 ### Set RPCI_JWT_SECRET
 

@@ -1202,6 +1202,122 @@ Exploding P for 10 gives S required = `10 × 2 = 20`, and R required =
 `20 × 3 = 60`. The shopping list shows the leaf material, R, at 60.
 
 
+## 2.14 Closing a year — how the system keeps a closed period closed
+
+Once you have reported a year, nothing should be able to change it quietly. One
+setting does that.
+
+**Where:** Configuration → Posting controls → **Books closed through**.
+
+- **Blank** (the default) means the books are **open**. Every date is accepted.
+- Put a date in, and **nothing may be dated on or before it**.
+
+That applies to every way a transaction gets into the books: purchases,
+production runs, sales, payroll runs, manual journal entries, **and reversals**.
+
+**Why reversals too.** A reversal is a posting like any other — it moves money and
+stock. If it were allowed inside a closed year, it would change a year you have
+already reported, which is exactly what closing it was meant to prevent.
+
+**Worked example.** Suppose **Books closed through** is `2026-06-30`.
+
+| You try to record | Dated | Result |
+|---|---|---|
+| A purchase | 2026-06-15 | **Refused** — inside the closed period |
+| A purchase | 2026-07-01 | Accepted — in the open period |
+| A reversal of a June sale | 2026-06-20 | **Refused** — a posting inside the closed period |
+
+The refusal names both dates, so there is nothing to guess at:
+
+> The books are closed through 2026-06-30, so a transaction cannot be dated
+> 2026-06-15. Date it after the closing date, or move the closing date back in
+> Configuration.
+
+**Two honest ways forward.** Either move the closing date back, make the
+correction, and set it forward again — or, as an accountant normally would, date
+the correction in the **current** period and leave the closed year alone. The
+second keeps the reported year exactly as reported.
+
+**A refused posting changes nothing.** No order, no stock movement, no journal
+entry. You get the error and the books are untouched, so there is no half-posted
+purchase to hunt down afterwards.
+
+## 2.15 Who entered it — the record that cannot be claimed
+
+Every posted transaction stores **the signed-in user's email address** as the
+person who entered it. The interface shows it as *Entered by* on the lists and
+drawings, and as *Recorded by* on a receipt.
+
+It is taken from the **sign-in session**, never from what the screen sends. That
+matters: if the name came from the screen, anybody who could reach the system
+could put somebody else's name on a transaction, and the record would be worth
+nothing. Because it comes from the session, "who entered SALE-014?" has a true
+answer.
+
+- A purchase entered by `store@resinovabd.com` is recorded as entered by
+  `store@resinovabd.com`, whoever else is around.
+- A reversal is attributed to the person who **asked** for it.
+- A manual journal entry is attributed to the person who posted it.
+
+**About older rows.** Transactions entered before this was tightened show the old
+labels — `Sales`, `Store`, `Payroll`, `system`, `import`. They are **kept as they
+were** rather than rewritten, because the record is history and history is not
+edited to look better. From the change onward, every row names a real person.
+
+## 2.16 When someone cannot sign in
+
+**"Too many failed attempts."** After **five** wrong passwords the account locks
+for **15 minutes** (an administrator can change both numbers). The message tells
+you how many minutes are left. While the lock is on, **the correct password is
+refused too** — that is the point of it, so guessing cannot succeed by luck.
+Waiting, or an administrator resetting the password, clears it.
+
+The lock is per **account**, not per computer: trying a different sign-in from the
+same laptop is unaffected.
+
+**A good sign-in clears the count.** If somebody mistypes twice and then gets it
+right, the two mistakes are forgotten — they are not left one typo away from a
+lock.
+
+**If nobody can sign in at all**, the accounts are still there — a data reset
+never deletes them. Either ask an administrator to reset a password from
+**Roles & Access → User accounts → Reset password**, or, with access to the
+server, make an administrator from the command line:
+
+```bash
+backend/.venv/bin/python scripts/create_user.py \
+    --email admin@resinovabd.com --name "Md. Sarwar Hossain" --role admin
+```
+
+## 2.17 Backing up, and proving the backup works
+
+These are your account books. A nightly copy, kept somewhere other than the
+machine that runs the database, is what stands between a bad day and losing them.
+
+Two commands, and they work whatever the system is running on — a hosted cloud
+database or a machine in your own office:
+
+```bash
+# Every night. Writes a dated file and keeps the last 30.
+backend/.venv/bin/python scripts/backup_db.py --out /mnt/backups --keep 30
+
+# Prove the file is good, into a scratch database — not the live one.
+backend/.venv/bin/python scripts/restore_db.py <the-file> --scratch <scratch-url>
+
+# Restore over the live database. Destructive: stop the application first.
+backend/.venv/bin/python scripts/restore_db.py <the-file> --yes
+```
+
+**Schedule it:** nightly, plus one before every upgrade and before any workbook
+import or data reset. On Linux or macOS use cron or a systemd timer; on Windows,
+Task Scheduler.
+
+**Test a restore at least once**, into a scratch database. A backup that has never
+been restored is not a backup, it is a hope. After restoring, sign in and check
+the **Dashboard**: the **trial balance difference must read `0.0000`** and the
+account balances must match what you expect for that date.
+
+
 # Section 3 — End-to-End User Test Cases
 
 These exercises walk through the system the way a real user would. Each one lists
@@ -1753,6 +1869,64 @@ else works from there.
 
 ---
 
+## Test Case 23 — Close a period and be refused
+
+- **User Persona:** Admin.
+- **Objective:** Set a closing date, then prove nothing can be posted inside it.
+- **Prerequisites:** Signed in as **Admin**; sample data loaded (Test Case 8); the
+  purchase from Test Case 9 posted. Note the date you used for it.
+- **Steps:**
+  1. Go to **Administration → Configuration → Posting controls**.
+  2. Set **Books closed through** to a date on or after your test purchase date,
+     and click **Save**.
+  3. Go to **Purchases** and enter a purchase dated **on or before** that closing
+     date. Click **Post purchase**.
+  4. Read the message.
+  5. Change the date to **after** the closing date and post again.
+  6. Go back to **Posting controls**, clear the field, and save.
+- **Expected Behaviour:** Step 3 is refused with a red message naming both dates.
+  Step 5 is accepted. In step 3 **nothing is posted** — the purchase list is
+  unchanged. Step 6 returns the books to normal.
+- **Actual Results & Calculation Explanation:** Every posting, whatever created
+  it, builds a journal entry — and the entry is built only after the transaction
+  date has been compared with the closing date. Inside the closed period the
+  entry is never built, so no order row, no stock movement and no journal line is
+  written. The refusal lists no partial work because there is none. Clearing the
+  field means "no closing date", so every date is accepted again.
+
+---
+
+## Test Case 24 — Get locked out, and back in
+
+- **User Persona:** Admin, testing with a spare account (use **Sales Staff**, so
+  you do not lock the account you are working from).
+- **Objective:** See the sign-in lock, and prove both ways it is released.
+- **Prerequisites:** Signed in as **Admin**, and you know the Sales Staff
+  password.
+- **Steps:**
+  1. **Sign out.**
+  2. Try to sign in as the Sales Staff account with a **wrong** password. Repeat
+     **five** times.
+  3. Read the message.
+  4. Now try with the **correct** password.
+  5. Sign in as **Admin**. Go to **Administration → Roles & Access → User
+     accounts**, find the Sales Staff row, and click **Reset password**.
+  6. Copy the password shown, sign out, and sign in as Sales Staff with it.
+- **Expected Behaviour:** After the fifth wrong attempt the message says the
+  account is locked and how many minutes remain. In step 4 **the correct password
+  is refused as well** — the lock is not bypassed. In step 6 the new password
+  works immediately.
+- **Actual Results & Calculation Explanation:** Each wrong password adds one to a
+  count kept **against the account** (not against the computer), so it survives a
+  restart of the service. At five, a lock time is written and the count is
+  cleared, so once the lock expires the person gets a fresh set of attempts rather
+  than locking again on their next typo. A **successful** sign-in also clears the
+  count, and so does issuing a new password — which is why step 6 works: an
+  administrator resetting a password releases the lock, otherwise the reset would
+  hand over details that still did not work.
+
+---
+
 ## A short checklist before you go live
 
 1. **Configuration → Company details** — set and **Confirm** the name, address and
@@ -1761,10 +1935,18 @@ else works from there.
    confirms, and confirm each row.
 3. **Configuration → Payroll** — agree the salary components and deductions.
 4. **Configuration → Posting controls** — decide whether reversals need a second
-   person.
+   person, and whether any year is **closed** (**Books closed through**). Leave it
+   blank until you have reported a year.
 5. **Configuration → Sales documents** — choose a plain receipt or a tax invoice.
 6. **Security** — each user sets their own password, and turns on two-factor
    authentication if required.
-7. **Roles & Access** — check the permission matrix matches the jobs people do.
+7. **Roles & Access** — check the permission matrix matches the jobs people do,
+   and **delete the five demo accounts** (`admin@rpci.demo` and the rest) once
+   your own administrators exist and can sign in.
 8. **Data** — import your workbook, or start fresh and begin entering.
+9. **Backups** — set up the nightly `backup_db.py` run, keep the files off the
+   machine that hosts the database, and **restore one into a scratch database** to
+   prove it works.
+10. **Try the two new guards once**, so you have seen them: close a period and be
+    refused (Test Case 23), and lock an account and release it (Test Case 24).
 

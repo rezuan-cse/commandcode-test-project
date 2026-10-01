@@ -27,7 +27,6 @@ class PurchaseRequest(BaseModel):
     purchase_date: date
     is_credit: bool = True
     lines: list[PurchaseLineIn] = Field(min_length=1)
-    posted_by: str = "store"
     simulate_failure: bool = False
 
 

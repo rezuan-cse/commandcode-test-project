@@ -228,8 +228,15 @@ def _assert_available(lines: list[SaleLinePreview]) -> None:
         raise InsufficientStockError("; ".join(short))
 
 
-def post(db: Session, payload: SaleRequest) -> SalePostResult:
-    """Post a sale atomically: reduce stock, recognise revenue and COGS."""
+def post(
+    db: Session, payload: SaleRequest, *, posted_by: str = "system"
+) -> SalePostResult:
+    """Post a sale atomically: reduce stock, recognise revenue and COGS.
+
+    ``posted_by`` is the signed-in user, supplied by the router out of the
+    session. It is deliberately not read from the payload, so the record of who
+    entered a transaction cannot be claimed by the client.
+    """
     try:
         priced = _price_lines(db, payload)
         _assert_available(priced)
@@ -247,7 +254,7 @@ def post(db: Session, payload: SaleRequest) -> SalePostResult:
             revenue=preview_data.revenue,
             vat_total=preview_data.vat_total,
             cogs=preview_data.cogs,
-            posted_by=payload.posted_by,
+            posted_by=posted_by,
         )
         for line in preview_data.lines:
             order.lines.append(
@@ -263,6 +270,7 @@ def post(db: Session, payload: SaleRequest) -> SalePostResult:
             )
         repository.add_order(db, order)
 
+        journal_service.assert_books_open(db, payload.sale_date)
         entry = journal_service.build_entry(
             voucher_no=order_no,
             entry_date=payload.sale_date,
@@ -279,7 +287,7 @@ def post(db: Session, payload: SaleRequest) -> SalePostResult:
             source=JournalSource.SALES,
             narration=f"Auto-posted from sales order {order_no}",
             reference=order_no,
-            posted_by=payload.posted_by,
+            posted_by=posted_by,
         )
         journal_repo.add_entry(db, entry)
         order.journal_entry_id = entry.id

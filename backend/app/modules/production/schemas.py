@@ -40,7 +40,6 @@ class ProductionRequest(BaseModel):
     production_date: date
     labor_cost: Decimal = Decimal("0")
     overhead_cost: Decimal = Decimal("0")
-    posted_by: str = "store"
     lines: list[ProductionLineIn] | None = None
     simulate_failure: bool = False
 

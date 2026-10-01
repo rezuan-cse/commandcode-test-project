@@ -9,7 +9,17 @@ from __future__ import annotations
 
 import datetime as dt
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, false, func, true
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    false,
+    func,
+    text,
+    true,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base, enum_col
@@ -46,6 +56,21 @@ class User(Base):
     )
 
     last_login_at: Mapped[dt.datetime | None] = mapped_column(DateTime, nullable=True)
+
+    # Sign-in throttling, so a password cannot be guessed by brute force. A wrong
+    # password counts up; at the limit the account locks until ``locked_until``
+    # passes. Held in the database rather than in memory, so restarting the
+    # service does not clear a lock.
+    #
+    # Times here are naive UTC on purpose: a DateTime column with no time zone
+    # gives back a naive value, and comparing a naive value against an aware one
+    # raises. The rest of the system formats aware UTC for display; this is the
+    # one place a stored time is compared.
+    failed_logins: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=text("0"), nullable=False
+    )
+    locked_until: Mapped[dt.datetime | None] = mapped_column(DateTime, nullable=True)
+
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )

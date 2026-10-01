@@ -51,7 +51,7 @@ def reverse_sale(
         db,
         order_id,
         reason=payload.reason,
-        posted_by=payload.posted_by,
+        posted_by=principal.user.email,
         reversal_date=payload.reversal_date,
         requested_by=principal.user.email,
     )
@@ -63,7 +63,15 @@ def preview_sale(payload: SaleRequest, db: Session = Depends(get_db)) -> SalePre
     return service.preview(db, payload)
 
 
-@router.post("", response_model=SalePostResult, status_code=201, dependencies=[CAN_WRITE])
-def post_sale(payload: SaleRequest, db: Session = Depends(get_db)) -> SalePostResult:
-    """Post a sale atomically."""
-    return service.post(db, payload)
+@router.post("", response_model=SalePostResult, status_code=201)
+def post_sale(
+    payload: SaleRequest,
+    principal: Principal = Depends(require("sales_purchase", write=True)),
+    db: Session = Depends(get_db),
+) -> SalePostResult:
+    """Post a sale atomically.
+
+    The person posting it is taken from the session, so the entry records who
+    really entered it.
+    """
+    return service.post(db, payload, posted_by=principal.user.email)

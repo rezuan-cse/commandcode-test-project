@@ -49,7 +49,6 @@ export default function ProductionPage() {
       production_date: date,
       labor_cost: labor,
       overhead_cost: overhead,
-      posted_by: "Store",
       lines: lines.length > 0 ? lines : null,
     };
   }, [outputItem, qty, date, labor, overhead, overrides]);

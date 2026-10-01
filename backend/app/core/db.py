@@ -258,8 +258,19 @@ def sync_schema() -> list[str]:
     return applied
 
 
-def clear_all_data(session: Session) -> None:
+# The tables that hold *people* rather than books. Emptying the books must not
+# delete the accounts — otherwise a deployment started without demo seeding, or
+# one whose only administrator is the person clicking Reset, has no way back in.
+KEEP_ACCOUNTS = frozenset({"users", "user_permissions", "recovery_codes"})
+
+
+def clear_all_data(session: Session, *, keep: frozenset[str] = frozenset()) -> None:
     """Delete every row, children before parents.
+
+    ``keep`` names tables to leave alone. Pass :data:`KEEP_ACCOUNTS` when
+    emptying the books on a live deployment, so signing in still works
+    afterwards. The default clears everything, which is what a test fixture
+    wants.
 
     Deliberately not DROP TABLE. Dropping needs an exclusive lock on each table,
     so on Postgres it blocks behind any other session holding a read lock — which
@@ -273,5 +284,7 @@ def clear_all_data(session: Session) -> None:
     from app import models_registry  # noqa: F401
 
     for table in reversed(Base.metadata.sorted_tables):
+        if table.name in keep:
+            continue
         session.execute(table.delete())
     session.flush()

@@ -44,7 +44,7 @@ def reverse_purchase(
         db,
         order_id,
         reason=payload.reason,
-        posted_by=payload.posted_by,
+        posted_by=principal.user.email,
         reversal_date=payload.reversal_date,
         requested_by=principal.user.email,
     )
@@ -58,9 +58,11 @@ def preview_purchase(
     return service.preview(db, payload)
 
 
-@router.post("", response_model=PurchasePostResult, status_code=201, dependencies=[CAN_WRITE])
+@router.post("", response_model=PurchasePostResult, status_code=201)
 def post_purchase(
-    payload: PurchaseRequest, db: Session = Depends(get_db)
+    payload: PurchaseRequest,
+    principal: Principal = Depends(require("sales_purchase", write=True)),
+    db: Session = Depends(get_db),
 ) -> PurchasePostResult:
-    """Post a purchase atomically."""
-    return service.post(db, payload)
+    """Post a purchase atomically, recording who entered it."""
+    return service.post(db, payload, posted_by=principal.user.email)

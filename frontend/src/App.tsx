@@ -70,7 +70,7 @@ export default function App() {
     <div className="shell">
       <aside className={`sidebar ${navOpen ? "open" : ""}`}>
         <div className="brand">
-          <span className="brand-mark">RPCI</span>
+          <span className="brand-mark">Resinova</span>
           <span className="brand-sub">Accounting &amp; Production ERP</span>
         </div>
         <nav>

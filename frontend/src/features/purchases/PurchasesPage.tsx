@@ -59,7 +59,6 @@ export default function PurchasesPage() {
       supplier,
       purchase_date: date,
       is_credit: onCredit,
-      posted_by: "Store",
       lines: lines
         .filter((line) => line.item_code && Number(line.qty) > 0)
         .map((line) => ({

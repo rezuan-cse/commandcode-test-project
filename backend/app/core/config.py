@@ -21,6 +21,18 @@ class Settings(BaseSettings):
 
     database_url: str = f"sqlite:///{PROJECT_ROOT / 'rpci_demo.db'}"
     demo_password: str = "rpci"
+    # Create one account per role at startup, each with RPCI_DEMO_PASSWORD, so a
+    # review can open the system and try each role without any setup. Turn this
+    # off on a deployment holding real books: the accounts then stop being
+    # created (any that already exist are left alone, so they can be deleted from
+    # Roles & Access once a real administrator exists), and the first
+    # administrator is made with scripts/create_user.py.
+    seed_demo_users: bool = True
+    # Sign-in throttling. A wrong password is counted against the account; after
+    # this many, the account is locked for the given number of minutes and even
+    # the right password is refused until the lock expires.
+    login_max_attempts: int = 5
+    login_lockout_minutes: int = 15
     seed_from_excel_path: str = str(PROJECT_ROOT / "RPCI Accounts.xlsx")
     # What a brand-new, empty database starts with:
     #   fresh    - a standard starter chart of accounts, no balances (default)

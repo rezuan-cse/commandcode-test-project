@@ -228,8 +228,14 @@ def _line_out(line: PayrollLine) -> PayrollLineOut:
     )
 
 
-def post_run(db: Session, payload: PayrollRequest) -> PayrollPostResult:
-    """Post a payroll run atomically: one balanced entry for the whole run."""
+def post_run(
+    db: Session, payload: PayrollRequest, *, posted_by: str = "system"
+) -> PayrollPostResult:
+    """Post a payroll run atomically: one balanced entry for the whole run.
+
+    ``posted_by`` is the signed-in user, supplied by the router out of the
+    session rather than trusted from the payload.
+    """
     try:
         preview = _assemble(db, payload)
         run_no = next_voucher(
@@ -244,7 +250,7 @@ def post_run(db: Session, payload: PayrollRequest) -> PayrollPostResult:
             gross_total=preview.gross_total,
             deductions_total=preview.deductions_total,
             net_total=preview.net_total,
-            posted_by=payload.posted_by,
+            posted_by=posted_by,
         )
         for line in preview.lines:
             run.lines.append(
@@ -260,6 +266,7 @@ def post_run(db: Session, payload: PayrollRequest) -> PayrollPostResult:
             )
         repository.add_run(db, run)
 
+        journal_service.assert_books_open(db, payload.pay_date)
         entry = journal_service.build_entry(
             voucher_no=run_no,
             entry_date=payload.pay_date,
@@ -276,7 +283,7 @@ def post_run(db: Session, payload: PayrollRequest) -> PayrollPostResult:
             source=JournalSource.PAYROLL,
             narration=f"Auto-posted from payroll run {run_no}",
             reference=run_no,
-            posted_by=payload.posted_by,
+            posted_by=posted_by,
         )
         journal_repo.add_entry(db, entry)
         run.journal_entry_id = entry.id

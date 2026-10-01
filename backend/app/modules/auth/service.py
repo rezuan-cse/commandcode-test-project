@@ -37,7 +37,7 @@ from app.modules.auth.schemas import (
 )
 from app.modules.users_roles.models import User
 
-ISSUER = "RPCI ERP"
+ISSUER = "Resinova ERP"
 
 
 class AuthenticationError(DomainError):
@@ -49,6 +49,44 @@ class AuthenticationError(DomainError):
 def _now() -> dt.datetime:
     """Current UTC time."""
     return dt.datetime.now(dt.timezone.utc)
+
+
+def _naive_utc() -> dt.datetime:
+    """Current UTC time as a naive value, for comparing against a stored time.
+
+    A ``DateTime`` column carries no time zone, so it hands back a naive value.
+    Comparing that against an aware one raises, so the comparison is made in
+    naive UTC on both sides.
+    """
+    return _now().replace(tzinfo=None)
+
+
+def _lock_remaining_minutes(user: User) -> int:
+    """Whole minutes left on a lock, rounded up so it never reads "0 minutes"."""
+    left = (user.locked_until - _naive_utc()).total_seconds()
+    return max(1, -(-int(left) // 60))
+
+
+def _clear_throttle(user: User) -> None:
+    """Forget the failed sign-in count and any lock on the account."""
+    user.failed_logins = 0
+    user.locked_until = None
+
+
+def _note_failure(db: Session, user: User) -> None:
+    """Count a wrong password, locking the account at the configured limit.
+
+    The counter resets when the lock is applied, so once the lock expires the
+    person gets a fresh run of attempts rather than locking again on the next
+    typo.
+    """
+    user.failed_logins = (user.failed_logins or 0) + 1
+    if user.failed_logins >= settings.login_max_attempts:
+        user.locked_until = _naive_utc() + dt.timedelta(
+            minutes=settings.login_lockout_minutes
+        )
+        user.failed_logins = 0
+    db.commit()
 
 
 def get_user(db: Session, user_id: int) -> User:
@@ -74,6 +112,9 @@ def _session(db: Session, user: User) -> SessionResponse:
     from app.modules.users_roles import service as access_service
 
     user.last_login_at = _now()
+    # A good sign-in clears the throttle, so a person who mistyped a few times and
+    # then got it right is not left one attempt from a lock.
+    _clear_throttle(user)
     db.commit()
     return SessionResponse(
         access_token=create_token(user.id, user.role.value),
@@ -89,7 +130,17 @@ def login(db: Session, payload: LoginRequest) -> LoginResponse:
     wrong, so the endpoint cannot be used to discover which accounts exist.
     """
     user = repository.get_by_email(db, payload.email)
-    if user is None or not verify_password(payload.password, user.password_hash):
+    if user is None:
+        raise AuthenticationError("Email or password is incorrect")
+    if user.locked_until is not None and user.locked_until > _naive_utc():
+        minutes = _lock_remaining_minutes(user)
+        raise AuthenticationError(
+            f"Too many failed attempts. This account is locked for another "
+            f"{minutes} minute{'s' if minutes != 1 else ''}."
+        )
+
+    if not verify_password(payload.password, user.password_hash):
+        _note_failure(db, user)
         raise AuthenticationError("Email or password is incorrect")
     if not user.is_active:
         raise AuthenticationError("This account has been disabled")
@@ -200,9 +251,16 @@ def change_password(db: Session, user: User, current: str, new: str) -> None:
     if verify_password(new, user.password_hash):
         raise DomainError("The new password must be different from the current one")
     repository.set_password(db, user, hash_password(new))
+    _clear_throttle(user)
     db.commit()
 
 
 def set_user_password(db: Session, user: User, password: str) -> None:
-    """Set a user's password, used when seeding and by an administrator."""
+    """Set a user's password, used when seeding and by an administrator.
+
+    A new password clears any sign-in lock. Without that, an administrator
+    hand-resetting a password for somebody who is locked out would hand them
+    details that still do not work — which is the one escape hatch there is.
+    """
     repository.set_password(db, user, hash_password(password))
+    _clear_throttle(user)

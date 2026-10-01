@@ -67,14 +67,14 @@ def preview_run(
     return service.preview_run(db, payload)
 
 
-@router.post(
-    "/runs", response_model=PayrollPostResult, status_code=201, dependencies=[CAN_WRITE]
-)
+@router.post("/runs", response_model=PayrollPostResult, status_code=201)
 def post_run(
-    payload: PayrollRequest, db: Session = Depends(get_db)
+    payload: PayrollRequest,
+    principal: Principal = Depends(require("payroll", write=True)),
+    db: Session = Depends(get_db),
 ) -> PayrollPostResult:
-    """Post a payroll run atomically."""
-    return service.post_run(db, payload)
+    """Post a payroll run atomically, recording who entered it."""
+    return service.post_run(db, payload, posted_by=principal.user.email)
 
 
 @router.get(
@@ -97,6 +97,6 @@ def reverse_run(
         db,
         run_id,
         reason=payload.reason,
-        posted_by=payload.posted_by,
+        posted_by=principal.user.email,
         requested_by=principal.user.email,
     )

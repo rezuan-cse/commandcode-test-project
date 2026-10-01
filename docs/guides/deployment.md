@@ -28,6 +28,9 @@ Copy `.env.example` to `.env`, or set the variables directly:
 | `RPCI_ACCESS_TOKEN_MINUTES` | `720` | How long a session lasts |
 | `RPCI_UTC_OFFSET_HOURS` | `6` | Timestamps are stored in UTC and shown at this offset |
 | `RPCI_DEMO_PASSWORD` | `rpci` | Password for the seeded demo accounts |
+| `RPCI_SEED_DEMO_USERS` | `true` | Create one account per role at startup. Set `false` for real books |
+| `RPCI_LOGIN_MAX_ATTEMPTS` | `5` | Wrong passwords before the account locks |
+| `RPCI_LOGIN_LOCKOUT_MINUTES` | `15` | How long that lock lasts |
 | `RPCI_SEED_MODE` | `fresh` | `fresh` (starter chart of accounts), `workbook`, or `none` |
 | `RPCI_SEED_FROM_EXCEL_PATH` | `../RPCI Accounts.xlsx` | Workbook to import |
 | `RPCI_CORS_ORIGINS` | `*` | Origins allowed to call the API |

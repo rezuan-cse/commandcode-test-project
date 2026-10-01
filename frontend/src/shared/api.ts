@@ -170,7 +170,7 @@ export const api = {
   reverseProduction: (id: number, reason: string) =>
     request<ProductionRun>(`/production/${id}/reverse`, {
       method: "POST",
-      body: JSON.stringify({ reason, posted_by: "store" }),
+      body: JSON.stringify({ reason }),
     }),
 
   sales: () => request<Sale[]>("/sales"),
@@ -186,7 +186,7 @@ export const api = {
   reverseSale: (id: number, reason: string) =>
     request<SaleDetail>(`/sales/${id}/reverse`, {
       method: "POST",
-      body: JSON.stringify({ reason, posted_by: "sales" }),
+      body: JSON.stringify({ reason }),
     }),
 
   previewPurchase: (payload: unknown) =>
@@ -203,7 +203,7 @@ export const api = {
   reversePurchase: (id: number, reason: string) =>
     request<Purchase>(`/purchases/${id}/reverse`, {
       method: "POST",
-      body: JSON.stringify({ reason, posted_by: "store" }),
+      body: JSON.stringify({ reason }),
     }),
 
   roleMatrix: () => request<RoleMatrix>("/access/matrix"),
@@ -243,7 +243,7 @@ export const api = {
   reversePayroll: (id: number, reason: string) =>
     request<PayrollRun>(`/payroll/runs/${id}/reverse`, {
       method: "POST",
-      body: JSON.stringify({ reason, posted_by: "payroll" }),
+      body: JSON.stringify({ reason }),
     }),
 
   vatSummary: (dateFrom: string, dateTo: string) =>

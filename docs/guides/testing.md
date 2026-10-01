@@ -16,6 +16,7 @@ cd backend && .venv/bin/python -m pytest tests -q
 | `test_account_admin.py` | Unlocking a locked-out account, and who may do it |
 | `test_data.py` | Fresh start, workbook import, and starting the books over (Admin only) |
 | `test_schema_sync.py` | A deployed database gains new tables and columns without losing rows, and drift is caught rather than ignored |
+| `test_production_readiness.py` | Who entered a transaction comes from the session and not the body; a closed period refuses every posting; wrong passwords lock the account, and a reset releases it; emptying the books keeps the accounts |
 
 The interface has its own tests, because the figures shown on screen must round
 the same way the ledger does:

@@ -202,6 +202,11 @@ def _specs() -> list[SettingSpec]:
                     "posting", "enum", "reversals",
                     "Which actions need approval. TBD (client).",
                     options=["reversals", "reversals_and_postings"], sort_order=30),
+        SettingSpec("posting.books_closed_through", "Books closed through",
+                    "posting", "string", "",
+                    "No transaction may be dated on or before this date, which is "
+                    "what keeps a closed year closed. Blank means the books are "
+                    "open. Use YYYY-MM-DD, e.g. 2026-06-30.", sort_order=40),
 
         # --- Security --------------------------------------------------------
         SettingSpec("security.require_2fa", "Require two-factor login", "security",

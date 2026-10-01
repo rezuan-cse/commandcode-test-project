@@ -16,7 +16,9 @@ class ReversalRequest(BaseModel):
     """
 
     reason: str = Field(min_length=3, max_length=400)
-    posted_by: str = Field(default="system", max_length=80)
+    # Who asked for it is taken from the signed-in session, never from the body:
+    # a caller must not be able to name somebody else as the person who undid a
+    # transaction.
     # Defaults to the transaction's own date, which keeps the original and its
     # reversal together in the same reporting period.
     reversal_date: date | None = None

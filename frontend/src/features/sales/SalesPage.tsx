@@ -58,7 +58,6 @@ export default function SalesPage() {
       customer,
       sale_date: date,
       is_credit: true,
-      posted_by: "Sales",
       lines: lines
         .filter((line) => line.item_code && Number(line.qty) > 0)
         .map((line) => ({

@@ -40,6 +40,42 @@ def assert_balanced(lines: list[JournalLineIn]) -> None:
         )
 
 
+def books_closed_through(db: Session) -> date | None:
+    """The date the books are closed through, or ``None`` when they are open."""
+    from app.modules.settings import service as settings_service
+
+    raw = settings_service.get_str(db, "posting.books_closed_through", "").strip()
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        raise DomainError(
+            f"The books-closed date in Configuration is not a date: {raw!r}. Use "
+            f"YYYY-MM-DD, or leave it blank for open books."
+        )
+
+
+def assert_books_open(db: Session, when: date) -> None:
+    """Refuse a posting dated in a closed period.
+
+    A closed year stays closed. Every path that writes an entry — a sale, a
+    purchase, a production run, payroll, a manual entry, and every reversal —
+    calls this first, so no route can post into a period the client has closed.
+
+    The refusal is deliberately specific about the two ways out, because the
+    person hitting it is usually entering a genuine invoice dated last month and
+    needs to know it is a deliberate block, not a fault.
+    """
+    closed = books_closed_through(db)
+    if closed is not None and when <= closed:
+        raise DomainError(
+            f"The books are closed through {closed.isoformat()}, so a transaction "
+            f"cannot be dated {when.isoformat()}. Date it after the closing date, "
+            f"or move the closing date back in Configuration."
+        )
+
+
 def build_entry(
     *,
     voucher_no: str,
@@ -76,10 +112,17 @@ def build_entry(
     return entry
 
 
-def post_manual_entry(db: Session, payload: JournalEntryCreate) -> JournalEntry:
-    """Validate, persist, and commit a manual journal entry."""
+def post_manual_entry(
+    db: Session, payload: JournalEntryCreate, *, posted_by: str = "system"
+) -> JournalEntry:
+    """Validate, persist, and commit a manual journal entry.
+
+    ``posted_by`` is the signed-in user, supplied by the router out of the
+    session rather than trusted from the payload.
+    """
     if repository.get_by_voucher(db, payload.voucher_no) is not None:
         raise DuplicateError(f"Voucher {payload.voucher_no} already exists")
+    assert_books_open(db, payload.entry_date)
     entry = build_entry(
         voucher_no=payload.voucher_no,
         entry_date=payload.entry_date,
@@ -87,7 +130,7 @@ def post_manual_entry(db: Session, payload: JournalEntryCreate) -> JournalEntry:
         source=JournalSource.MANUAL,
         narration=payload.narration,
         reference=payload.reference,
-        posted_by=payload.posted_by,
+        posted_by=posted_by,
     )
     repository.add_entry(db, entry)
     db.commit()
@@ -115,6 +158,9 @@ def reverse_entry(
     voucher_no = f"{original.voucher_no}-REV"
     if repository.get_by_voucher(db, voucher_no) is not None:
         raise DuplicateError(f"{voucher_no} already exists; this entry is reversed")
+    # A reversal is a posting like any other, so it cannot undo something that
+    # happened in a closed period either.
+    assert_books_open(db, reversal_date)
 
     mirror = [
         JournalLineIn(

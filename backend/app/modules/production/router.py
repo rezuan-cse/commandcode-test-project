@@ -44,7 +44,7 @@ def reverse_run(
         db,
         order_id,
         reason=payload.reason,
-        posted_by=payload.posted_by,
+        posted_by=principal.user.email,
         reversal_date=payload.reversal_date,
         requested_by=principal.user.email,
     )
@@ -58,9 +58,11 @@ def preview_run(
     return service.preview(db, payload)
 
 
-@router.post("", response_model=ProductionPostResult, status_code=201, dependencies=[CAN_WRITE])
+@router.post("", response_model=ProductionPostResult, status_code=201)
 def post_run(
-    payload: ProductionRequest, db: Session = Depends(get_db)
+    payload: ProductionRequest,
+    principal: Principal = Depends(require("production", write=True)),
+    db: Session = Depends(get_db),
 ) -> ProductionPostResult:
-    """Post a production run atomically."""
-    return service.post(db, payload)
+    """Post a production run atomically, recording who entered it."""
+    return service.post(db, payload, posted_by=principal.user.email)

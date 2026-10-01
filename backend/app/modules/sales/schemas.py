@@ -27,7 +27,6 @@ class SaleRequest(BaseModel):
     sale_date: date
     is_credit: bool = True
     lines: list[SaleLineIn] = Field(min_length=1)
-    posted_by: str = "sales"
     simulate_failure: bool = False
 
 

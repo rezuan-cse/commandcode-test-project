@@ -17,7 +17,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.db import clear_all_data
+from app.core.db import KEEP_ACCOUNTS, clear_all_data
 from app.core.enums import (
     AccountType,
     ItemCategory,
@@ -214,29 +214,6 @@ def _load_inventory(db: Session, data: WorkbookData) -> None:
     db.flush()
 
 
-def _load_users(db: Session) -> None:
-    """Insert one demo user per role, each with the shared demo password.
-
-    The password is hashed with bcrypt like any other, so the demo exercises the
-    same sign-in path as production. It comes from RPCI_DEMO_PASSWORD and is
-    listed on the sign-in screen, which is what lets a reviewer switch roles by
-    signing out and back in.
-    """
-    from app.core.security import hash_password
-
-    password_hash = hash_password(settings.demo_password)
-    for email, name, role in DEMO_USERS:
-        db.add(
-            User(
-                email=email,
-                full_name=name,
-                role=role,
-                password_hash=password_hash,
-            )
-        )
-    db.flush()
-
-
 def ensure_demo_users(db: Session) -> list[str]:
     """Make sure each demo account exists and can be signed into.
 
@@ -248,9 +225,14 @@ def ensure_demo_users(db: Session) -> list[str]:
     * an account that already has a password is **left alone**, so a password
       someone has changed is never quietly reset back to the demo default.
 
-    Returns the addresses it touched, for the startup log.
+    Returns the addresses it touched, for the startup log. Does nothing at all
+    when ``RPCI_SEED_DEMO_USERS`` is off, which is what a deployment holding the
+    client's real books wants.
     """
     from app.core.security import hash_password
+
+    if not settings.seed_demo_users:
+        return []
 
     repaired: list[str] = []
     default_hash = hash_password(settings.demo_password)
@@ -291,7 +273,7 @@ def seed_if_empty(db: Session) -> SeedReport:
     _load_opening_balances(db, data)
     _load_journal_entries(db, data)
     _load_inventory(db, data)
-    _load_users(db)
+    ensure_demo_users(db)
 
     db.commit()
 
@@ -315,8 +297,8 @@ def import_workbook(
 
     ``replace`` empties the books first, which is the honest default: an import
     is a fresh set of books, not a merge that could silently double-count. The
-    demo users and the configurable settings are restored afterwards, so the
-    instance stays sign-in-able and configured.
+    accounts and the configurable settings are kept, so the instance stays
+    sign-in-able and configured.
     """
     if not replace and is_already_seeded(db):
         raise DomainError(
@@ -325,7 +307,9 @@ def import_workbook(
 
     data = load_workbook_data(source)  # type: ignore[arg-type]
     if replace:
-        clear_all_data(db)
+        # The books are replaced, the accounts are not: an import should never
+        # be the reason nobody can sign in.
+        clear_all_data(db, keep=KEEP_ACCOUNTS)
 
     _load_accounts(db, data)
     _load_items(db, data)

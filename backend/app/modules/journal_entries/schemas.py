@@ -39,7 +39,6 @@ class JournalEntryCreate(BaseModel):
     entry_date: date
     narration: str | None = None
     reference: str | None = None
-    posted_by: str = "manual"
     lines: list[JournalLineIn] = Field(min_length=2)
 
 

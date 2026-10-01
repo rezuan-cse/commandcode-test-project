@@ -91,7 +91,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="RPCI Cloud Accounting & Production ERP",
+    title="Resinova Accounting & Production ERP",
     version="1.0.0",
     description=(
         "Double-entry accounting and production for a resin manufacturer: chart of "

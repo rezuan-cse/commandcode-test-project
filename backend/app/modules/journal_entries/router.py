@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.modules.journal_entries import service
 from app.modules.journal_entries.schemas import JournalEntryCreate, JournalEntryOut
-from app.modules.users_roles.service import require
+from app.modules.users_roles.service import Principal, require
 
 router = APIRouter(prefix="/journal-entries", tags=["journal-entries"])
 
@@ -35,7 +35,14 @@ def get_entry(entry_id: int, db: Session = Depends(get_db)) -> JournalEntryOut:
     return service.get_entry(db, entry_id)
 
 
-@router.post("", response_model=JournalEntryOut, status_code=201, dependencies=[CAN_WRITE])
-def post_entry(payload: JournalEntryCreate, db: Session = Depends(get_db)) -> JournalEntryOut:
-    """Post a manual journal entry. Rejected if debits != credits."""
-    return service.post_manual_entry(db, payload)
+@router.post("", response_model=JournalEntryOut, status_code=201)
+def post_entry(
+    payload: JournalEntryCreate,
+    principal: Principal = Depends(require("journal_entries", write=True)),
+    db: Session = Depends(get_db),
+) -> JournalEntryOut:
+    """Post a manual journal entry. Rejected if debits != credits.
+
+    The entry records the signed-in user as the person who posted it.
+    """
+    return service.post_manual_entry(db, payload, posted_by=principal.user.email)
