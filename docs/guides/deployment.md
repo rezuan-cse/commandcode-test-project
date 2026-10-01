@@ -26,6 +26,7 @@ Copy `.env.example` to `.env`, or set the variables directly:
 | `RPCI_DATABASE_URL` | `sqlite:///./rpci_demo.db` | Where the books live — SQLite or Postgres |
 | `RPCI_JWT_SECRET` | *(random per process)* | Session signing key. Set it on any deployment |
 | `RPCI_ACCESS_TOKEN_MINUTES` | `720` | How long a session lasts |
+| `RPCI_UTC_OFFSET_HOURS` | `6` | Timestamps are stored in UTC and shown at this offset |
 | `RPCI_DEMO_PASSWORD` | `rpci` | Password for the seeded demo accounts |
 | `RPCI_SEED_MODE` | `fresh` | `fresh` (starter chart of accounts), `workbook`, or `none` |
 | `RPCI_SEED_FROM_EXCEL_PATH` | `../RPCI Accounts.xlsx` | Workbook to import |

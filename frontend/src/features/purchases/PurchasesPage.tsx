@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
-import { fmt, fmtQty } from "../../shared/format";
+import { fmt, fmtDateTime, fmtQty } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
 import { PermissionNotice } from "../../shared/PermissionNotice";
 import { ReversedBadge, ReverseButton } from "../../shared/ReverseButton";
@@ -332,6 +332,7 @@ export default function PurchasesPage() {
                 <tr>
                   <th>Order</th>
                   <th>Date</th>
+                  <th>Posted</th>
                   <th>Supplier</th>
                   <th className="numeric">Value</th>
                   <th>Entered by</th>
@@ -348,6 +349,7 @@ export default function PurchasesPage() {
                       )}
                     </td>
                     <td>{purchase.purchase_date}</td>
+                    <td className="muted small">{fmtDateTime(purchase.posted_at)}</td>
                     <td>{purchase.supplier}</td>
                     <td className="numeric">{fmt(purchase.total_value)}</td>
                     <td className="muted small">{purchase.posted_by}</td>

@@ -6,6 +6,7 @@ import datetime as dt
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.clock import LocalDateTime
 from app.core.enums import Role
 
 
@@ -25,9 +26,9 @@ class UserOut(BaseModel):
     role: Role
     is_active: bool
     is_2fa_enabled: bool = False
-    last_login_at: dt.datetime | None = None
-    created_at: dt.datetime | None = None
-    updated_at: dt.datetime | None = None
+    last_login_at: LocalDateTime | None = None
+    created_at: LocalDateTime | None = None
+    updated_at: LocalDateTime | None = None
     # Access level per resource, so the interface can hide what this person may
     # not use. Always the effective level: the role's, plus any grant an
     # administrator has recorded against them.
@@ -125,4 +126,4 @@ class AuditEntryOut(BaseModel):
     action: str
     target_email: str
     detail: str | None
-    created_at: dt.datetime
+    created_at: LocalDateTime

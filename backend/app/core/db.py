@@ -29,7 +29,11 @@ else:
     # intermittent "prepared statement ... already exists". Disabling prepared
     # statements keeps a pooled connection string working, and costs almost
     # nothing next to the network round trip.
-    _connect_args = {"prepare_threshold": None}
+    #
+    # The session is pinned to UTC so the timestamps written through it are the
+    # same regardless of the database server's own setting; the interface applies
+    # the client's offset when it reads them.
+    _connect_args = {"prepare_threshold": None, "options": "-c timezone=UTC"}
 
 engine = create_engine(
     settings.database_url,

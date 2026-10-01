@@ -341,6 +341,7 @@ Set these on whichever host runs the API.
 | `RPCI_DATABASE_URL` | `sqlite:///<repo>/rpci_demo.db` | Where the books live |
 | `RPCI_JWT_SECRET` | *(random per process)* | Session signing key. **Set this** |
 | `RPCI_ACCESS_TOKEN_MINUTES` | `720` | How long a sign-in lasts |
+| `RPCI_UTC_OFFSET_HOURS` | `6` | Timestamps are stored in UTC and shown at this offset |
 | `RPCI_SEED_MODE` | `fresh` | What a new database starts with: `fresh` (starter chart of accounts), `workbook`, or `none` |
 | `RPCI_SEED_FROM_EXCEL_PATH` | `<repo>/RPCI Accounts.xlsx` | Workbook available to import |
 | `RPCI_DEMO_PASSWORD` | `rpci` | Password for the seeded demo accounts |

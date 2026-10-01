@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.clock import LocalDateTime
 from app.core.schemas import ReversalOut
 
 
@@ -90,6 +91,7 @@ class ProductionRunOut(ReversalOut):
     unit_cost: Decimal
     journal_entry_id: int | None
     posted_by: str
+    posted_at: LocalDateTime | None = None
 
 
 class ProductionPostResult(BaseModel):

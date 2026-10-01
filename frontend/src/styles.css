@@ -438,6 +438,14 @@ textarea {
   width: 100%;
 }
 
+/* A dropdown inside a table can be squeezed to nothing on a narrow screen: the
+   numeric inputs beside it declare fixed pixel widths, and they win. Without a
+   floor the chosen item is invisible until the select is tapped. The table
+   already scrolls sideways, so a floor costs nothing and keeps the text legible. */
+table select {
+  min-width: 150px;
+}
+
 input:focus,
 select:focus,
 textarea:focus {

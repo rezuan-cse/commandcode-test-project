@@ -308,3 +308,49 @@ def test_the_owner_may_look_at_administration_but_not_administer(
     # The matrix is readable, account management is not.
     assert client.get("/api/access/matrix", headers=owner).status_code == 200
     assert client.get("/api/access/users", headers=owner).status_code == 403
+
+
+# --- Time -----------------------------------------------------------------
+
+
+def test_timestamps_come_back_on_the_client_clock(
+    client: TestClient, auth_headers
+) -> None:
+    """Stored in UTC, handed to the interface at the configured offset (+06:00).
+
+    Every timestamp the API returns carries the offset, so a screen shows one
+    clock rather than whatever zone the reader's browser happens to be in.
+    """
+    headers = auth_headers(ADMIN)
+
+    me = client.get("/api/auth/me", headers=headers).json()
+    assert me["created_at"].endswith("+06:00")
+    assert me["updated_at"].endswith("+06:00")
+
+    client.post(
+        "/api/access/users",
+        json={"email": "clock@example.com", "full_name": "Clock", "role": "Sales Staff"},
+        headers=headers,
+    )
+    audit = client.get("/api/access/audit", headers=headers).json()
+    assert audit[0]["created_at"].endswith("+06:00")
+
+
+def test_a_posting_carries_the_time_it_was_entered(
+    client: TestClient, auth_headers
+) -> None:
+    """A posted transaction reports the business date and the moment it was entered."""
+    headers = auth_headers(ADMIN)
+    body = client.post(
+        "/api/purchases",
+        headers=headers,
+        json={
+            "supplier": "Sample Supplier",
+            "purchase_date": "2026-10-01",
+            "lines": [{"item_code": "RMC-003", "qty": "1", "unit_cost": "10"}],
+        },
+    ).json()
+
+    assert body["order"]["posted_at"].endswith("+06:00")
+    # The business date is the one chosen; the timestamp is when it was entered.
+    assert body["order"]["posted_at"].startswith("20")

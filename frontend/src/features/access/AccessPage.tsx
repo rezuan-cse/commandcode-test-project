@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
+import { fmtDateTime } from "../../shared/format";
 import { Card, ErrorBox, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import { menuLabels } from "../../shared/nav";
@@ -14,12 +15,6 @@ const ACCESS_LABEL: Record<string, string> = {
 };
 
 const LEVELS: Access[] = ["none", "view", "full"];
-
-/** "2026-09-29T14:03:11" as "2026-09-29 14:03". */
-function when(iso: string | null): string {
-  if (!iso) return "—";
-  return iso.slice(0, 16).replace("T", " ");
-}
 
 interface Draft {
   id: number | null;
@@ -356,8 +351,8 @@ function AccountsPanel({
                         {row.is_active ? "active" : "disabled"}
                       </Pill>
                     </td>
-                    <td className="muted small">{when(row.created_at)}</td>
-                    <td className="muted small">{when(row.updated_at)}</td>
+                    <td className="muted small">{fmtDateTime(row.created_at)}</td>
+                    <td className="muted small">{fmtDateTime(row.updated_at)}</td>
                     <td>
                       <div className="row-actions">
                         <button
@@ -614,7 +609,7 @@ function AuditPanel() {
             <tbody>
               {entries.data.map((entry: AuditEntry) => (
                 <tr key={entry.id}>
-                  <td className="muted small">{entry.created_at.slice(0, 19).replace("T", " ")}</td>
+                  <td className="muted small">{fmtDateTime(entry.created_at)}</td>
                   <td>{entry.action.replace(/_/g, " ")}</td>
                   <td className="muted small">{entry.actor_email}</td>
                   <td className="muted small">{entry.target_email}</td>

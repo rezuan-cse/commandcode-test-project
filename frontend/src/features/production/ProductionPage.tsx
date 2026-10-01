@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
-import { fmt, fmtQty } from "../../shared/format";
+import { fmt, fmtDateTime, fmtQty } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
 import { PermissionNotice } from "../../shared/PermissionNotice";
 import { ReversedBadge, ReverseButton } from "../../shared/ReverseButton";
@@ -313,6 +313,7 @@ export default function ProductionPage() {
                 <tr>
                   <th>Order</th>
                   <th>Date</th>
+                  <th>Posted</th>
                   <th>Output item</th>
                   <th className="numeric">Qty</th>
                   <th className="numeric">Material</th>
@@ -330,6 +331,7 @@ export default function ProductionPage() {
                       {run.is_reversed && <ReversedBadge reason={run.reversal_reason} />}
                     </td>
                     <td>{run.production_date}</td>
+                    <td className="muted small">{fmtDateTime(run.posted_at)}</td>
                     <td>{run.output_item_code}</td>
                     <td className="numeric">{fmtQty(run.qty_produced)}</td>
                     <td className="numeric">{fmt(run.material_cost)}</td>

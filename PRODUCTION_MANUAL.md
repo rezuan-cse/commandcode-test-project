@@ -41,6 +41,17 @@ It has three parts:
   `1,234.50`) so it is easy to read. Where extra precision matters — average and
   unit costs — more decimals are shown.
 
+### A note on time
+
+Every timestamp is **recorded in UTC and shown in Bangladesh time (GMT+6)**. You
+never have to convert anything: the Dashboard, the posted lists, the audit log and
+the approvals queue all read on the same clock, whichever computer or phone you
+open them on.
+
+Dates you choose yourself — a sale date, a purchase date, a pay date — are business
+dates, and are not shifted. A posted transaction shows both: the date it belongs
+to, and the moment it was entered.
+
 ---
 
 # Section 1 — Terminology & Glossary
@@ -525,10 +536,11 @@ pay**, and each person's component and deduction breakdown. A **Print** button.
 
 ### Approvals
 
-- **Pending** lists actions waiting for a second person: **Action**, **Details**,
-  **Amount**, **Requested by**, **Reason**, a **note (optional)** box, and
-  **Approve** / **Reject** buttons.
-- **History** lists decided requests with their status and who decided.
+- **Pending** lists actions waiting for a second person: **Action**, **Raised**
+  (when it was asked for), **Amount**, **Requested by**, **Reason**, a **note
+  (optional)** box, and **Approve** / **Reject** buttons.
+- **History** lists decided requests with **Raised**, **Status**, **Decided** (when
+  it was decided), who decided, and any note.
 
 ### Roles & Access
 

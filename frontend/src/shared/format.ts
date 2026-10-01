@@ -107,3 +107,19 @@ export function fmtOrDash(value: string | null | undefined): string {
   if (isZero(whole, fraction)) return "—";
   return fmt(value);
 }
+
+/**
+ * A timestamp, shown as "2026-10-01 14:25".
+ *
+ * The API sends timestamps already on the client's clock and carrying an explicit
+ * offset ("2026-10-01T14:25:09+06:00"), so this only makes the text readable. It
+ * deliberately does not build a `Date`: that would re-convert to whatever zone
+ * the browser happens to be in, and a screen must show one clock, not the
+ * viewer's.
+ */
+export function fmtDateTime(value: string | null | undefined): string {
+  if (!value) return "—";
+  const [day, rest = ""] = value.split("T");
+  const time = rest.slice(0, 5);
+  return time ? `${day} ${time}` : day;
+}

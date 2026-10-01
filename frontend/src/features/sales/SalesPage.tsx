@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
-import { fmt, fmtPct, fmtQty } from "../../shared/format";
+import { fmt, fmtDateTime, fmtPct, fmtQty } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
 import { PermissionNotice } from "../../shared/PermissionNotice";
 import { ReversedBadge, ReverseButton } from "../../shared/ReverseButton";
@@ -323,6 +323,7 @@ export default function SalesPage() {
                 <tr>
                   <th>Order</th>
                   <th>Date</th>
+                  <th>Posted</th>
                   <th>Customer</th>
                   <th className="numeric">Revenue</th>
                   <th className="numeric">COGS</th>
@@ -338,6 +339,7 @@ export default function SalesPage() {
                       {sale.is_reversed && <ReversedBadge reason={sale.reversal_reason} />}
                     </td>
                     <td>{sale.sale_date}</td>
+                    <td className="muted small">{fmtDateTime(sale.posted_at)}</td>
                     <td>{sale.customer}</td>
                     <td className="numeric">{fmt(sale.revenue)}</td>
                     <td className="numeric">{fmt(sale.cogs)}</td>

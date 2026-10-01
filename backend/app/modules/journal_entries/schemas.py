@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.core.clock import LocalDateTime
 from app.core.enums import JournalSource, Segment
 
 
@@ -66,5 +67,5 @@ class JournalEntryOut(BaseModel):
     source: JournalSource
     reference: str | None
     posted_by: str
-    posted_at: datetime
+    posted_at: LocalDateTime
     lines: list[JournalLineOut]

@@ -7,6 +7,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.clock import LocalDateTime
+
 
 class ApprovalOut(BaseModel):
     """A paused action, as shown on the Approvals screen."""
@@ -22,9 +24,9 @@ class ApprovalOut(BaseModel):
     requested_by: str
     status: str
     decided_by: str | None
-    decided_at: datetime | None
+    decided_at: LocalDateTime | None
     note: str | None
-    created_at: datetime
+    created_at: LocalDateTime
 
 
 class ApprovalDecision(BaseModel):

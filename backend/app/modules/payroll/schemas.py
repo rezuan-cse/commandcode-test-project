@@ -8,6 +8,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.clock import LocalDateTime
 from app.core.schemas import ReversalOut
 from app.modules.production.schemas import JournalLinePreview
 
@@ -95,6 +96,7 @@ class PayrollRunOut(ReversalOut):
     net_total: Decimal
     journal_entry_id: int | None
     posted_by: str
+    posted_at: LocalDateTime | None = None
 
 
 class PayrollDetailOut(PayrollRunOut):

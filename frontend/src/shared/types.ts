@@ -221,6 +221,8 @@ export interface ProductionRun extends Reversible {
   unit_cost: string;
   journal_entry_id: number | null;
   posted_by: string;
+  /** When it was entered, on the client's clock. */
+  posted_at: string | null;
 }
 
 export interface ProductionPostResult {
@@ -276,6 +278,8 @@ export interface Sale extends Reversible {
   cogs: string;
   journal_entry_id: number | null;
   posted_by: string;
+  /** When it was entered, on the client's clock. */
+  posted_at: string | null;
 }
 
 export interface SalePostResult {
@@ -339,6 +343,8 @@ export interface Purchase extends Reversible {
   vat_total: string;
   journal_entry_id: number | null;
   posted_by: string;
+  /** When it was entered, on the client's clock. */
+  posted_at: string | null;
 }
 
 export interface PurchasePostResult {
@@ -508,6 +514,8 @@ export interface PayrollRun extends Reversible {
   net_total: string;
   journal_entry_id: number | null;
   posted_by: string;
+  /** When it was entered, on the client's clock. */
+  posted_at: string | null;
 }
 
 export interface PayrollDetail extends PayrollRun {

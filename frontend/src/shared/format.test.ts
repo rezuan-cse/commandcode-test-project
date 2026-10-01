@@ -7,7 +7,26 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { fmt, fmtOrDash, fmtPct, fmtQty } from "./format";
+import { fmt, fmtDateTime, fmtOrDash, fmtPct, fmtQty } from "./format";
+
+describe("fmtDateTime", () => {
+  it("shows the clock the API sent, without re-zoning it", () => {
+    // The API sends the client's clock with an offset. The screen must show that
+    // time whatever zone the browser is in, so the string is read, not parsed.
+    expect(fmtDateTime("2026-10-01T14:25:09+06:00")).toBe("2026-10-01 14:25");
+    expect(fmtDateTime("2026-10-01T14:25:09+00:00")).toBe("2026-10-01 14:25");
+  });
+
+  it("shows a dash when there is no timestamp", () => {
+    expect(fmtDateTime(null)).toBe("—");
+    expect(fmtDateTime(undefined)).toBe("—");
+    expect(fmtDateTime("")).toBe("—");
+  });
+
+  it("keeps a bare date readable", () => {
+    expect(fmtDateTime("2026-10-01")).toBe("2026-10-01");
+  });
+});
 
 describe("fmt — money", () => {
   it("rounds the sale figures from the manual", () => {

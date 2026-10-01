@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { api } from "../../shared/api";
 import { useDemo } from "../../shared/DemoContext";
-import { fmt } from "../../shared/format";
+import { fmt, fmtDateTime } from "../../shared/format";
 import { Card, ErrorBox, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { ApprovalRequest } from "../../shared/types";
@@ -69,7 +69,7 @@ export default function ApprovalsPage() {
               <thead>
                 <tr>
                   <th>Action</th>
-                  <th>Details</th>
+                  <th>Raised</th>
                   <th className="numeric">Amount</th>
                   <th>Requested by</th>
                   <th>Reason</th>
@@ -82,7 +82,7 @@ export default function ApprovalsPage() {
                     <td className="name-cell">
                       Reverse {SOURCE_LABELS[row.source_type] ?? row.source_type} #{row.source_id}
                     </td>
-                    <td className="muted small">raised {row.created_at.slice(0, 10)}</td>
+                    <td className="muted small">{fmtDateTime(row.created_at)}</td>
                     <td className="numeric">{row.amount ? fmt(row.amount) : "—"}</td>
                     <td>{row.requested_by}</td>
                     <td className="muted small">{row.reason}</td>
@@ -128,9 +128,11 @@ export default function ApprovalsPage() {
               <thead>
                 <tr>
                   <th>Action</th>
+                  <th>Raised</th>
                   <th className="numeric">Amount</th>
                   <th>Requested by</th>
                   <th>Status</th>
+                  <th>Decided</th>
                   <th>Decided by</th>
                   <th>Note</th>
                 </tr>
@@ -143,11 +145,13 @@ export default function ApprovalsPage() {
                       <td className="name-cell">
                         Reverse {SOURCE_LABELS[row.source_type] ?? row.source_type} #{row.source_id}
                       </td>
+                      <td className="muted small">{fmtDateTime(row.created_at)}</td>
                       <td className="numeric">{row.amount ? fmt(row.amount) : "—"}</td>
                       <td>{row.requested_by}</td>
                       <td>
                         <Pill tone={STATUS_TONE[row.status] ?? "neutral"}>{row.status}</Pill>
                       </td>
+                      <td className="muted small">{fmtDateTime(row.decided_at)}</td>
                       <td className="muted small">{row.decided_by ?? "—"}</td>
                       <td className="muted small">{row.note ?? "—"}</td>
                     </tr>

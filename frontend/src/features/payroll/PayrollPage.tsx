@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
-import { fmt } from "../../shared/format";
+import { fmt, fmtDateTime } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
 import { PermissionNotice } from "../../shared/PermissionNotice";
 import { ReversedBadge, ReverseButton } from "../../shared/ReverseButton";
@@ -216,6 +216,7 @@ export default function PayrollPage() {
                   <th>Run</th>
                   <th>Period</th>
                   <th>Pay date</th>
+                  <th>Posted</th>
                   <th className="numeric">Gross</th>
                   <th className="numeric">Net</th>
                   <th />
@@ -231,6 +232,7 @@ export default function PayrollPage() {
                       {run.period_start} → {run.period_end}
                     </td>
                     <td>{run.pay_date}</td>
+                    <td className="muted small">{fmtDateTime(run.posted_at)}</td>
                     <td className="numeric">{fmt(run.gross_total)}</td>
                     <td className="numeric">{fmt(run.net_total)}</td>
                     <td>

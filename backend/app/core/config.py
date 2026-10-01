@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     #   none     - nothing; the books stay empty until data is entered or imported
     seed_mode: str = "fresh"
     default_segment: str = "Shared"
+    # Timestamps are stored in UTC and shown at this offset from it. Bangladesh is
+    # a fixed +06:00 with no daylight saving, so an offset is exact here.
+    utc_offset_hours: int = 6
     # When the interface is hosted on a different origin (Vercel, Netlify) the
     # browser needs permission to call this API. "*" is fine for a public demo
     # because no cookies are used; narrow it to the exact site if preferred.
