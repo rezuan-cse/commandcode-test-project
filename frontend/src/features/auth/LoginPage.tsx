@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../../shared/AuthContext";
-import { Card, ErrorBox, Field } from "../../shared/ui";
+import { Card, ErrorBox, Field, Logo } from "../../shared/ui";
 
 /**
  * The demo accounts, shown so a reviewer can switch roles without guesswork.
@@ -86,9 +86,7 @@ export default function LoginPage() {
     <div className="login-shell">
       <div className="login-panel">
         <div className="login-brand">
-          <span className="brand-mark">
-            <span className="brand-r">R</span>esinova
-          </span>
+          <Logo variant="light" />
           <span className="brand-sub">Accounting &amp; Production ERP</span>
         </div>
 

@@ -37,7 +37,7 @@ export default function EmployeesPage() {
   const canRead = can("payroll");
   const employees = useAsync(() => api.employees(), []);
 
-  const [draft, setDraft] = useState<Employee>(BLANK);
+  const [draft, setDraft] = useState<Employee | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -45,7 +45,7 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     setError(null);
-  }, [draft.code]);
+  }, [draft]);
 
   if (!canRead) {
     return (
@@ -62,6 +62,7 @@ export default function EmployeesPage() {
   }
 
   async function save() {
+    if (!draft) return;
     setSaving(true);
     setError(null);
     setMessage(null);
@@ -71,7 +72,7 @@ export default function EmployeesPage() {
       if (existing) await api.updateEmployee(draft.code, payload);
       else await api.createEmployee(payload);
       setMessage(existing ? "Employee updated." : "Employee added.");
-      setDraft(BLANK);
+      setDraft(null);
       refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
@@ -101,7 +102,7 @@ export default function EmployeesPage() {
       {message && <div className="toast">✓ {message}</div>}
       {error && <ErrorBox message={error} />}
 
-      {canWrite && (
+      {canWrite && draft && (
         <Card title={draft.code ? `Edit ${draft.code}` : "Add an employee"}>
           <div className="form-row" style={{ marginBottom: 14 }}>
             <Field label="Code">
@@ -209,9 +210,7 @@ export default function EmployeesPage() {
             <button className="primary" onClick={save} disabled={saving || !draft.code || !draft.name}>
               {saving ? "Saving…" : "Save employee"}
             </button>
-            {draft.code && (
-              <button onClick={() => setDraft(BLANK)}>New</button>
-            )}
+            <button onClick={() => setDraft(null)}>Cancel</button>
           </div>
         </Card>
       )}
@@ -220,8 +219,15 @@ export default function EmployeesPage() {
         title="Staff"
         subtitle={
           resigned > 0
-            ? `Select a row to edit · ${resigned} resigned`
+            ? `${resigned} resigned · select a row to edit`
             : "Select a row to edit"
+        }
+        actions={
+          canWrite ? (
+            <button className="primary" onClick={() => setDraft({ ...BLANK })}>
+              Add employee
+            </button>
+          ) : null
         }
       >
         <label className="check-row" style={{ marginBottom: 12 }}>
@@ -259,6 +265,7 @@ export default function EmployeesPage() {
                   <th>Mobile</th>
                   <th className="numeric">Gross</th>
                   <th>Status</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -280,6 +287,9 @@ export default function EmployeesPage() {
                       <Pill tone={row.is_active ? "positive" : "warn"}>
                         {row.is_active ? "active" : "resigned"}
                       </Pill>
+                    </td>
+                    <td>
+                      {canWrite && <button onClick={() => setDraft(row)}>Edit</button>}
                     </td>
                   </tr>
                 ))}

@@ -1,6 +1,6 @@
 /** Small presentational building blocks shared by every screen. */
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 export function Card({
   title,
@@ -59,6 +59,40 @@ export function Pill({
   tone?: "neutral" | "positive" | "negative" | "warn" | "info";
 }) {
   return <span className={`pill pill-${tone}`}>{children}</span>;
+}
+
+/**
+ * The Resinova logo.
+ *
+ * Two files from the brand kit belong in `frontend/public`:
+ *
+ *   `resinova-logo-light.svg` — the lockup for white backgrounds, with the
+ *                               charcoal wordmark. Used on the sign-in panel.
+ *   `resinova-logo-dark.svg`  — the reverse lockup for the charcoal sidebar,
+ *                               with the white wordmark and the blue R.
+ *
+ * Until a file is in place the wordmark is drawn in text instead, so a missing
+ * file shows as a plain name rather than a broken image. Adding the artwork is
+ * then the only step left.
+ */
+export function Logo({ variant }: { variant: "light" | "dark" }) {
+  const [missing, setMissing] = useState(false);
+
+  if (missing) {
+    return (
+      <span className="brand-mark">
+        <span className="brand-r">R</span>esinova
+      </span>
+    );
+  }
+  return (
+    <img
+      className={`brand-logo brand-logo-${variant}`}
+      src={`/resinova-logo-${variant}.svg`}
+      alt="Resinova"
+      onError={() => setMissing(true)}
+    />
+  );
 }
 
 /**

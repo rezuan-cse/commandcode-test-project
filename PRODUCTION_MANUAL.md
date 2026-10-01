@@ -525,9 +525,13 @@ toolbar.
 
 ### Employees
 
-- **Add an employee:** **Code**, **Name**, **Department** (Office or Factory),
-  **Designation**, **Personal email**, **Mobile**, **Joining date**, **Bank
-  account**, **Gross salary**, and **Status**.
+- **Add an employee:** press **Add employee** on the Staff card, which opens the
+  form: **Code**, **Name**, **Department** (Office or Factory), **Designation**,
+  **Personal email**, **Mobile**, **Joining date**, **Bank account**, **Gross
+  salary**, and **Status**. The form stays closed until you ask for it, so the
+  list is not pushed down the screen. **Edit** on a row — or a click anywhere on
+  that row — opens the same form for that person, and **Cancel** closes it without
+  saving.
 - **Staff** table: **Code, Name, Department, Designation, Joining date, Leaving
   date, Mobile, Gross, Status**. **Show active staff only** hides those who have
   left; the card's subtitle counts them.

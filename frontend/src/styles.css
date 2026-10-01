@@ -88,6 +88,19 @@ body {
   font-size: 1.14em;
 }
 
+/* The logo artwork, sized by height so the lockup keeps its own proportions
+   whatever the file's intrinsic size turns out to be. */
+.brand-logo {
+  display: block;
+  height: 40px;
+  width: auto;
+}
+
+.login-brand .brand-logo {
+  height: 68px;
+  margin: 0 auto 8px;
+}
+
 .brand-sub {
   font-size: 11px;
   color: #9aa0a6;

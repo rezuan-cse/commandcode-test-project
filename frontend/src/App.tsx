@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./shared/AuthContext";
 import { useDemo } from "./shared/DemoContext";
-import { Spinner } from "./shared/ui";
+import { Logo, Spinner } from "./shared/ui";
 import DashboardPage from "./features/dashboard/DashboardPage";
 import AccountsPage from "./features/accounts/AccountsPage";
 import JournalPage from "./features/journal/JournalPage";
@@ -70,9 +70,7 @@ export default function App() {
     <div className="shell">
       <aside className={`sidebar ${navOpen ? "open" : ""}`}>
         <div className="brand">
-          <span className="brand-mark">
-            <span className="brand-r">R</span>esinova
-          </span>
+          <Logo variant="dark" />
           <span className="brand-sub">Accounting &amp; Production ERP</span>
         </div>
         <nav>
