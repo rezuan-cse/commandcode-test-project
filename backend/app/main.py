@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
-from app.core.db import SessionLocal, describe_database, init_db
+from app.core.db import SessionLocal, describe_database, describe_timezone, init_db
 from app.core.exceptions import DomainError
 from app.modules.accounts.router import router as accounts_router
 from app.modules.approvals.router import router as approvals_router
@@ -46,8 +46,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # Say which database is in use. A sqlite file on a host with no persistent
     # disk means anything entered is lost when the instance restarts, which is
-    # worth knowing before someone spends an afternoon testing against it.
+    # worth knowing before someone spends an afternoon testing against it. The
+    # timezone is reported too: timestamps are written by the database's now(),
+    # and the interface can only show the client's clock if that is UTC.
     print(f"[db] using {describe_database()}")
+    print(f"[db] server timezone: {describe_timezone()}")
     init_db()
     # A brand-new database is populated according to RPCI_SEED_MODE: a standard
     # starter chart of accounts (the default), the sample workbook, or nothing.

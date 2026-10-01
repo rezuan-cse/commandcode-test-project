@@ -30,10 +30,11 @@ else:
     # statements keeps a pooled connection string working, and costs almost
     # nothing next to the network round trip.
     #
-    # The session is pinned to UTC so the timestamps written through it are the
-    # same regardless of the database server's own setting; the interface applies
-    # the client's offset when it reads them.
-    _connect_args = {"prepare_threshold": None, "options": "-c timezone=UTC"}
+    # Nothing else is sent in connect_args on purpose. A pooled connection does
+    # not support session settings (pgbouncer rejects startup parameters it does
+    # not recognise, `options` among them), so the session timezone is *reported*
+    # at startup rather than set — see describe_timezone below.
+    _connect_args = {"prepare_threshold": None}
 
 engine = create_engine(
     settings.database_url,
@@ -62,6 +63,32 @@ def describe_database() -> str:
     host = url.host or "?"
     pooled = " (pooled)" if "-pooler" in host else ""
     return f"{url.get_backend_name()} database {url.database} on {host}{pooled}"
+
+
+def describe_timezone() -> str:
+    """Report the database session's timezone, and say so if it is not UTC.
+
+    Column timestamps are written by the database's own now(), so the interface
+    can only present them on the client's clock if that now() is UTC — which is
+    the norm (Neon runs UTC). The session cannot be pinned here because a pooled
+    connection does not support session settings, so the assumption is reported
+    instead of being silently relied on.
+    """
+    if _is_sqlite:
+        return "UTC (sqlite stores timestamps in UTC)"
+    try:
+        from sqlalchemy import text
+
+        with engine.connect() as connection:
+            zone = connection.execute(text("SHOW timezone")).scalar_one()
+    except Exception as exc:  # noqa: BLE001 - a report must never stop the boot
+        return f"could not be read ({exc})"
+    if str(zone).upper() in {"UTC", "ETC/UTC", "GMT"}:
+        return f"{zone} (as expected)"
+    return (
+        f"{zone} -- NOT UTC. Timestamps will be shown at the wrong time. Set the "
+        f"database's timezone to UTC."
+    )
 
 
 class Base(DeclarativeBase):

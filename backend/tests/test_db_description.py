@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from app.core.config import settings
-from app.core.db import describe_database
+from app.core.db import describe_database, describe_timezone
 
 
 def test_it_names_a_hosted_postgres_without_the_password(monkeypatch) -> None:
@@ -35,3 +35,9 @@ def test_it_marks_a_pooled_host(monkeypatch) -> None:
         "postgresql+psycopg://u:p@ep-x-pooler.c-11.us-east-1.aws.neon.tech/db?sslmode=require",
     )
     assert describe_database().endswith("(pooled)")
+
+
+def test_the_timezone_report_never_raises(monkeypatch) -> None:
+    """It is a startup report, so it must not be able to stop the boot."""
+    monkeypatch.setattr(settings, "database_url", "sqlite:///./whatever.db")
+    assert "UTC" in describe_timezone()
