@@ -445,7 +445,9 @@ Every voucher in the system.
 
 - Entries are listed newest-first as cards, each headed with its voucher number
   and date, its narration, and a tag showing whether it was **Manual**,
-  **Production**, **Sales** or **Purchase**.
+  **Production**, **Sales** or **Purchase**. Each card also gives the number of
+  lines, who entered it, and **when — date and time** — so a voucher can be matched
+  to the moment it was posted.
 - **Show lines** expands the entry to its lines: **Account, Segment, Narration,
   Debit, Credit**, with a **Total** row.
 
@@ -518,8 +520,15 @@ toolbar.
 
 - **Add an employee:** **Code**, **Name**, **Department** (Office or Factory),
   **Designation**, **Personal email**, **Mobile**, **Joining date**, **Bank
-  account**, **Gross salary**.
-- **Staff** table: **Code, Name, Department, Designation, Gross, Status**.
+  account**, **Gross salary**, and **Status**.
+- **Staff** table: **Code, Name, Department, Designation, Joining date, Mobile,
+  Gross, Status**.
+- **When someone leaves,** select their row, switch **Status** to *Resigned* and
+  save. A **Leaving date** appears, defaulting to today. They stay on the list with
+  their joining and leaving dates and keep every payslip they were paid; payroll
+  simply stops including them. Nothing is deleted, and switching the status back to
+  *Active* brings them back — which clears the leaving date, so re-employing
+  somebody does not carry their old resignation with them.
 
 ### Payroll Runs
 

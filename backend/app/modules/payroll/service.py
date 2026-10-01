@@ -358,18 +358,34 @@ def create_employee(db: Session, payload: EmployeeIn) -> Employee:
     """Add an employee. The code must be unique."""
     if repository.get_employee(db, payload.code) is not None:
         raise DuplicateError(f"Employee {payload.code} already exists")
-    employee = Employee(**payload.model_dump())
+    employee = Employee(**_fields(payload))
     repository.add_employee(db, employee)
     db.commit()
     return employee
 
 
 def update_employee(db: Session, code: str, payload: EmployeeIn) -> Employee:
-    """Update an employee."""
+    """Update an employee.
+
+    Marking somebody inactive is how a resignation is recorded. They stay on the
+    list and keep their history; payroll simply stops including them.
+    """
     employee = repository.get_employee(db, code)
     if employee is None:
         raise NotFoundError(f"Employee {code} not found")
-    for field, value in payload.model_dump(exclude={"code"}).items():
+    for field, value in _fields(payload, skip={"code"}).items():
         setattr(employee, field, value)
     db.commit()
     return employee
+
+
+def _fields(payload: EmployeeIn, *, skip: set[str] | None = None) -> dict:
+    """The stored values for an employee, with the leaving date kept consistent.
+
+    Somebody active has no leaving date: it is cleared rather than left behind,
+    so re-employing someone does not carry their old resignation with them.
+    """
+    data = payload.model_dump(exclude=skip or set())
+    if data["is_active"]:
+        data["left_on"] = None
+    return data

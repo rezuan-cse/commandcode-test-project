@@ -477,6 +477,8 @@ export interface Employee {
   bank_account: string | null;
   mobile: string | null;
   gross_salary: string;
+  /** Recorded when someone leaves. A resignation is kept, never deleted. */
+  left_on: string | null;
   is_active: boolean;
 }
 

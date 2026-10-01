@@ -38,6 +38,9 @@ class Employee(Base):
     gross_salary: Mapped[Decimal] = mapped_column(
         Numeric(18, 4), default=Decimal("0"), nullable=False
     )
+    # Set when someone leaves. The record is kept rather than removed: a payroll
+    # run that already paid them names them, and the history has to stay readable.
+    left_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
 
 

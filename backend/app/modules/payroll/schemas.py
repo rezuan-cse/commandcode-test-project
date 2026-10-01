@@ -25,6 +25,7 @@ class EmployeeIn(BaseModel):
     bank_account: str | None = None
     mobile: str | None = None
     gross_salary: Decimal = Field(default=Decimal("0"), ge=0)
+    left_on: date | None = None
     is_active: bool = True
 
 
@@ -42,6 +43,7 @@ class EmployeeOut(BaseModel):
     bank_account: str | None
     mobile: str | None
     gross_salary: Decimal
+    left_on: date | None = None
     is_active: bool
 
 

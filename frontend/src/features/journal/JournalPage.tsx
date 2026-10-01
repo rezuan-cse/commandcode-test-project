@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api } from "../../shared/api";
-import { fmt } from "../../shared/format";
+import { fmt, fmtDateTime } from "../../shared/format";
 import { Card, Empty, Pill, Spinner, ErrorBox } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { JournalEntry } from "../../shared/types";
@@ -68,6 +68,10 @@ function EntryCard({
         </>
       }
     >
+      <p className="small muted" style={{ marginTop: 0 }}>
+        {entry.lines.length} lines · entered by {entry.posted_by} ·{" "}
+        {fmtDateTime(entry.posted_at)}
+      </p>
       {open ? (
         <div className="table-wrap">
           <table>
@@ -100,11 +104,7 @@ function EntryCard({
             </tbody>
           </table>
         </div>
-      ) : (
-        <p className="small muted" style={{ margin: 0 }}>
-          {entry.lines.length} lines · entered by {entry.posted_by}
-        </p>
-      )}
+      ) : null}
     </Card>
   );
 }

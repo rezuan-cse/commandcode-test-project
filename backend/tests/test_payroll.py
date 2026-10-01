@@ -104,6 +104,43 @@ def test_an_empty_payroll_warns_rather_than_posting_nothing_quietly(db) -> None:
     assert any("no active employees" in w.lower() for w in preview.warnings)
 
 
+def test_a_resigned_employee_leaves_the_payroll_and_keeps_their_history(db) -> None:
+    """Resigning is recorded, not deleted.
+
+    Payroll stops including them, the runs that already paid them still name them,
+    and marking them active again brings them back.
+    """
+    _seed_staff(db)
+    first = service.post_run(db, _request())
+    assert len(first.preview.lines) == 2
+
+    resigned = EmployeeIn(
+        code="EMP-001",
+        name="Office Person",
+        department="office",
+        gross_salary=Decimal("30000"),
+        is_active=False,
+        left_on=date(2026, 9, 30),
+    )
+    service.update_employee(db, "EMP-001", resigned)
+
+    preview = service.preview_run(db, _request())
+    assert [line.employee_code for line in preview.lines] == ["EMP-002"]
+
+    # The run that already paid them is untouched.
+    detail = service.get_run(db, first.run.id)
+    assert {line.employee_code for line in detail.lines} == {"EMP-001", "EMP-002"}
+
+    # Re-employing them clears the leaving date rather than carrying it forward.
+    service.update_employee(
+        db, "EMP-001", resigned.model_copy(update={"is_active": True})
+    )
+    db.expire_all()
+    restored = service.list_employees(db)[0]
+    assert restored.is_active is True
+    assert restored.left_on is None
+
+
 def test_only_admin_accountant_and_owner_may_read_payroll(
     client: TestClient, auth_headers
 ) -> None:

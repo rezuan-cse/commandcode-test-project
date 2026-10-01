@@ -19,8 +19,16 @@ const BLANK: Employee = {
   bank_account: "",
   mobile: "",
   gross_salary: "0",
+  left_on: null,
   is_active: true,
 };
+
+/** Today on the reader's own clock, which is what they mean by "today". */
+function today(): string {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
 
 export default function EmployeesPage() {
   const { user, can, level } = useAuth();
@@ -78,6 +86,12 @@ export default function EmployeesPage() {
         The salary structure is not stored on the employee: gross pay is split into its
         components and deductions by the rules in Configuration, so a change to the structure
         applies everywhere without editing every record.
+      </p>
+      <p className="page-intro">
+        <strong>When someone leaves</strong>, select their row, switch the status to
+        <em> Resigned</em> and save. They stay on the list with their joining and leaving
+        dates and keep every payslip they were paid; payroll simply stops including them.
+        Nothing is deleted, and marking them active again brings them back.
       </p>
 
       {message && <div className="toast">✓ {message}</div>}
@@ -157,6 +171,37 @@ export default function EmployeesPage() {
               />
             </Field>
           </div>
+          <div className="form-row" style={{ marginBottom: 14 }}>
+            <Field label="Status">
+              <label className="inline-field">
+                <input
+                  type="checkbox"
+                  checked={draft.is_active}
+                  onChange={(event) =>
+                    setDraft({
+                      ...draft,
+                      is_active: event.target.checked,
+                      // Leaving is dated today unless the user says otherwise, and
+                      // cleared when someone comes back.
+                      left_on: event.target.checked ? null : (draft.left_on ?? today()),
+                    })
+                  }
+                />
+                <span>{draft.is_active ? "Active" : "Resigned"}</span>
+              </label>
+            </Field>
+            {!draft.is_active && (
+              <Field label="Leaving date" hint="Kept on the record">
+                <input
+                  type="date"
+                  value={draft.left_on ?? ""}
+                  onChange={(event) =>
+                    setDraft({ ...draft, left_on: event.target.value || null })
+                  }
+                />
+              </Field>
+            )}
+          </div>
           <div className="row-actions">
             <button className="primary" onClick={save} disabled={saving || !draft.code || !draft.name}>
               {saving ? "Saving…" : "Save employee"}
@@ -185,6 +230,8 @@ export default function EmployeesPage() {
                   <th>Name</th>
                   <th>Department</th>
                   <th>Designation</th>
+                  <th>Joining date</th>
+                  <th>Mobile</th>
                   <th className="numeric">Gross</th>
                   <th>Status</th>
                 </tr>
@@ -200,11 +247,16 @@ export default function EmployeesPage() {
                     <td>{row.name}</td>
                     <td>{row.department}</td>
                     <td className="muted small">{row.designation ?? "—"}</td>
+                    <td className="muted small">{row.joining_date ?? "—"}</td>
+                    <td className="muted small">{row.mobile ?? "—"}</td>
                     <td className="numeric">{fmt(row.gross_salary)}</td>
                     <td>
                       <Pill tone={row.is_active ? "positive" : "warn"}>
-                        {row.is_active ? "active" : "inactive"}
+                        {row.is_active ? "active" : "resigned"}
                       </Pill>
+                      {!row.is_active && row.left_on && (
+                        <div className="muted small">left {row.left_on}</div>
+                      )}
                     </td>
                   </tr>
                 ))}
