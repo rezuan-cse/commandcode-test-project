@@ -44,6 +44,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Operations",
     items: [
       { to: "/parties", text: "Customers & Suppliers", resource: "parties" },
+      { to: "/payments", text: "Receipts & Payments", resource: "payments" },
       { to: "/inventory", text: "Inventory & BOM", resource: "items_bom" },
       { to: "/purchases", text: "Purchase Entry", resource: "sales_purchase" },
       { to: "/production", text: "Production Entry", resource: "production" },

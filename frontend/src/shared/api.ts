@@ -16,8 +16,11 @@ import type {
   IntegrityReport,
   InventoryRow,
   Item,
+  OutstandingInvoice,
   Party,
   PartyImportResult,
+  Payment,
+  PaymentPreview,
   JournalEntry,
   LoginResponse,
   PayrollDetail,
@@ -180,6 +183,33 @@ export const api = {
 
   importParties: () =>
     request<PartyImportResult>("/parties/import-existing", { method: "POST" }),
+
+  payments: () => request<Payment[]>("/payments"),
+
+  outstandingInvoices: () => request<OutstandingInvoice[]>("/payments/outstanding"),
+
+  moneyAccounts: () => request<string[]>("/payments/money-accounts"),
+
+  previewPayment: (payload: unknown) =>
+    request<PaymentPreview>("/payments/preview", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  postPayment: (payload: unknown) =>
+    request<Payment>("/payments", { method: "POST", body: JSON.stringify(payload) }),
+
+  allocatePayment: (id: number, allocations: unknown) =>
+    request<Payment>(`/payments/${id}/allocate`, {
+      method: "POST",
+      body: JSON.stringify({ allocations }),
+    }),
+
+  reversePayment: (id: number, reason: string) =>
+    request<Payment>(`/payments/${id}/reverse`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
 
   bom: (code: string) => request<BomComponent[]>(`/items/${code}/bom`),
 

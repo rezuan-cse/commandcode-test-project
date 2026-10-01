@@ -81,6 +81,19 @@ INCREASING_MOVEMENTS = {
 }
 
 
+class PaymentDirection(str, enum.Enum):
+    """Which way the money moved.
+
+    A receipt is money in from a customer; a payment is money out to a supplier.
+    The two are one table because everything about them is the same — a partner, an
+    amount, a date, a bank account, a list of invoices it settles — and only the
+    accounts and the sign differ.
+    """
+
+    RECEIPT = "Receipt"
+    PAYMENT = "Payment"
+
+
 class JournalSource(str, enum.Enum):
     """What created a journal entry."""
 
@@ -89,6 +102,8 @@ class JournalSource(str, enum.Enum):
     SALES = "Sales"
     PURCHASE = "Purchase"
     PAYROLL = "Payroll"
+    RECEIPT = "Receipt"
+    PAYMENT = "Payment"
 
 
 class Role(str, enum.Enum):

@@ -9,6 +9,7 @@ from app.modules.items_bom.models import BomComponent, Item  # noqa: F401
 from app.modules.journal_entries.models import JournalEntry, JournalLine  # noqa: F401
 from app.modules.opening_balances.models import OpeningBalance  # noqa: F401
 from app.modules.parties.models import Party  # noqa: F401
+from app.modules.payments.models import Payment, PaymentAllocation  # noqa: F401
 from app.modules.payroll.models import Employee, PayrollLine, PayrollRun  # noqa: F401
 from app.modules.production.models import ProductionLine, ProductionOrder  # noqa: F401
 from app.modules.purchases.models import PurchaseLine, PurchaseOrder  # noqa: F401

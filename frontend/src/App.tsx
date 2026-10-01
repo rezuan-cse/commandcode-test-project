@@ -8,6 +8,7 @@ import AccountsPage from "./features/accounts/AccountsPage";
 import JournalPage from "./features/journal/JournalPage";
 import InventoryPage from "./features/inventory/InventoryPage";
 import PartiesPage from "./features/parties/PartiesPage";
+import PaymentsPage from "./features/payments/PaymentsPage";
 import ProductionPage from "./features/production/ProductionPage";
 import SalesPage from "./features/sales/SalesPage";
 import ReceiptPage from "./features/sales/ReceiptPage";
@@ -161,6 +162,7 @@ export default function App() {
             <Route path="/journal" element={<JournalPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/parties" element={<PartiesPage />} />
+            <Route path="/payments" element={<PaymentsPage />} />
             <Route path="/purchases" element={<PurchasesPage />} />
             <Route path="/production" element={<ProductionPage />} />
             <Route path="/sales" element={<SalesPage />} />

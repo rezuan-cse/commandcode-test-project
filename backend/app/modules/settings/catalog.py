@@ -207,6 +207,11 @@ def _specs() -> list[SettingSpec]:
                     "No transaction may be dated on or before this date, which is "
                     "what keeps a closed year closed. Blank means the books are "
                     "open. Use YYYY-MM-DD, e.g. 2026-06-30.", sort_order=40),
+        SettingSpec("payments.money_accounts", "Accounts money moves through",
+                    "posting", "json", ["1010"],
+                    "The cash and bank accounts a receipt or payment may be recorded "
+                    "against. Add a second bank account's code here and it appears "
+                    "in the payment form.", sort_order=50),
 
         # --- Security --------------------------------------------------------
         SettingSpec("security.require_2fa", "Require two-factor login", "security",

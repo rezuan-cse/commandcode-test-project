@@ -149,6 +149,69 @@ export interface PartyImportResult {
   linked: number;
 }
 
+export type PaymentDirection = "Receipt" | "Payment";
+
+export interface PaymentAllocation {
+  sale_order_id: number | null;
+  purchase_order_id: number | null;
+  invoice_no: string;
+  invoice_date: string;
+  invoice_total: string;
+  amount: string;
+}
+
+export interface Payment {
+  id: number;
+  voucher_no: string;
+  pay_date: string;
+  direction: PaymentDirection;
+  party_code: string;
+  party_name: string;
+  amount: string;
+  money_account: string;
+  reference: string | null;
+  memo: string | null;
+  journal_entry_id: number | null;
+  posted_by: string;
+  posted_at: string | null;
+  allocated: string;
+  on_account: string;
+  allocations: PaymentAllocation[];
+  is_reversed: boolean;
+  reversed_by: string | null;
+  reversal_reason: string | null;
+  reversed_at: string | null;
+}
+
+export interface OutstandingInvoice {
+  kind: "sale" | "purchase";
+  invoice_id: number;
+  invoice_no: string;
+  invoice_date: string;
+  party_code: string | null;
+  party_name: string;
+  total: string;
+  paid: string;
+  outstanding: string;
+  is_reversed: boolean;
+}
+
+export interface PaymentPreview {
+  direction: PaymentDirection;
+  party_code: string;
+  party_name: string;
+  amount: string;
+  allocated: string;
+  on_account: string;
+  journal_lines: {
+    account_code: string;
+    account_name: string;
+    debit: string;
+    credit: string;
+    narration: string;
+  }[];
+}
+
 export interface BomComponent {
   parent_code: string;
   component_code: string;

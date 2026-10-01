@@ -85,6 +85,7 @@ disappears too.
 | **Ledger** | **Chart of Accounts** | The list of every account the books are kept in. |
 | **Ledger** | **Journal Entries** | Every voucher in the system, typed or automatic. |
 | **Operations** | **Customers & Suppliers** | The list of firms you trade with — customers, suppliers, or both. |
+| **Operations** | **Receipts & Payments** | Money in from customers, money out to suppliers, and what is still owed. |
 | **Operations** | **Inventory & BOM** | Items, quantity on hand, average cost, and the recipe (BOM) list. |
 | **Operations** | **Purchase Entry** | Record goods you buy in. |
 | **Operations** | **Production Entry** | Record a production run that makes something. |
@@ -479,6 +480,35 @@ you and supplies you, and one record means one spelling of its name.
   are your real trading partners, so they are turned into records in one step — each
   one then claims the transactions carrying its name. It is safe to press more than
   once: names that already have a record are counted and left alone.
+
+
+### Receipts & Payments
+
+Money in from a customer and money out to a supplier, in one place, and the answer
+to **what is still owed**. This is the screen that makes a customer balance
+possible, because the money is attached to the customer record rather than left in
+a journal entry.
+
+- **Outstanding invoices** — every invoice that is not fully settled, showing
+  **Date, Invoice, Customer or supplier, Total, Settled, Outstanding**. It covers
+  both directions: sales you are owed for, and purchases you owe.
+- **Settle** on a row opens the form already filled in for that invoice.
+- **Receive money** / **Pay supplier** open an empty form.
+- The form: **Type** (Receipt = money in, Payment = money out), **Customer** or
+  **Supplier**, **Date**, **Amount**, **Account** (the cash or bank account the
+  money moved through), **Reference** (cheque number), **Note**, and the list of
+  **Invoices this settles**.
+- **Preview entry** shows the two journal lines before anything is posted —
+  *Debit* the bank and *Credit* receivables for a receipt, the reverse for a
+  payment — with how much settles invoices and how much is held on account.
+- **Receipts & payments** — the list, newest first: **Voucher, Type, Customer or
+  supplier, Amount, On account, Settles, Recorded by**.
+- **Apply** on a payment with money on account opens the allocation panel.
+- **Reverse** undoes a receipt or payment, with a reason. The invoices it had
+  settled go back to outstanding, and nothing is edited or deleted.
+- **Money on account** is the important idea: a receipt or payment with no invoice
+  against it is held for that customer or supplier, not lost. **Apply** puts it
+  against invoices later — which is exactly what a deposit or an advance is.
 
 
 ### Inventory & BOM
@@ -2044,6 +2074,72 @@ else works from there.
 
 ---
 
+## Test Case 27 — Take a customer's money, and settle an invoice
+
+- **User Persona:** **Admin** or **Accountant** (receipts and payments are an
+  accounting job; an administrator can widen this per user from Roles & Access).
+- **Objective:** Record money received, settle an invoice with it, and see the
+  balance answer itself.
+- **Prerequisites:** Test Case 26 done, so there is a customer and a posted sale.
+- **Steps:**
+  1. Open **Receipts & Payments**.
+  2. In **Outstanding invoices**, find the sale from Test Case 26 and read its
+     **Total**, **Settled** and **Outstanding**.
+  3. Click **Settle** on that row.
+  4. Check the **Amount** is the outstanding figure, set **Account** to `1010`, and
+     type a **Reference** such as `CHQ-1001`.
+  5. Click **Preview entry** and read the two lines.
+  6. Click **Record**.
+  7. Look at **Outstanding invoices** again, and at **Journal Entries**.
+- **Expected Behaviour:** In step 3 the form opens with **Type**, the **Customer**
+  and the **Amount** already filled from the invoice. Step 5 shows exactly two
+  lines — bank debited, receivables credited, for the same amount — and no
+  difference. Step 7: the invoice has gone from the outstanding list, the receipt
+  appears in **Receipts & payments** with **On account** empty, and the journal has
+  a matching two-line entry recorded by you.
+- **Actual Results & Calculation Explanation:** The receipt writes one balanced
+  entry — debit the money account, credit Accounts Receivable — so the customer's
+  receivable falls by exactly what the sale raised it by. **Paid and outstanding are
+  not stored**: they are worked out from the allocations every time they are shown,
+  which is why nothing can drift, and why reversing the receipt puts the invoice
+  back to unpaid on its own. Settling in part is allowed and leaves the remainder
+  visible; more than the invoice is worth is refused, and the refusal names the
+  outstanding figure.
+
+---
+
+## Test Case 28 — Take a deposit before the invoice exists
+
+- **User Persona:** **Admin** or **Accountant**.
+- **Objective:** Record money received with no invoice to put it against, then
+  apply it when the invoice arrives. This is the case that used to need a manual
+  journal entry, and was invisible in the customer's balance.
+- **Prerequisites:** Signed in as Admin. A customer record exists.
+- **Steps:**
+  1. Open **Receipts & Payments** and click **Receive money**.
+  2. Choose the customer, set **Date** and **Amount** to `5000`, **Account** `1010`,
+     and leave **Invoices this settles** empty.
+  3. **Record** it.
+  4. Look at the receipt in the **Receipts & payments** list.
+  5. Sell something to that customer for less than 5,000 (Sales Entry), then come
+     back to **Receipts & Payments**.
+  6. Click **Apply** on the receipt, set the amount to the invoice's outstanding,
+     and click **Apply**.
+  7. Check **Outstanding invoices**.
+- **Expected Behaviour:** In step 3 a green message says the money is held **on
+  account**. Step 4 shows the full 5,000 under **On account** and nothing under
+  **Settles**. In step 7 the invoice has been settled by the deposit, and the
+  receipt's **On account** is down to whatever is left.
+- **Actual Results & Calculation Explanation:** The receipt still posted the same
+  balanced entry — bank debited, receivables credited — because the money really did
+  arrive. What it did **not** do was claim an invoice, so the 5,000 is carried as a
+  credit against that customer. Applying it later writes **no new journal entry**:
+  the money already moved, and allocating only decides which invoice it clears. That
+  is why a deposit shows in the customer's balance from the moment it is received
+  rather than being parked somewhere until someone remembers it.
+
+---
+
 ## A short checklist before you go live
 
 1. **Configuration → Company details** — set and **Confirm** the name, address and
@@ -2073,4 +2169,9 @@ else works from there.
     existing names** to turn the names on your posted transactions into records in
     one step. Otherwise add your main customers and suppliers by hand. Sales and
     purchases pick from this list.
+13. **Receipts & Payments** — decide who may record money (Admin and Accountant can
+    by default; widen it per user if a cashier needs it), and confirm the **Accounts
+    money moves through** setting lists every bank account you take money through.
+    Then work through Test Cases 27 and 28 once, so you have seen an invoice settled
+    and a deposit applied.
 
