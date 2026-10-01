@@ -19,10 +19,11 @@ from app.core.accounting import (
     inventory_account,
 )
 from app.core.enums import JournalSource, MovementType
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError, StockMovedError
 from app.core.money import money, to_decimal, ZERO
 from app.core.numbering import next_voucher
 from app.modules.accounts import repository as accounts_repo
+from app.modules.inventory_ledger import repository as ledger_repository
 from app.modules.inventory_ledger import service as ledger
 from app.modules.items_bom import repository as items_repo
 from app.modules.journal_entries import repository as journal_repo
@@ -250,6 +251,37 @@ def get_order(db: Session, order_id: int) -> PurchaseOrder:
     return order
 
 
+def _assert_items_untouched(db: Session, order: PurchaseOrder) -> None:
+    """Refuse when an item has moved since the purchase.
+
+    A reversal takes the goods back out at exactly the value they came in at. If
+    the item has been sold, consumed or topped up since, subtracting that old
+    value leaves what remains valued at a figure that never existed — the average
+    drifts. Example: hold 100 kg at 20, buy 100 kg at 25 (200 kg at 22.50),
+    consume 60 kg (140 kg at 22.50), then reverse the purchase. Removing 2,500
+    leaves 40 kg carried at 16.25, though those 40 kg cost 20.
+
+    The later transactions have to be reversed first. That puts the item back
+    where it was when this purchase was posted, and the reversal is then exact.
+    """
+    for line in order.lines:
+        purchased = ledger_repository.movement_for(db, line.item_code, order.order_no)
+        if purchased is None:
+            # Imported history has no ledger row to compare against; the quantity
+            # guard in record_movement still protects the reversal.
+            continue
+        current = ledger.position(db, line.item_code)
+        if (
+            current.qty != money(purchased.balance_qty)
+            or current.value != money(purchased.balance_value)
+        ):
+            raise StockMovedError(
+                f"{line.item_code} has moved since this purchase "
+                f"({money(purchased.balance_qty)} on hand then, {current.qty} now). "
+                f"Reverse the later transactions first."
+            )
+
+
 def reverse(
     db: Session,
     order_id: int,
@@ -265,12 +297,13 @@ def reverse(
     The stock goes back out at exactly the price paid, and the journal entry is
     mirrored, so the payable or the bank credit unwinds with it.
 
-    This will refuse if the goods have already been used. Taking back stock that
-    has since been consumed in production would drive the quantity negative, and
-    the honest answer is to reverse the later consumption first rather than let
-    the ledger hold a balance that never existed.
+    Refused while the item has moved since the purchase — sold, consumed or topped
+    up. Taking the purchase back out at its original value would leave what
+    remains valued at a figure that never existed. Reverse the later transactions
+    first, and the reversal is exact.
     """
     order = get_order(db, order_id)
+    _assert_items_untouched(db, order)
     if not bypass_approval:
         from app.modules.approvals import service as approvals
 

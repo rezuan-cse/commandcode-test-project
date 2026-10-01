@@ -267,35 +267,45 @@ original and its mirror entry both remain, and the mirror voucher is numbered
 ### Why a reversal is sometimes refused
 
 A reversal puts back exactly what a transaction took, or takes back exactly what
-it put in. The only thing that can stop it is not having the stock:
+it put in. The only things that can stop it are the stock, and whether the item
+has moved since:
 
 - A **sale** gives goods **back** to you, so it can never run short. It can always
   be reversed.
-- A **purchase** takes goods **out** of stock, so it can only be reversed while you
-  still hold at least as much of that item as the purchase delivered.
+- A **purchase** takes goods **out** of stock, and can only be reversed while
+  **nothing has touched the item since the purchase** — no sale, no production,
+  not even a second purchase of the same item.
 - A **production run** takes the **output** out first, so it can only be reversed
   while the output is still on hand — that is, while none of it has been sold. Its
   components always come back freely.
 
-In this walkthrough, reversing the **purchase** from Step 1 is *allowed* — you
-still hold 140 kg of `RM-100` against the 100 kg you bought.
-
 ### See a refusal for yourself
 
-1. Do **not** reverse the sale yet.
-2. With the sale still posted, try to reverse the **production run** from Step 2.
-3. It is refused with *"Cannot take 30 of FG-100: only 20 on hand."* — the run made
-   30, and 10 have been sold.
-4. Reverse the sale first; the production run can then be reversed.
+In this walkthrough the purchase from Step 1 is **refused**, because the production
+run has used some of it:
+
+1. In **Posted purchases**, click **Reverse** on the purchase from Step 1.
+2. Type a reason and click **Confirm reversal**.
+3. It is refused with *"RM-100 has moved since this purchase (200.0000 on hand
+   then, 140.0000 now). Reverse the later transactions first."* Nothing changes.
+
+The same happens to the **production run** while its output is still sold — try it
+before reversing the sale and you get *"Cannot take 30 of FG-100: only 20 on
+hand."*
 
 ### The order to reverse in
 
 Undo things in the **reverse order you did them**: the sale first, then the
-production run, then the purchase. Done that way, every reversal is exact and the
-stock returns to precisely where it started.
+production run, then the purchase.
 
-The system allows a reversal whenever the stock permits it, but only unwinding in
-reverse order guarantees the values land back exactly as they were.
+1. Reverse the **sale** (as above). `FG-100` returns to 30 units.
+2. Reverse the **production run**. It is now allowed, because the output is back.
+   The components return.
+3. Reverse the **purchase**. Now allowed too, because nothing has touched the items
+   since it was posted. `RM-100` is back to 100 kg at 20.
+
+Done in that order, every reversal is exact and the stock returns to precisely
+where it started.
 
 > Reversals are recorded in the order you make them, however old the transaction
 > they correct. The stock ledger lists them that way, so the running balance always

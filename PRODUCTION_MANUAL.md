@@ -1062,11 +1062,11 @@ put in. The only thing that can stop it is not having the stock to move:
 | Reversing a… | Stock moves | Can it be refused? |
 |---|---|---|
 | **Sale** | goods come **back in** | **No.** Putting goods back can never overdraw stock, so a sale can always be reversed. |
-| **Purchase** | goods go **out** | **Yes** — only while you still hold at least as much of each item as the purchase delivered. |
+| **Purchase** | goods go **out** | **Yes** — only while nothing has touched the item since the purchase. |
 | **Production run** | the **output goes out first**, then the components come back in | **Yes** — only while the output is still on hand, i.e. none of what it made has been sold. Components always return freely. |
 | **Payroll run** | nothing (accounts only) | No. |
 
-A refusal always names the item and the quantity on hand, for example
+A refusal always names the item and what is on hand, for example
 *"Cannot take 30 of FG-100: only 20 on hand."* The whole reversal is one
 transaction, so a refusal changes nothing at all.
 
@@ -1079,19 +1079,37 @@ Undo in the **reverse order you did things** — the sale first, then the produc
 run, then the purchase. Reversing in that order is exact: stock quantity, stock
 value and average cost all return precisely to where they started.
 
-The system allows a reversal whenever the stock permits it, but only unwinding in
-reverse order guarantees the figures land back exactly. Two things to know:
-
 - **A production run cannot be reversed while its output has been sold.** Reverse
   the sale that consumed the output first.
-- **Reversing a purchase after some of it has been consumed is allowed if enough
-  remains, but it recalculates what is left.** The purchase is removed at exactly
-  the value it came in at, so the remaining units take a new average. If you want
-  the original figures back untouched, undo in reverse order instead.
+- **A purchase cannot be reversed while anything has touched the item since.**
+  Sold, consumed, or even topped up with another purchase — any of those changes
+  the item's average, and taking the original purchase back out at its own value
+  would leave what remains valued at a figure that never existed.
+
+  The refusal names the item and both quantities, for example:
+  *"RMC-100 has moved since this purchase (200.0000 on hand then, 140.0000 now).
+  Reverse the later transactions first."* Do that, and the purchase reversal
+  becomes exact — the item returns to exactly where it started.
 
 > Reversals are recorded in the order you make them, however old the transaction
 > they correct. The stock ledger lists rows in that order, so the running balance
 > always reads correctly.
+
+### Why a purchase is refused rather than recalculated
+
+Suppose you hold 100 kg at 20 each, then buy 100 kg at 25. You now hold 200 kg
+worth 4,500 — an average of **22.50**. You use 60 kg in production, leaving 140 kg
+worth 3,150, the average still 22.50.
+
+Reverse the purchase now, and it removes 100 kg at the 2,500 it came in at. What
+is left is 40 kg worth `3,150 − 2,500 = 650` — **16.25 each**. But those 40 kg are
+the original stock that cost **20**. The stock sheet and the accounts would still
+agree with each other, yet the item would be carried at a price that never
+existed, and every later cost drawn from it would be wrong.
+
+So the system refuses, and asks you to reverse the production run first. Undoing
+the run puts the 60 kg back, the item returns to 200 kg at 22.50, and the purchase
+then comes out exactly.
 
 ---
 

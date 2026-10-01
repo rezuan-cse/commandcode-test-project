@@ -61,3 +61,22 @@ def existing_references(db: Session) -> set[str]:
     """Return the set of reference numbers already present (used for idempotent seeding)."""
     stmt = select(InventoryLedgerRow.reference).where(InventoryLedgerRow.reference.is_not(None))
     return {ref for (ref,) in db.execute(stmt).all() if ref}
+
+
+def movement_for(db: Session, item_code: str, reference: str) -> InventoryLedgerRow | None:
+    """The last ledger row an item got from a given reference, if there is one.
+
+    Used to compare an item's position now with the position it held straight
+    after a transaction, which is how a reversal decides whether anything has
+    happened since.
+    """
+    stmt = (
+        select(InventoryLedgerRow)
+        .where(
+            InventoryLedgerRow.item_code == item_code,
+            InventoryLedgerRow.reference == reference,
+        )
+        .order_by(InventoryLedgerRow.id.desc())
+        .limit(1)
+    )
+    return db.execute(stmt).scalars().first()

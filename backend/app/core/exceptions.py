@@ -27,6 +27,19 @@ class InsufficientStockError(DomainError):
     status_code = 422
 
 
+class StockMovedError(DomainError):
+    """An item has moved since a transaction, so undoing it would misprice what is left.
+
+    Reversing takes a transaction back out at exactly the value it came in at. If
+    the item has moved since — sold, consumed, or topped up — subtracting the old
+    value leaves the remainder valued at a number that never existed. The later
+    transactions have to be reversed first, which puts the item back where it was
+    when this one was posted.
+    """
+
+    status_code = 409
+
+
 class DuplicateError(DomainError):
     """A unique identifier (account code, voucher number) already exists."""
 

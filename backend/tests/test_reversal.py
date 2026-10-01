@@ -15,7 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.core.enums import MovementType, Role
-from app.core.exceptions import DomainError, InsufficientStockError
+from app.core.exceptions import DomainError, InsufficientStockError, StockMovedError
 from app.modules.inventory_ledger import service as ledger
 from app.modules.production import repository as production_repo
 from app.modules.production import service as production
@@ -218,21 +218,86 @@ def test_reversing_a_purchase_restores_exactly(db) -> None:
 
 
 def test_reversing_a_purchase_is_refused_once_the_stock_is_used(db) -> None:
-    """You cannot un-buy something you have already consumed.
+    """You cannot un-buy something that has moved since.
 
-    Refusing is the honest answer. Forcing it would drive the quantity negative
-    and record a stock position that never existed.
+    Taking the goods back out at their original value would leave what remains
+    valued at a figure that never existed. The later transaction has to go first.
     """
     _buy(db)
     _produce(db)  # consumes part of RMC-003
     order = purchases_repo.list_orders(db)[0]
 
-    with pytest.raises(InsufficientStockError):
+    with pytest.raises(StockMovedError, match="Reverse the later transactions first"):
         purchases.reverse(db, order.id, reason="too late", posted_by="store")
 
     # And nothing was changed by the attempt.
     db.expire_all()
     assert purchases_repo.get_order(db, order.id).is_reversed is False
+    assert reports.trial_balance(db, AS_OF).balanced is True
+
+
+def test_a_purchase_is_refused_after_a_later_purchase_of_the_same_item(db) -> None:
+    """A later receipt moves the item just as a consumption does.
+
+    The second purchase changes the average, so taking the first one back out at
+    its own value would misprice what is left.
+    """
+    _buy(db)  # PUR-001
+    _buy(db)  # PUR-002, same items again
+    first = purchases_repo.list_orders(db)[1]
+
+    with pytest.raises(StockMovedError):
+        purchases.reverse(db, first.id, reason="wrong supplier", posted_by="store")
+
+
+def test_reversing_the_later_transaction_frees_the_earlier_one(db) -> None:
+    """Reverse the newer things first, and the older reversal becomes exact again."""
+    opening = _position(db, "RMC-003")
+    _buy(db)  # PUR-001
+    _buy(db)  # PUR-002
+    second, first = purchases_repo.list_orders(db)[0], purchases_repo.list_orders(db)[1]
+
+    # The most recent purchase can be reversed straight away ...
+    purchases.reverse(db, second.id, reason="wrong supplier", posted_by="store")
+    db.expire_all()
+
+    # ... which puts the item back where the first purchase left it, so that one
+    # can now be reversed too — and the item returns to where it started.
+    purchases.reverse(db, first.id, reason="wrong supplier", posted_by="store")
+    db.expire_all()
+    assert _position(db, "RMC-003") == opening
+    assert reports.trial_balance(db, AS_OF).balanced is True
+
+
+def test_reversing_a_production_run_frees_the_purchase_behind_it(db) -> None:
+    """Reverse the run that consumed the goods, then the purchase is exact.
+
+    This is the guidance the refusal message gives, carried out end to end: both
+    reversals together put every item back where it started.
+    """
+    codes = ["RMC-001", "RMC-002", "RMC-003", "RMC-004", "RMCD-005", "PKC-026"]
+    opening = {code: _position(db, code) for code in codes}
+
+    _buy(db)
+    run = _produce(db).order
+    purchase = purchases_repo.list_orders(db)[0]
+
+    # While the run stands, the purchase is refused.
+    with pytest.raises(StockMovedError):
+        purchases.reverse(db, purchase.id, reason="wrong supplier", posted_by="store")
+
+    production.reverse(db, run.id, reason="wrong recipe", posted_by="store")
+    db.expire_all()
+
+    purchases.reverse(db, purchase.id, reason="wrong supplier", posted_by="store")
+    db.expire_all()
+
+    for code, position in opening.items():
+        now = _position(db, code)
+        assert now.qty == position.qty, code
+        assert now.value == position.value, code
+    # The average cost is not compared: an item emptied to zero keeps its last
+    # average on the ledger row rather than reverting to a blank, by design.
     assert reports.trial_balance(db, AS_OF).balanced is True
 
 
