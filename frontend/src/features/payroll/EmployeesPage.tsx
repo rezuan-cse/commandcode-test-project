@@ -4,7 +4,7 @@ import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
 import { fmt } from "../../shared/format";
 import { PermissionNotice } from "../../shared/PermissionNotice";
-import { Card, ErrorBox, Field, Pill, Spinner } from "../../shared/ui";
+import { Card, ErrorBox, Field, Pill, Spinner, Toggle } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { Employee } from "../../shared/types";
 
@@ -177,22 +177,21 @@ export default function EmployeesPage() {
           </div>
           <div className="form-row" style={{ marginBottom: 14 }}>
             <Field label="Status">
-              <label className="check-row">
-                <input
-                  type="checkbox"
-                  checked={draft.is_active}
-                  onChange={(event) =>
-                    setDraft({
-                      ...draft,
-                      is_active: event.target.checked,
-                      // Leaving is dated today unless the user says otherwise, and
-                      // cleared when someone comes back.
-                      left_on: event.target.checked ? null : (draft.left_on ?? today()),
-                    })
-                  }
-                />
-                <span>{draft.is_active ? "Active" : "Resigned"}</span>
-              </label>
+              <Toggle
+                checked={draft.is_active}
+                labelOn="Active"
+                labelOff="Resigned"
+                ariaLabel="Employment status"
+                onChange={(next) =>
+                  setDraft({
+                    ...draft,
+                    is_active: next,
+                    // Leaving is dated today unless the user says otherwise, and
+                    // cleared when someone comes back.
+                    left_on: next ? null : (draft.left_on ?? today()),
+                  })
+                }
+              />
             </Field>
             {!draft.is_active && (
               <Field label="Leaving date" hint="Kept on the record">

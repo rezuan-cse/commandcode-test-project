@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/AuthContext";
-import { Card, ErrorBox, Pill, Spinner } from "../../shared/ui";
+import { Card, ErrorBox, Pill, Spinner, Toggle } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { Setting } from "../../shared/types";
 
@@ -140,14 +140,11 @@ function SettingInput({
 }) {
   if (setting.value_type === "bool") {
     return (
-      <label className="check-row">
-        <input
-          type="checkbox"
-          checked={value === "true"}
-          onChange={(event) => onChange(event.target.checked ? "true" : "false")}
-        />
-        <span>{value === "true" ? "on" : "off"}</span>
-      </label>
+      <Toggle
+        checked={value === "true"}
+        onChange={(next) => onChange(next ? "true" : "false")}
+        ariaLabel={setting.label}
+      />
     );
   }
   if (setting.value_type === "enum") {

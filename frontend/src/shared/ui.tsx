@@ -61,6 +61,44 @@ export function Pill({
   return <span className={`pill pill-${tone}`}>{children}</span>;
 }
 
+/**
+ * An on/off switch.
+ *
+ * Used where a value is a state rather than a choice — a configuration rule that
+ * is on or off, an employee who is active or has left. A tick box is kept
+ * underneath, so the control is still a real checkbox to a keyboard, a screen
+ * reader and the tests; the track and knob are drawn on top of it.
+ */
+export function Toggle({
+  checked,
+  onChange,
+  labelOn = "on",
+  labelOff = "off",
+  disabled = false,
+  ariaLabel,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  labelOn?: string;
+  labelOff?: string;
+  disabled?: boolean;
+  ariaLabel?: string;
+}) {
+  return (
+    <label className={`toggle${disabled ? " disabled" : ""}`}>
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+      <span className="toggle-track" aria-hidden="true" />
+      <span className="toggle-text">{checked ? labelOn : labelOff}</span>
+    </label>
+  );
+}
+
 export function Field({
   label,
   children,
