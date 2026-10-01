@@ -49,10 +49,15 @@ class User(Base):
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )
-    # Bumped by the database whenever the row changes, so the admin screen can
-    # show when an account was created and when it was last altered.
-    updated_at: Mapped[dt.datetime] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
+    # When the row was last altered, so the admin screen can show it.
+    #
+    # Deliberately nullable, and with no DDL default: the schema sync adds columns
+    # with ALTER TABLE, and SQLite refuses to add a column whose default is a
+    # non-constant expression such as now(). The default is applied by the ORM on
+    # insert and on update instead, so the column needs neither. Accounts that
+    # existed before this column show "—" until they are next changed.
+    updated_at: Mapped[dt.datetime | None] = mapped_column(
+        DateTime, default=func.now(), onupdate=func.now(), nullable=True
     )
 
     recovery_codes: Mapped[list["RecoveryCode"]] = relationship(

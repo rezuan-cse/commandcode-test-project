@@ -13,6 +13,7 @@ from collections.abc import Generator
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import create_engine
 from sqlalchemy.engine import make_url
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
@@ -208,8 +209,19 @@ def sync_schema() -> list[str]:
                     f"existing table. Give it a server_default, or migrate by hand."
                 )
             ddl = str(CreateColumn(column).compile(dialect=engine.dialect))
-            with engine.begin() as connection:
-                connection.execute(text(f"ALTER TABLE {table.name} ADD COLUMN {ddl}"))
+            try:
+                with engine.begin() as connection:
+                    connection.execute(text(f"ALTER TABLE {table.name} ADD COLUMN {ddl}"))
+            except OperationalError as exc:
+                # The ALTER itself was refused. Name the column: the engine's own
+                # message does not say which one, and this runs at startup, where
+                # a failed upgrade means the service never comes up at all.
+                raise RuntimeError(
+                    f"Could not add {table.name}.{column.name} to an existing "
+                    f"table, so this upgrade cannot run:\n  {ddl}\n  {exc}\n"
+                    "Give the column a constant default, make it nullable, or "
+                    "migrate it by hand."
+                ) from exc
             applied.append(f"{table.name}.{column.name}")
 
     return applied
