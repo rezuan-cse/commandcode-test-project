@@ -4,7 +4,8 @@ import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
 import { fmt } from "../../shared/format";
 import { PermissionNotice } from "../../shared/PermissionNotice";
-import { Card, ErrorBox, Field, Pill, Spinner, Toggle } from "../../shared/ui";
+import { csvFilename } from "../../shared/csv";
+import { Card, ErrorBox, ExportButton, Field, Pill, Spinner, Toggle } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { Employee } from "../../shared/types";
 
@@ -223,11 +224,29 @@ export default function EmployeesPage() {
             : "Select a row to edit"
         }
         actions={
-          canWrite ? (
-            <button className="primary" onClick={() => setDraft({ ...BLANK })}>
-              Add employee
-            </button>
-          ) : null
+          <div style={{ display: "flex", gap: 8 }}>
+            {canWrite && (
+              <button className="primary" onClick={() => setDraft({ ...BLANK })}>
+                Add employee
+              </button>
+            )}
+            <ExportButton
+              filename={csvFilename("staff")}
+              rows={rows}
+              columns={[
+                { header: "Code", value: (row) => row.code },
+                { header: "Name", value: (row) => row.name },
+                { header: "Designation", value: (row) => row.designation },
+                { header: "Department", value: (row) => row.department },
+                { header: "Joining date", value: (row) => row.joining_date },
+                { header: "Leaving date", value: (row) => row.left_on },
+                { header: "Mobile", value: (row) => row.mobile },
+                { header: "Personal email", value: (row) => row.email },
+                { header: "Gross salary", value: (row) => row.gross_salary },
+                { header: "Status", value: (row) => (row.is_active ? "active" : "resigned") },
+              ]}
+            />
+          </div>
         }
       >
         <label className="check-row" style={{ marginBottom: 12 }}>

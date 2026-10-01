@@ -6,7 +6,8 @@ import { fmt, fmtDateTime, fmtQty } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
 import { PermissionNotice } from "../../shared/PermissionNotice";
 import { ReversedBadge, ReverseButton } from "../../shared/ReverseButton";
-import { Card, ErrorBox, Field, Pill, Spinner } from "../../shared/ui";
+import { csvFilename } from "../../shared/csv";
+import { Card, ErrorBox, ExportButton, Field, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { ProductionPreview, ProductionRun } from "../../shared/types";
 
@@ -298,7 +299,29 @@ export default function ProductionPage() {
       </Card>
       )}
 
-      <Card title="Posted production runs" subtitle="Newest first">
+      <Card
+        title="Posted production runs"
+        subtitle="Newest first"
+        actions={
+          <ExportButton
+            filename={csvFilename("production-runs")}
+            rows={runs.data}
+            columns={[
+              { header: "Order", value: (row) => row.order_no },
+              { header: "Date", value: (row) => row.production_date },
+              { header: "Item produced", value: (row) => row.output_item_code },
+              { header: "Quantity", value: (row) => row.qty_produced },
+              { header: "Material cost", value: (row) => row.material_cost },
+              { header: "Labour cost", value: (row) => row.labor_cost },
+              { header: "Overhead", value: (row) => row.overhead_cost },
+              { header: "Total cost", value: (row) => row.total_cost },
+              { header: "Unit cost", value: (row) => row.unit_cost },
+              { header: "Entered by", value: (row) => row.posted_by },
+              { header: "Reversed", value: (row) => (row.is_reversed ? "yes" : "") },
+            ]}
+          />
+        }
+      >
         {runs.loading && <Spinner />}
         {runs.data && runs.data.length === 0 && (
           <p className="small muted" style={{ margin: 0 }}>

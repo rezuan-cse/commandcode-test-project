@@ -6,7 +6,8 @@ import { fmt, fmtDateTime, fmtQty } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
 import { PermissionNotice } from "../../shared/PermissionNotice";
 import { ReversedBadge, ReverseButton } from "../../shared/ReverseButton";
-import { Card, ErrorBox, Field, Spinner } from "../../shared/ui";
+import { csvFilename } from "../../shared/csv";
+import { Card, ErrorBox, ExportButton, Field, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { Purchase, PurchasePreview } from "../../shared/types";
 
@@ -345,7 +346,26 @@ export default function PurchasesPage() {
       </Card>
       )}
 
-      <Card title="Posted purchases" subtitle="Newest first">
+      <Card
+        title="Posted purchases"
+        subtitle="Newest first"
+        actions={
+          <ExportButton
+            filename={csvFilename("posted-purchases")}
+            rows={purchases.data}
+            columns={[
+              { header: "Order", value: (row) => row.order_no },
+              { header: "Date", value: (row) => row.purchase_date },
+              { header: "Supplier", value: (row) => row.supplier },
+              { header: "Total value", value: (row) => row.total_value },
+              { header: "VAT", value: (row) => row.vat_total },
+              { header: "Entered by", value: (row) => row.posted_by },
+              { header: "Reversed", value: (row) => (row.is_reversed ? "yes" : "") },
+              { header: "Reversal reason", value: (row) => row.reversal_reason },
+            ]}
+          />
+        }
+      >
         {purchases.loading && <Spinner />}
         {purchases.error && <ErrorBox message={purchases.error} />}
         {purchases.data && purchases.data.length === 0 && (

@@ -7,7 +7,8 @@ import { fmt, fmtDateTime, fmtPct, fmtQty } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
 import { PermissionNotice } from "../../shared/PermissionNotice";
 import { ReversedBadge, ReverseButton } from "../../shared/ReverseButton";
-import { Card, ErrorBox, Field, Pill, Spinner } from "../../shared/ui";
+import { csvFilename } from "../../shared/csv";
+import { Card, ErrorBox, ExportButton, Field, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { Sale, SalePreview } from "../../shared/types";
 
@@ -337,7 +338,26 @@ export default function SalesPage() {
       </Card>
       )}
 
-      <Card title="Posted sales">
+      <Card
+        title="Posted sales"
+        actions={
+          <ExportButton
+            filename={csvFilename("posted-sales")}
+            rows={sales.data}
+            columns={[
+              { header: "Order", value: (row) => row.order_no },
+              { header: "Date", value: (row) => row.sale_date },
+              { header: "Customer", value: (row) => row.customer },
+              { header: "Revenue", value: (row) => row.revenue },
+              { header: "VAT", value: (row) => row.vat_total },
+              { header: "Cost of goods sold", value: (row) => row.cogs },
+              { header: "Entered by", value: (row) => row.posted_by },
+              { header: "Reversed", value: (row) => (row.is_reversed ? "yes" : "") },
+              { header: "Reversal reason", value: (row) => row.reversal_reason },
+            ]}
+          />
+        }
+      >
         {sales.loading && <Spinner />}
         {sales.data && sales.data.length === 0 && (
           <p className="small muted" style={{ margin: 0 }}>

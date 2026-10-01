@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { api } from "../../shared/api";
-import { ErrorBox, Card, Empty, Pill, Spinner } from "../../shared/ui";
+import { csvFilename } from "../../shared/csv";
+import { ErrorBox, Card, Empty, ExportButton, Pill, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 
 const SEGMENTS = ["", "Import", "Manufacturing", "Packaging", "Trading", "Application", "Shared"];
@@ -50,6 +51,21 @@ export default function AccountsPage() {
       <Card
         title={`${counts.total} accounts across ${counts.segments} segments`}
         subtitle="Filter by segment, type, or search by code and name"
+        actions={
+          <ExportButton
+            filename={csvFilename("chart-of-accounts")}
+            rows={data}
+            columns={[
+              { header: "Code", value: (row) => row.code },
+              { header: "Name", value: (row) => row.name_en },
+              { header: "Name (Bangla)", value: (row) => row.name_bn },
+              { header: "Type", value: (row) => row.account_type },
+              { header: "Segment", value: (row) => row.segment },
+              { header: "Normal balance", value: (row) => row.normal_balance },
+              { header: "Active", value: (row) => (row.is_active ? "yes" : "no") },
+            ]}
+          />
+        }
       >
         <div className="form-row" style={{ marginBottom: 16 }}>
           <label className="field" style={{ marginBottom: 0 }}>

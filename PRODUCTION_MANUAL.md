@@ -530,9 +530,16 @@ is nothing to install.
   that is normally well beyond what you need; if you ever need the whole history in
   one file, that is a change worth asking for.
 
-**Where the button is:** Trial Balance, General Ledger, Balance Sheet, Inventory,
-Customers & Suppliers, and both the outstanding-invoice and receipts lists on
-Receipts & Payments.
+**Where the button is:** every list and report — Chart of Accounts, Journal Entries,
+Inventory, Customers & Suppliers, Receipts & Payments (both the outstanding invoices
+and the payments list), Purchase Entry, Production Entry, Sales Entry, Employees,
+Payroll Runs, Trial Balance, General Ledger and Balance Sheet.
+
+**The Journal Entries export is the one an auditor asks for.** It writes **one row
+per journal line**, not one per voucher, so a single file holds every debit and
+credit with its voucher, account, segment and narration — ready to sort and total
+in Excel. That is the general-ledger listing, and it is the file to hand over if
+the books are ever examined.
 
 
 ### Inventory & BOM

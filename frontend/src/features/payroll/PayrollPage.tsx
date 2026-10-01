@@ -7,7 +7,8 @@ import { fmt, fmtDateTime } from "../../shared/format";
 import JournalPreview from "../../shared/JournalPreview";
 import { PermissionNotice } from "../../shared/PermissionNotice";
 import { ReversedBadge, ReverseButton } from "../../shared/ReverseButton";
-import { Card, ErrorBox, Field, Spinner } from "../../shared/ui";
+import { csvFilename } from "../../shared/csv";
+import { Card, ErrorBox, ExportButton, Field, Spinner } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { PayrollPreview, PayrollRun } from "../../shared/types";
 
@@ -199,7 +200,27 @@ export default function PayrollPage() {
         </Card>
       )}
 
-      <Card title="Posted runs" subtitle="Newest first">
+      <Card
+        title="Posted runs"
+        subtitle="Newest first"
+        actions={
+          <ExportButton
+            filename={csvFilename("payroll-runs")}
+            rows={runs.data}
+            columns={[
+              { header: "Run", value: (row) => row.run_no },
+              { header: "Period start", value: (row) => row.period_start },
+              { header: "Period end", value: (row) => row.period_end },
+              { header: "Pay date", value: (row) => row.pay_date },
+              { header: "Gross", value: (row) => row.gross_total },
+              { header: "Deductions", value: (row) => row.deductions_total },
+              { header: "Net paid", value: (row) => row.net_total },
+              { header: "Entered by", value: (row) => row.posted_by },
+              { header: "Reversed", value: (row) => (row.is_reversed ? "yes" : "") },
+            ]}
+          />
+        }
+      >
         {runs.loading && <Spinner />}
         {runs.error && <ErrorBox message={runs.error} />}
         {runs.data && runs.data.length === 0 && (

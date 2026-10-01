@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { api } from "../../shared/api";
 import { fmt, fmtDateTime } from "../../shared/format";
-import { Card, Empty, Pill, Spinner, ErrorBox } from "../../shared/ui";
+import { csvFilename } from "../../shared/csv";
+import { Card, Empty, ExportButton, Pill, Spinner, ErrorBox } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { JournalEntry } from "../../shared/types";
 
@@ -28,6 +29,43 @@ export default function JournalPage() {
       {loading && <Spinner />}
       {error && <ErrorBox message={error} />}
       {data && data.length === 0 && <Empty message="No journal entries yet." />}
+
+      {data && data.length > 0 && (
+        <Card
+          title={`${data.length} vouchers`}
+          subtitle="Every entry, newest first"
+          actions={
+            <ExportButton
+              filename={csvFilename("journal-entries")}
+              // One row per *line*, not per voucher: flattened, this is the
+              // account-by-account listing that reconciles against the ledger.
+              rows={data.flatMap((entry) =>
+                entry.lines.map((line) => ({ entry, line })),
+              )}
+              columns={[
+                { header: "Voucher", value: (row) => row.entry.voucher_no },
+                { header: "Date", value: (row) => row.entry.entry_date },
+                { header: "Source", value: (row) => row.entry.source },
+                { header: "Account", value: (row) => row.line.account_code },
+                { header: "Segment", value: (row) => row.line.segment },
+                { header: "Line narration", value: (row) => row.line.narration },
+                { header: "Voucher narration", value: (row) => row.entry.narration },
+                { header: "Debit", value: (row) => row.line.debit },
+                { header: "Credit", value: (row) => row.line.credit },
+                { header: "Entered by", value: (row) => row.entry.posted_by },
+                { header: "Posted at", value: (row) => row.entry.posted_at },
+              ]}
+            />
+          }
+        >
+          <p className="small muted" style={{ margin: 0 }}>
+            The export writes <strong>one row per journal line</strong>, not one per
+            voucher. Flattened that way it is the general-ledger listing: every debit
+            and credit, with the voucher and account it belongs to, ready to sort and
+            total in Excel.
+          </p>
+        </Card>
+      )}
 
       {data && data.map((entry) => (
         <EntryCard
