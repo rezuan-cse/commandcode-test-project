@@ -9,8 +9,14 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.modules.items_bom import service
-from app.modules.items_bom.schemas import BomComponentOut, BomExplosionOut, ItemOut
-from app.modules.users_roles.service import require
+from app.modules.items_bom.schemas import (
+    BomComponentOut,
+    BomExplosionOut,
+    ItemIn,
+    ItemOut,
+    ItemUpdate,
+)
+from app.modules.users_roles.service import Principal, require
 
 router = APIRouter(prefix="/items", tags=["items-bom"])
 
@@ -23,6 +29,41 @@ def list_items(
 ) -> list[ItemOut]:
     """List items with live quantity and average cost."""
     return service.list_items(db, search=search)
+
+
+@router.post("", response_model=ItemOut, status_code=201)
+def create_item(
+    payload: ItemIn,
+    principal: Principal = Depends(require("items_bom", write=True)),
+    db: Session = Depends(get_db),
+) -> ItemOut:
+    """Add an item to the master."""
+    return service.create_item(db, payload)
+
+
+@router.patch("/{code}", response_model=ItemOut)
+def update_item(
+    code: str,
+    payload: ItemUpdate,
+    principal: Principal = Depends(require("items_bom", write=True)),
+    db: Session = Depends(get_db),
+) -> ItemOut:
+    """Correct an item's name, category, segment, unit or active flag."""
+    return service.update_item(db, code, payload)
+
+
+@router.delete("/{code}")
+def delete_item(
+    code: str,
+    principal: Principal = Depends(require("items_bom", write=True)),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Remove an item that no transaction or BOM refers to.
+
+    Refused once the item has any history; set it inactive instead.
+    """
+    service.delete_item(db, code)
+    return {"message": f"Item {code} deleted"}
 
 
 @router.get("/{code}", response_model=ItemOut, dependencies=[CAN_READ])

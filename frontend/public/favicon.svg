@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Resinova">
-  <rect width="64" height="64" rx="14" fill="#0f172a"/>
-  <text x="32" y="45" text-anchor="middle"
+  <rect width="64" height="64" rx="14" fill="#ffffff" stroke="#0d6efd" stroke-width="4"/>
+  <text x="32" y="46" text-anchor="middle"
         font-family="Georgia, 'Times New Roman', serif"
-        font-size="38" font-weight="700" fill="#e2b23c">R</text>
+        font-size="40" font-weight="700" fill="#0d6efd">R</text>
 </svg>

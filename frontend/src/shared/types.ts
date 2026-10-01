@@ -122,6 +122,7 @@ export interface Item {
   category: string;
   segment: Segment;
   uom: string;
+  is_active: boolean;
   qty_on_hand: string;
   avg_cost: string;
   value_on_hand: string;

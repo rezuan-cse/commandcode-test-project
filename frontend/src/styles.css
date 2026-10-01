@@ -1,15 +1,21 @@
 :root {
-  --ink: #0f172a;
-  --ink-soft: #334155;
-  --muted: #64748b;
-  --line: #e2e8f0;
-  --line-strong: #cbd5e1;
-  --bg: #f6f8fb;
+  /* Resinova brand palette. Kept here and nowhere else: every colour in the
+     interface comes from one of these, so a change to the brand is a change to
+     this block and nothing else.
+       Primary brand blue   #0d6efd
+       Brand dark charcoal  #1e1e1e
+       Brand background     #ffffff                                          */
+  --ink: #1e1e1e;
+  --ink-soft: #3f3f3f;
+  --muted: #6b7280;
+  --line: #e4e6ea;
+  --line-strong: #cbd0d8;
+  --bg: #ffffff;
   --panel: #ffffff;
-  --sidebar: #0f172a;
-  --sidebar-soft: #1e293b;
-  --accent: #2563eb;
-  --accent-soft: #eff6ff;
+  --sidebar: #1e1e1e;
+  --sidebar-soft: #2b2b2b;
+  --accent: #0d6efd;
+  --accent-soft: #eaf2ff;
   --positive: #047857;
   --positive-soft: #ecfdf5;
   --negative: #b91c1c;
@@ -63,20 +69,28 @@ body {
   flex-direction: column;
   gap: 2px;
   padding: 0 10px 18px;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid var(--sidebar-soft);
   margin-bottom: 16px;
 }
 
+/* The wordmark, as the logo has it: the initial in brand blue, the rest of the
+   name in the brand charcoal. On the dark sidebar the name is set in white for
+   contrast, which keeps the same blue initial. */
 .brand-mark {
   font-size: 19px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   color: #fff;
+}
+
+.brand-mark .brand-r {
+  color: var(--accent);
+  font-size: 1.14em;
 }
 
 .brand-sub {
   font-size: 11px;
-  color: #94a3b8;
+  color: #9aa0a6;
   line-height: 1.35;
 }
 
@@ -856,11 +870,13 @@ button:disabled {
   margin-bottom: 18px;
 }
 
+/* On the white sign-in panel the wordmark is the logo exactly as drawn: a blue
+   initial against the brand charcoal. */
 .login-brand .brand-mark {
   color: var(--ink);
   font-size: 22px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
 }
 
 /* ---------- Signed-in user ---------- */

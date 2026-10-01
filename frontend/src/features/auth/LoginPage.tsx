@@ -86,7 +86,9 @@ export default function LoginPage() {
     <div className="login-shell">
       <div className="login-panel">
         <div className="login-brand">
-          <span className="brand-mark">Resinova</span>
+          <span className="brand-mark">
+            <span className="brand-r">R</span>esinova
+          </span>
           <span className="brand-sub">Accounting &amp; Production ERP</span>
         </div>
 

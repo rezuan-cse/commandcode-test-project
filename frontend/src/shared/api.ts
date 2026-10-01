@@ -143,6 +143,20 @@ export const api = {
   items: (search?: string) =>
     request<Item[]>(`/items${search ? `?search=${encodeURIComponent(search)}` : ""}`),
 
+  createItem: (payload: unknown) =>
+    request<Item>("/items", { method: "POST", body: JSON.stringify(payload) }),
+
+  updateItem: (code: string, payload: unknown) =>
+    request<Item>(`/items/${encodeURIComponent(code)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
+  deleteItem: (code: string) =>
+    request<{ message: string }>(`/items/${encodeURIComponent(code)}`, {
+      method: "DELETE",
+    }),
+
   bom: (code: string) => request<BomComponent[]>(`/items/${code}/bom`),
 
   explode: (code: string, qty: string) =>

@@ -93,7 +93,7 @@ disappears too.
 | **Reports** | **Trial Balance** | Every account with a non-zero balance, which must total to zero. |
 | **Reports** | **General Ledger** | Opening, movement and closing balance for every account. |
 | **Reports** | **Balance Sheet** | Assets, liabilities and equity, which must balance. |
-| **Administration** | **Roles & Access** | The permission table, who sees which menus, a live permission test, and (for Admin) user accounts and the audit log. |
+| **Administration** | **Roles & Access** | The permission table, who sees which menus, and (for Admin) user accounts and the audit log. |
 | **Administration** | **Approvals** | Actions that are waiting for a second person to approve. |
 | **Administration** | **Configuration** | Every rate, company detail and control switch, editable without a programmer. |
 | **Administration** | **Data** | Import a workbook, or start the books over. Admin only. |
@@ -457,6 +457,13 @@ Every voucher in the system.
   **Value**. A **Search item…** box filters the list. The **Ledger** button opens
   that item's movement history: **Date, Type, Reference, In qty, In value, Out
   qty, Out value, Balance qty, Balance value, Avg cost**.
+- **Item master** — **Add item** opens a form: **Code, Name, Unit, Category,
+  Segment, Active**. The **Code** is fixed once saved, because every other record
+  in the system points at it; everything else can be corrected afterwards with
+  **Edit**. A **Delete** button removes an item that has no history at all — once
+  it has been bought, sold, made or consumed the server refuses, and its message
+  says to set the item **inactive** instead. That keeps the history intact and
+  simply takes the item out of the pickers.
 - **BOM explosion** — type a **Target quantity** and press **Explode BOM** to see
   the full component list with **Level, Component, Category, Per unit, Required,
   Avg cost, Estimated cost**, and an **Estimated material cost** total.
@@ -1864,8 +1871,9 @@ else works from there.
 - **Actual Results & Calculation Explanation:** The menu is built from your role's
   permissions, so items you cannot read are never offered. That alone would not be
   security, because the address could be typed by hand — which is why the server
-  checks the role on every request and refuses it. You can prove this yourself on
-  the **Roles & Access** screen with the **Live permission probe**.
+  checks the role on every request and refuses it. You can see the same refusals
+  the server will give in the **Menus by role** table on the **Roles & Access**
+  screen.
 
 ---
 
@@ -1927,6 +1935,43 @@ else works from there.
 
 ---
 
+## Test Case 25 — Add a new item, and find out what cannot be deleted
+
+- **User Persona:** **Store/Production Staff** or **Admin**.
+- **Objective:** Add a product to the item master without importing a workbook,
+  correct it, and see the rule that protects items with history.
+- **Prerequisites:** Signed in as Admin or Store/Production Staff.
+- **Steps:**
+  1. Open **Inventory & BOM**.
+  2. Click **Add item**.
+  3. Fill in **Code** `NEW-100`, **Name** `New Resin Grade`, **Unit** `kg`,
+     **Category** `Raw Material`, **Segment** `Manufacturing`, **Active** on.
+  4. Click **Add item**.
+  5. Find `NEW-100` in the list and read its **Qty on hand**, **Avg cost** and
+     **Value**.
+  6. Click **Edit** on that row, change the **Name**, and click **Save item**.
+  7. Click **Edit** again and press **Delete**.
+  8. Now try the same on an item that has been used — `TRD001` in the sample data —
+     by clicking its **Edit**, then **Delete**.
+- **Expected Behaviour:** Step 4 shows a green confirmation and the item appears
+  with zero stock. Step 6 changes the name and leaves the unit and category alone.
+  Step 7 removes the item, because nothing refers to it. Step 8 is **refused**,
+  with a message saying how many records use the item and telling you to set it
+  **inactive** instead.
+- **Actual Results & Calculation Explanation:** The row holds only the master data
+  — code, name, category, segment, unit. Quantity and average cost are **derived
+  from the stock ledger**, so a brand-new item shows zero until it is bought or
+  made; they are deliberately not editable here, which is what stops the stock
+  sheet disagreeing with the accounts. The **code** is the key every other record
+  points at, so it is fixed once saved — renaming it would orphan the purchases,
+  sales and movements that named it. Deletion is allowed only when the count of
+  references is zero, checked across the stock ledger, purchase lines, sales
+  lines, production runs and the BOM. When it is not zero the refusal keeps the
+  posted history whole, and **inactive** achieves what the user actually wanted:
+  the item stops appearing in the pickers while its history stays readable.
+
+---
+
 ## A short checklist before you go live
 
 1. **Configuration → Company details** — set and **Confirm** the name, address and
@@ -1949,4 +1994,7 @@ else works from there.
    prove it works.
 10. **Try the two new guards once**, so you have seen them: close a period and be
     refused (Test Case 23), and lock an account and release it (Test Case 24).
+11. **Item master** — add your real products under **Inventory & BOM**, or import
+    your workbook, before the first purchase, production run or sale. Nothing can
+    be bought, made or sold until its item exists.
 

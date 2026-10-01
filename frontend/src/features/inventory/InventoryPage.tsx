@@ -1,14 +1,129 @@
 import { useState } from "react";
 import { api } from "../../shared/api";
+import { useAuth } from "../../shared/AuthContext";
+import { useDemo } from "../../shared/DemoContext";
 import { fmt, fmtQty } from "../../shared/format";
-import { Card, Empty, ErrorBox, Pill, Spinner } from "../../shared/ui";
+import { Card, Empty, ErrorBox, Field, Pill, Spinner, Toggle } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
-import type { BomExplosion } from "../../shared/types";
+import type { BomExplosion, Item } from "../../shared/types";
+
+/** The item classifications the system understands, in the order a user expects. */
+const CATEGORIES = [
+  "Raw Material",
+  "WIP",
+  "Finished Good",
+  "Packaging",
+  "Trading Stock",
+  "Imported Goods",
+];
+
+/** Business segments carried by every item and account. */
+const SEGMENTS = [
+  "Import",
+  "Manufacturing",
+  "Packaging",
+  "Trading",
+  "Application",
+  "Shared",
+];
+
+interface ItemDraft {
+  code: string;
+  name: string;
+  category: string;
+  segment: string;
+  uom: string;
+  is_active: boolean;
+  isNew: boolean;
+}
+
+const BLANK: ItemDraft = {
+  code: "",
+  name: "",
+  category: "Raw Material",
+  segment: "Shared",
+  uom: "kg",
+  is_active: true,
+  isNew: true,
+};
 
 export default function InventoryPage() {
+  const { can } = useAuth();
+  const { refresh } = useDemo();
+  const canWrite = can("items_bom", true);
   const items = useAsync(() => api.items(), []);
   const [selected, setSelected] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [draft, setDraft] = useState<ItemDraft | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  function startAdd() {
+    setError(null);
+    setMessage(null);
+    setDraft({ ...BLANK });
+  }
+
+  function startEdit(item: Item) {
+    setError(null);
+    setMessage(null);
+    setDraft({
+      code: item.code,
+      name: item.name,
+      category: item.category,
+      segment: item.segment,
+      uom: item.uom,
+      is_active: item.is_active,
+      isNew: false,
+    });
+  }
+
+  async function save() {
+    if (!draft) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const details = {
+        name: draft.name,
+        category: draft.category,
+        segment: draft.segment,
+        uom: draft.uom,
+        is_active: draft.is_active,
+      };
+      if (draft.isNew) {
+        const created = await api.createItem({ ...details, code: draft.code });
+        setMessage(`Item ${created.code} added.`);
+      } else {
+        await api.updateItem(draft.code, details);
+        setMessage(`Item ${draft.code} saved.`);
+      }
+      setDraft(null);
+      refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove() {
+    if (!draft || draft.isNew) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const result = await api.deleteItem(draft.code);
+      setMessage(result.message);
+      setDraft(null);
+      refresh();
+    } catch (e) {
+      // The server refuses once the item has any history, and its message says
+      // to deactivate instead — so it is shown rather than replaced.
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const filtered = (items.data ?? []).filter((item) => {
     if (!search) return true;
@@ -27,17 +142,43 @@ export default function InventoryPage() {
         from the accounts.
       </p>
 
+      {(error || message) && (
+        <div style={{ marginBottom: 16 }}>
+          {error && <ErrorBox message={error} />}
+          {message && !error && <div className="notice">{message}</div>}
+        </div>
+      )}
+
+      {draft && (
+        <ItemForm
+          draft={draft}
+          saving={saving}
+          canDelete={!draft.isNew}
+          onChange={setDraft}
+          onSave={save}
+          onDelete={remove}
+          onCancel={() => setDraft(null)}
+        />
+      )}
+
       <Card
         title="Inventory ledger"
         subtitle="Every movement, with its running balance and average cost"
         actions={
-          <input
-            type="search"
-            placeholder="Search item…"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            style={{ width: 200 }}
-          />
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              type="search"
+              placeholder="Search item…"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              style={{ width: 200 }}
+            />
+            {canWrite && (
+              <button className="primary" onClick={startAdd}>
+                Add item
+              </button>
+            )}
+          </div>
         }
       >
         {items.loading && <Spinner />}
@@ -67,6 +208,12 @@ export default function InventoryPage() {
                     <tr key={item.code}>
                       <td className="numeric" style={{ textAlign: "left" }}>
                         {item.code}
+                        {!item.is_active && (
+                          <>
+                            {" "}
+                            <Pill tone="warn">inactive</Pill>
+                          </>
+                        )}
                       </td>
                       <td className="name-cell">{item.name}</td>
                       <td>{item.category}</td>
@@ -76,7 +223,10 @@ export default function InventoryPage() {
                       <td className="numeric">{fmt(item.avg_cost, 4)}</td>
                       <td className="numeric">{fmt(item.value_on_hand)}</td>
                       <td>
-                        <button onClick={() => setSelected(item.code)}>Ledger</button>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button onClick={() => setSelected(item.code)}>Ledger</button>
+                          {canWrite && <button onClick={() => startEdit(item)}>Edit</button>}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -89,6 +239,113 @@ export default function InventoryPage() {
 
       {selected && <ItemDetail code={selected} onClose={() => setSelected(null)} />}
     </>
+  );
+}
+
+function ItemForm({
+  draft,
+  saving,
+  canDelete,
+  onChange,
+  onSave,
+  onDelete,
+  onCancel,
+}: {
+  draft: ItemDraft;
+  saving: boolean;
+  canDelete: boolean;
+  onChange: (draft: ItemDraft) => void;
+  onSave: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <Card
+      title={draft.isNew ? "New item" : `Edit ${draft.code}`}
+      subtitle={
+        draft.isNew
+          ? "The code is how every other record refers to this item, so choose it carefully"
+          : "Quantity and average cost are not edited here — they come from the stock ledger"
+      }
+      actions={<button onClick={onCancel}>Cancel</button>}
+    >
+      <div className="form-row">
+        <Field label="Code">
+          <input
+            value={draft.code}
+            disabled={!draft.isNew}
+            placeholder="e.g. RMC-004"
+            onChange={(event) => onChange({ ...draft, code: event.target.value })}
+          />
+        </Field>
+        <Field label="Name">
+          <input
+            value={draft.name}
+            onChange={(event) => onChange({ ...draft, name: event.target.value })}
+          />
+        </Field>
+        <Field label="Unit">
+          <input
+            value={draft.uom}
+            placeholder="kg, litre, pcs"
+            onChange={(event) => onChange({ ...draft, uom: event.target.value })}
+          />
+        </Field>
+      </div>
+
+      <div className="form-row">
+        <Field label="Category">
+          <select
+            value={draft.category}
+            onChange={(event) => onChange({ ...draft, category: event.target.value })}
+          >
+            {CATEGORIES.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Segment">
+          <select
+            value={draft.segment}
+            onChange={(event) => onChange({ ...draft, segment: event.target.value })}
+          >
+            {SEGMENTS.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Active" hint="Inactive items stay in the history but leave the pickers">
+          <Toggle
+            checked={draft.is_active}
+            labelOn="Active"
+            labelOff="Inactive"
+            ariaLabel="Item active"
+            onChange={(next) => onChange({ ...draft, is_active: next })}
+          />
+        </Field>
+      </div>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          className="primary"
+          onClick={onSave}
+          disabled={
+            saving || !draft.code.trim() || !draft.name.trim() || !draft.uom.trim()
+          }
+        >
+          {saving ? "Saving…" : draft.isNew ? "Add item" : "Save item"}
+        </button>
+        {canDelete && (
+          <button onClick={onDelete} disabled={saving}>
+            Delete
+          </button>
+        )}
+      </div>
+    </Card>
   );
 }
 

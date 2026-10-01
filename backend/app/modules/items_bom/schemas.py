@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.enums import ItemCategory, Segment
 
@@ -19,9 +19,35 @@ class ItemOut(BaseModel):
     category: ItemCategory
     segment: Segment
     uom: str
+    is_active: bool
     qty_on_hand: Decimal
     avg_cost: Decimal
     value_on_hand: Decimal
+
+
+class ItemIn(BaseModel):
+    """Payload for adding an item to the master."""
+
+    code: str = Field(min_length=1, max_length=24)
+    name: str = Field(min_length=1, max_length=160)
+    category: ItemCategory
+    segment: Segment
+    uom: str = Field(min_length=1, max_length=16)
+    is_active: bool = True
+
+
+class ItemUpdate(BaseModel):
+    """Payload for changing an item.
+
+    The code is deliberately absent: it is the key every other record points at,
+    so it is fixed once the item exists. Everything else can be corrected.
+    """
+
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    category: ItemCategory | None = None
+    segment: Segment | None = None
+    uom: str | None = Field(default=None, min_length=1, max_length=16)
+    is_active: bool | None = None
 
 
 class BomComponentOut(BaseModel):
