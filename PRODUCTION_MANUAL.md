@@ -719,6 +719,27 @@ shows the **Setting**, its **Value**, a **Status** badge (**confirmed** or
 **pending client**), and a **Description**. An Admin can edit the value and press
 **Save**, or **Confirm** to mark it settled.
 
+**Every setting can be changed at any time, for ever.** Nothing here is settled once
+and locked. VAT rates, security rules, payroll structure, posting controls, accounts,
+money accounts and company details can all be revisited whenever the business
+changes, and the change **takes effect immediately** — no redeploy, no restart.
+
+Two guarantees worth knowing:
+
+- **A value you set is never reset.** Not by a restart, not by a redeploy. If you set
+  the VAT rate to 7.5%, it stays 7.5% until somebody changes it deliberately. (This is
+  covered by a test, because a rate that silently reverted overnight would be worse
+  than one that could not be changed at all — the books would be using a figure
+  nobody chose.)
+- **A change applies to what happens next, not to what has already happened.**
+  Turning VAT on today does not add VAT to last month's invoices: a posted entry is
+  never rewritten. That is deliberate, and it is what an auditor expects to see.
+
+**Changing a setting is an administrator's job.** Every other role can *read* the
+configuration — it explains the figures on their screen — but only an Admin can
+change a value, because these rates decide what the books say. New settings can
+appear here over time; if one is not what you need, ask, and it can be added.
+
 ### Data (Admin only)
 
 - **Import an existing workbook** — choose an `.xlsx` file, leave *Replace the

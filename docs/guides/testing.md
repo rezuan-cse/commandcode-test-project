@@ -22,6 +22,7 @@ cd backend && .venv/bin/python -m pytest tests -q
 | `test_payments.py` | Receipts and payments: a receipt settles an invoice in full or in part, an invoice cannot be overpaid, money with no invoice is held on account and applied later, reversing a receipt puts the invoice back to unpaid, the direction must match the invoice type, and the trial balance still agrees |
 | `test_reports_comparison.py` | Period comparison: the movement between two months, a fall reported as negative, no percentage change against a period with nothing in it, a margin compared in points, and the figures agreeing with the plain P&L |
 | `test_low_stock.py` | Reorder level and the low-stock list: a blank level means "not watched" and is never listed, an item exactly at its level is listed, the shortfall and its cost are right, enough stock clears it, and an inactive item is left off |
+| `test_settings.py` | The client owns their configuration: every setting in the catalogue can be changed through the API, a silly value is refused, a change takes effect without a restart, a client's value is never reset by the boot-time seeding, and only an administrator may change one |
 
 The interface has its own tests, because the figures shown on screen must round
 the same way the ledger does:
