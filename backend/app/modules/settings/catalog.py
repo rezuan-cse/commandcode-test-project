@@ -93,10 +93,11 @@ def _specs() -> list[SettingSpec]:
         SettingSpec("company.currency", "Currency", "company", "string",
                     "BDT", "Currency the books are kept in.", sort_order=40),
         SettingSpec("company.vat_reg_no", "VAT registration (BIN)", "company",
-                    "string", "", "VAT registration number. TBD (client).",
-                    sort_order=50),
-        SettingSpec("company.tin", "TIN", "company", "string", "",
-                    "Tax identification number. TBD (client).", sort_order=60),
+                    "string", "002016027-0208",
+                    "VAT registration number. Printed on tax invoices and used on "
+                    "the Mushak returns.", confirmed=True, sort_order=50),
+        SettingSpec("company.tin", "TIN", "company", "string", "155979113247",
+                    "Tax identification number.", confirmed=True, sort_order=60),
 
         # --- VAT -------------------------------------------------------------
         SettingSpec("vat.charge_vat", "Charge VAT", "vat", "bool", False,

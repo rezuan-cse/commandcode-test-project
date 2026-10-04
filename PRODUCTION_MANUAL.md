@@ -2341,8 +2341,9 @@ else works from there.
 
 ## A short checklist before you go live
 
-1. **Configuration → Company details** — set and **Confirm** the name, address and
-   phone.
+1. **Configuration → Company details** — set and **Confirm** the name, address,
+   phone, **VAT registration (BIN)** and **TIN**. The BIN has to be right before any
+   tax invoice is issued, because it is printed on the document.
 2. **Configuration → VAT / AIT, TDS and VDS** — set the rates your tax adviser
    confirms, and confirm each row.
 3. **Configuration → Payroll** — agree the salary components and deductions.
