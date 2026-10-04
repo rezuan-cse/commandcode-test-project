@@ -87,6 +87,7 @@ def create_party(db: Session, payload: PartyIn) -> PartyOut:
         phone=_clean(payload.phone),
         email=_clean(payload.email),
         address=_clean(payload.address),
+        vat_reg_no=_clean(payload.vat_reg_no),
         credit_days=payload.credit_days,
         is_active=payload.is_active,
     )
@@ -110,7 +111,7 @@ def update_party(db: Session, code: str, payload: PartyUpdate) -> PartyOut:
         party.name = supplied["name"].strip()
     if supplied.get("kind") is not None:
         party.kind = supplied["kind"]
-    for field in ("contact_person", "phone", "email", "address"):
+    for field in ("contact_person", "phone", "email", "address", "vat_reg_no"):
         if field in supplied:
             setattr(party, field, _clean(supplied[field]))
     if "credit_days" in supplied:

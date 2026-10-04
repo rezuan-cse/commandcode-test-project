@@ -65,5 +65,12 @@ class SalesLine(Base):
     vat_amount: Mapped[Decimal] = mapped_column(
         Numeric(18, 4), default=Decimal("0"), server_default="0", nullable=False
     )
+    # The rate this line was taxed at, as a percentage, recorded at posting time.
+    # Nullable so lines posted before this column existed stay valid, and so a line
+    # that carried no tax at all can be told apart from one posted before the
+    # column arrived.
+    vat_rate_pct: Mapped[Decimal | None] = mapped_column(
+        Numeric(9, 4), nullable=True
+    )
 
     order: Mapped[SalesOrder] = relationship(back_populates="lines")

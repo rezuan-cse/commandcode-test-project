@@ -38,6 +38,8 @@ class SaleLinePreview(BaseModel):
 
     item_code: str
     item_name: str
+    # The rate this line will be taxed at, carried through so posting can record it.
+    vat_rate_pct: Decimal = Decimal("0")
     qty: Decimal
     sale_price: Decimal
     unit_cost: Decimal
@@ -94,6 +96,9 @@ class SaleLineOut(BaseModel):
     sale_price: Decimal
     line_revenue: Decimal
     vat_amount: Decimal = Decimal("0")
+    # The rate this line was taxed at, as it was on the day. A tax invoice has to
+    # show the rate beside each line, and the return is grouped by it.
+    vat_rate_pct: Decimal | None = None
 
 
 class SaleDetailOut(SaleOut):

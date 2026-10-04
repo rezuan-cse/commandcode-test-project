@@ -182,6 +182,8 @@ export interface Party {
   phone: string | null;
   email: string | null;
   address: string | null;
+  /** A business buyer's VAT registration number. Blank for a walk-in customer. */
+  vat_reg_no: string | null;
   credit_days: number | null;
   is_active: boolean;
 }

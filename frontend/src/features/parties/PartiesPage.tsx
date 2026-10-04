@@ -18,6 +18,7 @@ interface PartyDraft {
   phone: string;
   email: string;
   address: string;
+  vat_reg_no: string;
   credit_days: string;
   is_active: boolean;
   isNew: boolean;
@@ -31,6 +32,7 @@ const BLANK: PartyDraft = {
   phone: "",
   email: "",
   address: "",
+  vat_reg_no: "",
   credit_days: "",
   is_active: true,
   isNew: true,
@@ -98,6 +100,7 @@ export default function PartiesPage() {
       phone: party.phone ?? "",
       email: party.email ?? "",
       address: party.address ?? "",
+      vat_reg_no: party.vat_reg_no ?? "",
       credit_days: party.credit_days === null ? "" : String(party.credit_days),
       is_active: party.is_active,
       isNew: false,
@@ -116,6 +119,9 @@ export default function PartiesPage() {
         phone: draft.phone || null,
         email: draft.email || null,
         address: draft.address || null,
+        // Blank for a walk-in customer: a tax invoice must show a business buyer's
+        // number, and omits it for somebody who has none.
+        vat_reg_no: draft.vat_reg_no || null,
         credit_days: draft.credit_days === "" ? null : Number(draft.credit_days),
         is_active: draft.is_active,
       };
@@ -270,6 +276,7 @@ export default function PartiesPage() {
                 { header: "Phone", value: (row) => row.phone },
                 { header: "Email", value: (row) => row.email },
                 { header: "Address", value: (row) => row.address },
+                { header: "BIN", value: (row) => row.vat_reg_no },
                 { header: "Credit days", value: (row) => row.credit_days },
                 { header: "Status", value: (row) => (row.is_active ? "active" : "inactive") },
               ]}
@@ -302,6 +309,7 @@ export default function PartiesPage() {
                   <th>Contact</th>
                   <th>Phone</th>
                   <th>Email</th>
+                  <th>BIN</th>
                   <th className="numeric">Credit days</th>
                   <th>Status</th>
                   <th />
@@ -320,6 +328,7 @@ export default function PartiesPage() {
                     <td className="muted small">{party.contact_person ?? "—"}</td>
                     <td className="muted small">{party.phone ?? "—"}</td>
                     <td className="muted small">{party.email ?? "—"}</td>
+                    <td className="muted small">{party.vat_reg_no ?? "—"}</td>
                     <td className="numeric">
                       {party.credit_days === null ? "—" : party.credit_days}
                     </td>
@@ -435,6 +444,13 @@ function PartyForm({
             value={draft.credit_days}
             placeholder="0 = pay on delivery"
             onChange={(event) => onChange({ ...draft, credit_days: event.target.value })}
+          />
+        </Field>
+        <Field label="BIN" hint="VAT registration number. Leave blank for a walk-in customer">
+          <input
+            value={draft.vat_reg_no}
+            placeholder="blank for retail"
+            onChange={(event) => onChange({ ...draft, vat_reg_no: event.target.value })}
           />
         </Field>
         <Field label="Active" hint="Inactive records stay in the history but leave the pickers">

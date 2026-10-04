@@ -32,6 +32,12 @@ class Party(Base):
     email: Mapped[str | None] = mapped_column(String(160), nullable=True)
     address: Mapped[str | None] = mapped_column(String(240), nullable=True)
 
+    # The buyer's VAT registration number. Nullable and optional on purpose: a tax
+    # invoice has to show a business buyer's BIN, but a walk-in retail customer has
+    # none, and forcing the field would make ordinary counter sales impossible to
+    # record. Blank means "not supplied", which the invoice states by leaving it off.
+    vat_reg_no: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
     # Days of credit allowed; 0 means payment on delivery. Nullable on purpose:
     # a record adopted from an old transaction carries no agreed terms, and
     # claiming a default nobody agreed to would be worse than saying nothing.

@@ -71,6 +71,11 @@ def _price_lines(db: Session, payload: SaleRequest) -> list[SaleLinePreview]:
             SaleLinePreview(
                 item_code=item.code,
                 item_name=item.name,
+                # Recorded at posting so the rate is knowable later, whatever the
+                # setting says by then.
+                vat_rate_pct=vat_tax.rate_pct_for(
+                    db, segment=item.segment.value, item_code=item.code
+                ),
                 qty=qty,
                 sale_price=to_decimal(line.sale_price),
                 unit_cost=unit_cost,
@@ -280,6 +285,7 @@ def post(
                     line_revenue=line.line_revenue,
                     line_cogs=line.line_cogs,
                     vat_amount=line.vat_amount,
+                    vat_rate_pct=line.vat_rate_pct,
                 )
             )
         repository.add_order(db, order)

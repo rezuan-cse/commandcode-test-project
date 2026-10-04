@@ -19,6 +19,7 @@ class PartyOut(BaseModel):
     phone: str | None = None
     email: str | None = None
     address: str | None = None
+    vat_reg_no: str | None = None
     credit_days: int | None = None
     is_active: bool = True
 
@@ -33,6 +34,8 @@ class PartyIn(BaseModel):
     phone: str | None = Field(default=None, max_length=40)
     email: str | None = Field(default=None, max_length=160)
     address: str | None = Field(default=None, max_length=240)
+    # A business buyer's BIN, printed on the tax invoice. Leave blank for retail.
+    vat_reg_no: str | None = Field(default=None, max_length=20)
     credit_days: int | None = Field(default=None, ge=0, le=365)
     is_active: bool = True
 
@@ -50,6 +53,7 @@ class PartyUpdate(BaseModel):
     phone: str | None = Field(default=None, max_length=40)
     email: str | None = Field(default=None, max_length=160)
     address: str | None = Field(default=None, max_length=240)
+    vat_reg_no: str | None = Field(default=None, max_length=20)
     credit_days: int | None = Field(default=None, ge=0, le=365)
     is_active: bool | None = None
 

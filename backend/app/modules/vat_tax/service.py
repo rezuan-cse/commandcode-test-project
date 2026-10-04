@@ -87,6 +87,21 @@ def sale_split(
     return gross, money(gross * rate)
 
 
+def rate_pct_for(db: Session, *, segment: str, item_code: str) -> Decimal:
+    """The VAT rate applying to a line, as a percentage — zero when none does.
+
+    Recorded on the sale line when it is posted. The **amount** alone is not
+    enough: Mushak 9.1 reports supplies grouped by rate slab, and if the rate is
+    changed part-way through a year there is otherwise no way to tell which sales
+    were taxed at which slab. Keeping the rate with the posting makes the return
+    readable afterwards without anybody having to remember what the rate was in
+    March.
+    """
+    if not applies(db, segment=segment, item_code=item_code):
+        return ZERO
+    return money(_rate(db) * HUNDRED)
+
+
 def purchase_vat(
     db: Session, *, segment: str, item_code: str, net: Decimal
 ) -> Decimal:
