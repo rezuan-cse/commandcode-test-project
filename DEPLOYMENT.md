@@ -54,8 +54,8 @@ A new database starts from a standard starter chart of accounts with zero
 balances. An administrator imports the client's own workbook from
 **Administration → Data**, or restores the sample workbook there. The free Render
 instance sleeps after about 15 minutes of inactivity and takes 30–60 seconds to
-wake; the keep-alive workflow reduces that, and the Neon database keeps the data
-safe either way.
+wake; an external monitor reduces that, and the Neon database keeps the data safe
+either way.
 
 Other free/open-source hosts work too — Fly.io, Koyeb and Railway run the same
 Docker image. The only things that matter are a running process and a persistent
@@ -303,32 +303,40 @@ after about 15 minutes without traffic. The next visitor then waits 30–60 seco
 while it starts again. The data is safe either way — this is only about the first
 impression.
 
-`.github/workflows/keep-alive.yml` requests `/healthz` every 10 minutes so the
-instance never reaches that idle threshold. It needs no account and no
-configuration; it starts running as soon as the repository has the file.
+An **external monitor on cron-job.org** requests `/healthz` every 5 minutes so the
+instance never reaches that idle threshold.
 
-You can test it immediately from the **Actions** tab → *Keep the demo awake* →
-**Run workflow**.
+**Why not GitHub Actions.** This used to be a scheduled workflow in this repository.
+It was checked, and GitHub was running it about **three times a day** instead of the
+144 the schedule asked for — its scheduler is best effort and drops most slots for
+high-frequency schedules on public repositories. Every run reported success, which
+made it a false comfort: the workflow looked healthy while the instance slept in
+the gaps. A measured request to `/healthz` took **51 seconds** — a cold start.
+
+So the ping lives outside GitHub now. The trade is an account somebody has to keep,
+against a schedule that actually fires.
+
+**Set the interval to 5 minutes, not 10.** Render sleeps at about 15, so ten minutes
+leaves only five minutes of slack — one delayed or failed request and the instance
+sleeps anyway. Five minutes halves the exposure and costs nothing.
+
+Turn on cron-job.org's failure notifications. It can disable a job that fails
+repeatedly, and a silently disabled monitor is the same problem in a new place.
 
 ### What it will not do
 
 Worth knowing, because it is easy to assume this is a guarantee:
 
-- **GitHub's scheduler is best effort.** Scheduled runs are queued on shared
-  runners and often start several minutes late. If a slot slips by more than
-  about 5 minutes, the instance can still sleep.
-- **It stops after 60 days without a push.** GitHub disables scheduled workflows
-  in quiet repositories. Any commit re-enables them.
-- **On a private repository it uses Actions minutes.** Every 10 minutes is
-  roughly 1,080 minutes a month against the 2,000 free ones. Public repositories
-  are unlimited.
+- **It is only as good as the monitor.** One that has been paused, deleted, or
+  disabled after repeated failures stops keeping the instance awake, and nothing in
+  this repository will notice. Turn on the monitor's own failure alerts.
+- **A ping prevents sleeping; it does not prevent restarts.** A deploy or a
+  platform restart still interrupts whatever is in flight.
+- **Five minutes is a risk margin, not a promise.** Render sleeps at about 15, so
+  two consecutive missed pings are enough to let it sleep.
 
-If you want a firmer guarantee, a dedicated uptime monitor does the same job on
-a fixed schedule and alerts you when the service is down — UptimeRobot and
-cron-job.org both have free tiers. The workflow above is the option that needs no
-third-party account.
-
-If the demo moves to another host, change `DEMO_HEALTH_URL` in the workflow.
+If the service moves to another host, update the monitor's URL. There is nothing to
+change in this repository.
 
 ---
 

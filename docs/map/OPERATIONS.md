@@ -12,7 +12,8 @@
 | Frontend tests | `cd frontend && npm test` | Vitest. |
 | Frontend typecheck | `cd frontend && npm run typecheck` | `tsc -b`. |
 | Verify the workbook figures | `backend/.venv/bin/python scripts/seed_from_excel.py --check` | Prints the reconciliation table. |
-| CI | `.github/workflows/keep-alive.yml` | Pings `/healthz` every 10 min. There is no build/test CI. |
+| CI | *(none)* | There is no build or test CI. Run the checks below by hand before deploying. |
+| Keeping the service awake | **cron-job.org** (external account) | Pings `https://rpci.onrender.com/healthz` every 5 min. Render's free tier sleeps after ~15 min. Deliberately **not** in this repository: GitHub's scheduler dropped most runs. See [../guides/deployment.md](../guides/deployment.md). |
 | Health probe | `GET /healthz` | Returns `{"status":"ok"}`. |
 | Deploy (public HTTPS) | Apply `render.yaml` on Render | See [../guides/deployment.md](../guides/deployment.md) and `DEPLOYMENT.md`. |
 | Rollback | Redeploy the previous image / re-apply the blueprint | Data lives in Postgres when `RPCI_DATABASE_URL` is set. |
