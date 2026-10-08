@@ -12,6 +12,7 @@
 | Frontend tests | `cd frontend && npm test` | Vitest. |
 | Frontend typecheck | `cd frontend && npm run typecheck` | `tsc -b`. |
 | Verify the workbook figures | `backend/.venv/bin/python scripts/seed_from_excel.py --check` | Prints the reconciliation table. |
+| Generate demo activity | `backend/.venv/bin/python scripts/generate_demo_data.py --months 18` | Posts 18 months of purchases, production, sales, payments and payroll through the service layer. Refuses a non-empty database unless `--force`. Testing phase only — wipe before go-live. |
 | CI | *(none)* | There is no build or test CI. Run the checks below by hand before deploying. |
 | Keeping the service awake | **cron-job.org** (external account) | Pings `https://rpci.onrender.com/healthz` every 5 min. Render's free tier sleeps after ~15 min. Deliberately **not** in this repository: GitHub's scheduler dropped most runs. See [../guides/deployment.md](../guides/deployment.md). |
 | Health probe | `GET /healthz` | Returns `{"status":"ok"}`. |
