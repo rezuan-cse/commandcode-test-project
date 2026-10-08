@@ -98,6 +98,12 @@ export default function BalanceSheetPage() {
                 ))}
                 <tr>
                   <td className="indent" colSpan={3}>
+                    Retained earnings (profit before this year)
+                  </td>
+                  <td className="numeric">{fmt(data.retained_earnings)}</td>
+                </tr>
+                <tr>
+                  <td className="indent" colSpan={3}>
                     Current period net profit
                   </td>
                   <td className="numeric">{fmt(data.current_period_profit)}</td>

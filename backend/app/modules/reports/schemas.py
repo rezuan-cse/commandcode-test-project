@@ -160,6 +160,7 @@ class BalanceSheetOut(BaseModel):
     total_assets: Decimal
     total_liabilities: Decimal
     equity_per_gl: Decimal
+    retained_earnings: Decimal
     current_period_profit: Decimal
     total_equity: Decimal
     total_liabilities_and_equity: Decimal

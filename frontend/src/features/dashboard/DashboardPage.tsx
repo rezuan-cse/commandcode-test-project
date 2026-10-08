@@ -118,6 +118,10 @@ export default function DashboardPage() {
             <Stat label="Total liabilities" value={fmt(balance.total_liabilities)} />
             <Stat label="Owner's equity" value={fmt(balance.equity_per_gl)} />
             <Stat
+              label="Retained earnings"
+              value={fmt(balance.retained_earnings)}
+            />
+            <Stat
               label="Current period profit"
               value={fmt(balance.current_period_profit)}
               tone="positive"

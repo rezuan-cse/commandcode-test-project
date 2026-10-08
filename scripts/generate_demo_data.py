@@ -20,8 +20,9 @@ Usage, from the repository root:
 Safety:
 
 * The script refuses to run when the database already holds journal entries,
-  unless ``--force`` is passed. Generate into an empty database, wipe first
-  from Administration -> Data ("Empty everything"), or pass ``--wipe-first``
+  unless ``--force`` is passed. On a completely empty database it seeds the
+  starter chart of accounts itself; otherwise wipe first from
+  Administration -> Data ("Empty everything"), or pass ``--wipe-first``
   to empty the books (fresh starter chart) and generate in one step.
   Sign-in accounts are never touched by a wipe.
 * Everything is deterministic for a given ``--seed``: the same seed and month
@@ -55,7 +56,11 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "backend"))
 
+from sqlalchemy import func, select  # noqa: E402
+
 from app.core.db import SessionLocal, init_db  # noqa: E402
+from app.modules.accounts.models import Account  # noqa: E402
+from app.seed.starter import seed_starter  # noqa: E402
 from app.core.enums import (  # noqa: E402
     ItemCategory,
     PartyKind,
@@ -412,6 +417,12 @@ def main() -> int:
                 "(\"Empty everything\"), or re-run with --force if you really "
                 "mean it."
             )
+
+        # An empty database has no chart of accounts yet; the postings below
+        # need the starter chart. Idempotent — a no-op when accounts exist.
+        if db.execute(select(func.count()).select_from(Account)).scalar_one() == 0:
+            added = seed_starter(db)
+            print(f"Seeded the starter chart of accounts ({added} accounts).")
 
         rng = random.Random(args.seed)
         ensure_master(db, rng)

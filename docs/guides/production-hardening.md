@@ -66,3 +66,5 @@ client-testing phase:
 4. Confirm `/docs` and `/openapi.json` return 404 on the public URL.
 5. Nightly backup scheduled and one restore proven into a scratch database.
 6. `RPCI_DATABASE_URL` points at the production Postgres (never SQLite).
+7. Rotate the Neon database password — it was shared in plain text (screenshots,
+   shell history) during the testing phase.

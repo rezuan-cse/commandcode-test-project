@@ -119,6 +119,7 @@ export interface BalanceSheet {
   total_assets: string;
   total_liabilities: string;
   equity_per_gl: string;
+  retained_earnings: string;
   current_period_profit: string;
   total_equity: string;
   total_liabilities_and_equity: string;

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
@@ -173,6 +173,24 @@ def _segment_totals(
         elif account_type == AccountType.OTHER_INCOME:
             other_income = money(other_income + (-amount))
     return per_segment, expenses, other_income, ZERO
+
+
+def cumulative_net_profit(db: Session, up_to: date) -> Decimal:
+    """Net profit from the first posting through ``up_to``.
+
+    This is retained earnings: profit the business earned before the current
+    reporting period. It lives on in the asset and liability balances, so the
+    balance sheet must give it a home on the equity side — otherwise any
+    books with activity before the current year can never balance.
+    """
+    per_segment, expenses, other_income, _ = _segment_totals(db, None, up_to)
+    total_revenue = ZERO
+    total_cogs = ZERO
+    for segment in SEGMENTS:
+        bucket = per_segment.get(segment, {"revenue": ZERO, "cogs": ZERO})
+        total_revenue = money(total_revenue + money(bucket["revenue"]))
+        total_cogs = money(total_cogs + money(bucket["cogs"]))
+    return money(total_revenue - total_cogs - expenses + other_income)
 
 
 def pnl_by_segment(db: Session, date_from: date, date_to: date) -> PnlOut:
@@ -408,7 +426,10 @@ def balance_sheet(db: Session, as_of: date) -> BalanceSheetOut:
 
     current_year = date(as_of.year, 1, 1)
     pnl = pnl_by_segment(db, current_year, as_of)
-    total_equity = money(equity_gl + pnl.net_profit)
+    # Profit earned before the current year is retained earnings: it sits in
+    # the asset and liability balances, so it must appear on the equity side.
+    retained_earnings = cumulative_net_profit(db, current_year - timedelta(days=1))
+    total_equity = money(equity_gl + retained_earnings + pnl.net_profit)
     total_le = money(total_liabilities + total_equity)
     check = money(total_assets - total_le)
 
@@ -420,6 +441,7 @@ def balance_sheet(db: Session, as_of: date) -> BalanceSheetOut:
         total_assets=money(total_assets),
         total_liabilities=money(total_liabilities),
         equity_per_gl=equity_gl,
+        retained_earnings=retained_earnings,
         current_period_profit=pnl.net_profit,
         total_equity=total_equity,
         total_liabilities_and_equity=total_le,
