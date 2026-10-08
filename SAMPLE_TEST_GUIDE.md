@@ -5,6 +5,23 @@ end: **buy → make → sell**, plus payroll.
 
 Everything below uses round figures, so you can check the maths by hand.
 
+## Before you start
+
+The system lives at **https://rpci.onrender.com/**. The landing page is a
+sign-in; while it is in testing there are public demo accounts, all with the
+password **`rpci`**:
+
+| Email | Role |
+|---|---|
+| `admin@rpci.demo` | Admin — everything, including Administration |
+| `accountant@rpci.demo` | Accountant — post and view, no administration |
+| `store@rpci.demo` | Store — inventory and production |
+| `sales@rpci.demo` | Sales — customers, sales, receipts |
+| `owner@rpci.demo` | Owner — view reports, no posting |
+
+This walkthrough starts as **Admin** (`admin@rpci.demo`). Step 7 asks you to
+sign in as the **Sales** user (`sales@rpci.demo`) — same password.
+
 **Files**
 
 | File | What it is |
@@ -451,3 +468,193 @@ To start the walkthrough again from a clean slate, either:
 - **Data → Restore sample workbook** (reloads this exact starting position), or
 - **Data → Start fresh (starter accounts)** (empties everything and loads only the
   standard accounts).
+
+> On the production deployment (`rpci.onrender.com`) the **Start over** buttons
+> are disabled — clicking one answers *"Starting the books over is disabled on
+> this deployment."* That switch (`RPCI_ALLOW_DATA_RESET`) is deliberately off
+> outside local testing. To reset the hosted database, either re-import the
+> workbook with **Replace the books** ticked (importing is not behind the
+> switch), or wipe and regenerate from your own machine with
+> `scripts/generate_demo_data.py --wipe-first` (see `docs/map/OPERATIONS.md`).
+
+---
+
+# Part 2 — Reports, money in and out, and people
+
+Part 1 walked the core loop: buy → make → sell, plus payroll. Part 2 covers
+everything around it: following the cash, reading the reports, correcting the
+books by hand, and who gets to do what.
+
+**Starting position.** Part 2 assumes Steps 0–5 are done (skip the optional
+Steps 4, 6 and 7):
+
+| Figure | Value |
+|---|---|
+| Bank — Cash and Bank (1010) | 392,900.00 |
+| Receivable — Karim Enterprise | 1,500.00 |
+| Payable — Sample Supplier | 4,200.00 |
+| TDS Payable | 11,200.00 |
+| Trial Balance difference | 0.0000 |
+| Total assets | 403,980.00 |
+
+## Step 8 — Receipts & Payments: follow the money
+
+The Step 3 sale put 1,500 on Karim Enterprise's tab; the Step 1 purchase put
+4,200 on yours. Nothing has been paid yet. **Receipts & Payments** settles
+those tabs.
+
+### 8a — Record the receipt
+
+1. Open **Receipts & Payments** (the **Receipts** tab).
+2. **Party:** `Karim Enterprise` — the invoice list shows the Step 3 sale with
+   **1,500.00 outstanding**.
+3. **Date:** `2026-02-10`. **Amount:** `1500`. Leave the money account as
+   **1010 — Cash and Bank**.
+4. The amount allocates itself to the invoice. Click **Post receipt**.
+
+**Expected.** A message such as *"RCV-001 recorded against Karim Enterprise."*
+The journal entry it posts:
+
+| Account | Debit | Credit |
+|---|---|---|
+| Cash and Bank (1010) | 1,500 | — |
+| Accounts Receivable (1100) | — | 1,500 |
+
+**Checkpoint:** Bank is now **394,400.00**; the receivable is **0**. Total
+assets are unchanged at 403,980.00 — cash simply replaced the IOU.
+
+### 8b — Record the payment
+
+1. Switch to the **Payments** tab.
+2. **Party:** `Sample Supplier` — outstanding **4,200.00**.
+3. **Date:** `2026-02-12`. **Amount:** `4200`. Post.
+
+**Expected.** *"PMT-001 recorded against Sample Supplier."*
+
+| Account | Debit | Credit |
+|---|---|---|
+| Accounts Payable — Local (2010) | 4,200 | — |
+| Cash and Bank (1010) | — | 4,200 |
+
+**Checkpoint:** Bank is now **390,200.00**; the payable is **0**. Total assets
+are **399,780.00** (money left the business); trial balance still `0.0000`.
+
+> If you enter more than the outstanding invoices, the extra is **held on
+> account** for that party — the message tells you how much. It is not lost;
+> the next invoice picks it up.
+
+## Step 9 — Read the reports
+
+With the money moved, walk the reports. Keep the **As of** date at
+`28/02/2026` unless a step says otherwise.
+
+### Dashboard
+
+**Position at a glance** should read: Total assets 399,780.00, Total
+liabilities 11,200.00 (only TDS now), Owner's equity 500,000.00, Current
+period profit −111,420.00. Yes, negative — one small sale against a full
+month's payroll. The books are honest even when the news isn't. The **Data
+integrity** card shows four ticks.
+
+### Trial Balance → General Ledger
+
+Open **Reports → Trial Balance**, then open account **1010** in **General
+Ledger**. Every bank movement from Steps 1–8 is there as its own line: the 300
+of production labour, the 100,800 of payroll, the 1,500 receipt, the 4,200
+payment. The ledger is the journal entries, flattened — this is where you come
+when a figure looks wrong and you want to see exactly what posted it.
+
+### Balance Sheet
+
+**Reports → Balance Sheet.** The check reads `0.00`. Note the **Retained
+earnings** line: `0.00`, because everything happened in 2026 and there is no
+earlier profit to carry. If you ever see this sheet out of balance, look here
+first — profit earned before the current year lives in that line.
+
+### Period Comparison
+
+**Reports → Period Comparison.** Compare **Jan 2026** against **Feb 2026**.
+January shows the sale (revenue 1,500, COGS 920, gross profit 580); February
+is quiet — and the payroll expense appears in *neither*, because it posts on
+its **pay date** (5 March), not in the month the work was done. Worth knowing:
+in this system, an expense hits the books when it is paid.
+
+### Low Stock
+
+**Reports → Low Stock** is empty — nothing is being watched yet. Open
+**Inventory & BOM**, edit `RM-100`, and set its **reorder level** to `500`.
+Back on Low Stock, `RM-100` appears: 140 on hand against a 500 level. A blank
+level means "not watched".
+
+## Step 10 — A manual journal entry (via the API)
+
+Everything so far was posted by an entry screen. Sometimes the books need a
+hand-written adjustment — say 800 of office stationery bought for cash, with
+no purchase invoice. The Journal page lists entries but has no entry form, so
+adjustments go through the API:
+
+```bash
+TOKEN=$(curl -s -X POST https://rpci.onrender.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@rpci.demo","password":"rpci"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+curl -s -X POST https://rpci.onrender.com/api/journal-entries \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{
+    "voucher_no": "JRN-001",
+    "entry_date": "2026-03-15",
+    "narration": "Office stationery, paid in cash",
+    "lines": [
+      {"account_code": "6000", "segment": "Shared", "debit": "800"},
+      {"account_code": "1010", "segment": "Shared", "credit": "800"}
+    ]
+  }'
+```
+
+**Expected.** A `201`, and the entry appears in **Journal Entries** as
+`JRN-001`. The same rules apply as everywhere else: debits must equal
+credits, the voucher number must be unique, and the date must fall in an open
+period — break any of them and the API refuses with a plain message.
+
+**Checkpoint:** Bank **389,400.00**; trial balance `0.0000`. On the Dashboard,
+operating expenses for the period rise by 800.
+
+## Step 11 — Who gets to do what: the roles tour
+
+Sign out and sign in as each demo user (password `rpci` for all). What changes
+is the menu — and the server enforces it too, so a hidden screen stays closed
+even if you type its address.
+
+| Sign in as | What you get |
+|---|---|
+| `accountant@rpci.demo` | No Administration group at all. Journal Entries, Parties, Receipts & Payments, Payroll and Reports work fully; Chart of Accounts, Inventory & BOM, Production and Purchase/Sales entries open read-only with a "View only for your role" banner. |
+| `store@rpci.demo` | Inventory & BOM and Production Entry fully; Parties fully; Receipts & Payments view-only. No journal, no sales, no payroll, no reports, no administration. |
+| `sales@rpci.demo` | Parties and Purchase/Sales Entry fully; Inventory view-only; Receipts & Payments view-only. Nothing else. |
+| `owner@rpci.demo` | Everything view-only, except Reports which are full. Administration opens read-only. |
+
+Try it: as Sales, open **Journal Entries** directly at
+`https://rpci.onrender.com/journal`. The screen loads but offers no actions —
+the menu is not the security; the signed token is.
+
+## Step 12 — Parties, people, and exports
+
+1. **Customers & Suppliers.** `Sample Supplier` and `Karim Enterprise` were
+   created automatically the first time you typed their names. Open each and
+   fill in phone and email — the next receipt or payment will find them.
+2. **Roles & Access** (Admin). The matrix shows every role against every
+   screen — compare it with what you saw in Step 11. **Add user** creates a
+   login; it is admin-only.
+3. **Exports.** Every report page carries an **Export CSV** button. Open
+   **Trial Balance** and export it — the file matches the screen exactly, and
+   this is how the accountant gets figures into a spreadsheet.
+
+## Part 2 checkpoints
+
+| After | Trial Balance difference | Total assets | Balance sheet check |
+|---|---|---|---|
+| Step 8a (receipt) | `0.0000` | `403,980.00` | `0.0000` |
+| Step 8b (payment) | `0.0000` | `399,780.00` | `0.0000` |
+| Step 10 (manual entry) | `0.0000` | `398,980.00` | `0.0000` |
+
+(The manual entry swaps 800 of cash for 800 of expense: assets fall, equity
+falls by the same 800, and the sheet never notices.)

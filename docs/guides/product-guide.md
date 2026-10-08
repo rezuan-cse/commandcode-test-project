@@ -198,6 +198,9 @@ picture of how the business actually runs.
 10. **Configuration** — VAT, payroll, and the approval switches, each marked
     *pending client* rather than silently assumed.
 
-Nothing in the walkthrough is destructive. **Administration → Data** can start the
-books over at any point, so a reviewer can try things without wondering whether
-what they see is their own doing.
+Nothing in the walkthrough is destructive. On a local or test deployment,
+**Administration → Data** can start the books over at any point, so a reviewer
+can try things without wondering whether what they see is their own doing.
+(On the production deployment the Start-over buttons are disabled by
+`RPCI_ALLOW_DATA_RESET=false`; there, re-importing the workbook with
+**Replace the books** ticked is the way back to a clean slate.)
