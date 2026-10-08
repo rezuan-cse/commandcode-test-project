@@ -12,6 +12,8 @@ from app.modules.payroll.schemas import (
     EmployeeIn,
     EmployeeOut,
     PayrollDetailOut,
+    PayrollOptionsIn,
+    PayrollOptionsOut,
     PayrollPostResult,
     PayrollPreview,
     PayrollRequest,
@@ -49,6 +51,21 @@ def update_employee(
 ) -> EmployeeOut:
     """Update an employee."""
     return service.update_employee(db, code, payload)
+
+
+@router.get("/options", response_model=PayrollOptionsOut, dependencies=[CAN_READ])
+def get_options(db: Session = Depends(get_db)) -> PayrollOptionsOut:
+    """The department and designation dropdown options for the employee form."""
+    return service.get_options(db)
+
+
+@router.put("/options", response_model=PayrollOptionsOut, dependencies=[CAN_WRITE])
+def set_options(
+    payload: PayrollOptionsIn, db: Session = Depends(get_db)
+) -> PayrollOptionsOut:
+    """Replace the dropdown options. Whoever can run payroll (admin and
+    accountant) can manage them."""
+    return service.set_options(db, payload)
 
 
 @router.get("/runs", response_model=list[PayrollRunOut], dependencies=[CAN_READ])

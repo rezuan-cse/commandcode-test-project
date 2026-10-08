@@ -7,10 +7,18 @@ from decimal import Decimal
 
 from fastapi.testclient import TestClient
 
+import pytest
+
 from app.core.enums import Role
+from app.core.exceptions import DomainError
 from app.modules.journal_entries import repository as journal_repo
 from app.modules.payroll import service
-from app.modules.payroll.schemas import EmployeeIn, PayrollRequest
+from app.modules.payroll.schemas import (
+    DepartmentOption,
+    EmployeeIn,
+    PayrollOptionsIn,
+    PayrollRequest,
+)
 from app.modules.reports import service as reports
 from app.modules.settings import service as settings_service
 
@@ -170,3 +178,123 @@ def test_the_owner_may_read_but_not_change_payroll(
         headers=owner,
     )
     assert created.status_code == 403
+
+
+def test_department_and_designation_come_from_the_managed_options(db) -> None:
+    """Values are matched case-insensitively and stored in canonical form."""
+    settings_service.seed_defaults(db)
+    db.commit()
+    emp = service.create_employee(
+        db,
+        EmployeeIn(
+            code="EMP-010",
+            name="Case Test",
+            department="office",
+            designation="accounts officer",
+            gross_salary=Decimal("10000"),
+        ),
+    )
+    assert emp.department == "Office"
+    assert emp.designation == "Accounts Officer"
+
+
+def test_unknown_department_or_designation_is_refused(db) -> None:
+    """The dropdowns are closed lists: unknown values are rejected."""
+    settings_service.seed_defaults(db)
+    db.commit()
+    with pytest.raises(DomainError):
+        service.create_employee(
+            db,
+            EmployeeIn(
+                code="EMP-011", name="Nope", department="Mars", gross_salary=Decimal("1")
+            ),
+        )
+    with pytest.raises(DomainError):
+        service.create_employee(
+            db,
+            EmployeeIn(
+                code="EMP-012",
+                name="Nope",
+                department="Office",
+                designation="Astronaut",
+                gross_salary=Decimal("1"),
+            ),
+        )
+
+
+def test_payroll_charges_each_department_to_its_own_account(db) -> None:
+    """A custom department posts its pay to its own salary account."""
+    settings_service.seed_defaults(db)
+    db.commit()
+    service.set_options(
+        db,
+        PayrollOptionsIn(
+            departments=[
+                DepartmentOption(name="Office", salary_account="6010"),
+                DepartmentOption(name="Lab", salary_account="5011"),
+            ],
+            designations=["Scientist"],
+        ),
+    )
+    service.create_employee(
+        db,
+        EmployeeIn(
+            code="EMP-020",
+            name="Lab Tech",
+            department="lab",
+            designation="Scientist",
+            gross_salary=Decimal("20000"),
+        ),
+    )
+    preview = service.preview_run(db, _request())
+    debits = {
+        line.account_code: line.debit
+        for line in preview.journal_lines
+        if line.debit > 0
+    }
+    assert debits["5011"] == 20000
+    assert preview.balanced is True
+
+
+def test_removing_a_department_in_use_is_refused(db) -> None:
+    """Options can be managed freely, but not from under active employees."""
+    settings_service.seed_defaults(db)
+    db.commit()
+    service.create_employee(
+        db,
+        EmployeeIn(
+            code="EMP-030",
+            name="Factory Hand",
+            department="factory",
+            gross_salary=Decimal("15000"),
+        ),
+    )
+    with pytest.raises(DomainError, match="Factory"):
+        service.set_options(
+            db,
+            PayrollOptionsIn(
+                departments=[DepartmentOption(name="Office", salary_account="6010")],
+                designations=["Worker"],
+            ),
+        )
+
+
+def test_accountant_may_manage_options_but_store_may_not(
+    client: TestClient, auth_headers
+) -> None:
+    """Whoever can run payroll can manage the dropdowns; nobody else can."""
+    payload = {
+        "departments": [{"name": "Office", "salary_account": "6010"}],
+        "designations": ["Clerk"],
+    }
+    for role, expected in [
+        (Role.ADMIN, 200),
+        (Role.ACCOUNTANT, 200),
+        (Role.OWNER_VIEWER, 403),
+        (Role.STORE_PRODUCTION, 403),
+        (Role.SALES_STAFF, 403),
+    ]:
+        response = client.put(
+            "/api/payroll/options", json=payload, headers=auth_headers(role)
+        )
+        assert response.status_code == expected, role.value

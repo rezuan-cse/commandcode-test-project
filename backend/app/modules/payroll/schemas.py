@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -20,7 +19,7 @@ class EmployeeIn(BaseModel):
     name: str = Field(min_length=1)
     email: str | None = None
     designation: str | None = None
-    department: Literal["office", "factory"] = "office"
+    department: str = Field(default="Office", min_length=1, max_length=40)
     joining_date: date | None = None
     bank_account: str | None = None
     mobile: str | None = None
@@ -45,6 +44,27 @@ class EmployeeOut(BaseModel):
     gross_salary: Decimal
     left_on: date | None = None
     is_active: bool
+
+
+class DepartmentOption(BaseModel):
+    """One department choice, with the account its salaries are charged to."""
+
+    name: str = Field(min_length=1, max_length=40)
+    salary_account: str = Field(min_length=1, max_length=20)
+
+
+class PayrollOptionsIn(BaseModel):
+    """Replacement option lists for the employee form's dropdowns."""
+
+    departments: list[DepartmentOption] = Field(min_length=1)
+    designations: list[str] = Field(min_length=1)
+
+
+class PayrollOptionsOut(BaseModel):
+    """The dropdown options for the employee form."""
+
+    departments: list[DepartmentOption]
+    designations: list[str]
 
 
 class PayrollLineOut(BaseModel):

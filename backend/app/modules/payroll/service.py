@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.core.accounting import DEFAULT_BANK_ACCOUNT
 from app.core.enums import JournalSource
-from app.core.exceptions import DuplicateError, NotFoundError
+from app.core.exceptions import DomainError, DuplicateError, NotFoundError
 from app.core.money import money, ZERO
 from app.core.numbering import next_voucher
 from app.modules.accounts import repository as accounts_repo
@@ -26,14 +26,18 @@ from app.modules.journal_entries.schemas import JournalLineIn
 from app.modules.payroll import repository
 from app.modules.payroll.models import Employee, PayrollLine, PayrollRun
 from app.modules.payroll.schemas import (
+    DepartmentOption,
     EmployeeIn,
     PayrollDetailOut,
     PayrollLineOut,
+    PayrollOptionsIn,
+    PayrollOptionsOut,
     PayrollPostResult,
     PayrollPreview,
     PayrollRequest,
     PayrollRunOut,
 )
+from app.modules.settings.schemas import SettingUpdate
 from app.modules.production.schemas import JournalLinePreview
 from app.modules.settings import service as settings_service
 
@@ -102,22 +106,29 @@ def _deduction_account(db: Session, name: str) -> str:
 
 def _journal(
     db: Session,
-    office_total: Decimal,
-    factory_total: Decimal,
+    dept_totals: dict[str, Decimal],
+    departments: list[dict[str, str]],
     deduction_totals: dict[str, Decimal],
     net_total: Decimal,
 ) -> list[JournalLinePreview]:
-    """Build the balanced payroll entry from the run's totals."""
-    entries: list[JournalLinePreview] = []
+    """Build the balanced payroll entry from the run's totals.
 
-    for total, key, label in (
-        (office_total, "payroll.office_salary_account", "Office salaries"),
-        (factory_total, "payroll.factory_labour_account", "Factory labour"),
-    ):
+    One debit line per department that has pay in the run, charged to that
+    department's salary account.
+    """
+    entries: list[JournalLinePreview] = []
+    accounts = {dept["name"]: dept["salary_account"] for dept in departments}
+
+    for name, total in dept_totals.items():
         total = money(total)
         if total <= 0:
             continue
-        account = settings_service.get_account(db, key)
+        account = accounts[name]
+        if accounts_repo.get_account(db, account) is None:
+            raise DomainError(
+                f"Salary account {account} for department '{name}' no longer "
+                f"exists. Fix it in the department options."
+            )
         entries.append(
             JournalLinePreview(
                 account_code=account,
@@ -125,7 +136,7 @@ def _journal(
                 segment="Shared",
                 debit=total,
                 credit=ZERO,
-                narration=label,
+                narration=f"{name} salaries",
             )
         )
 
@@ -163,29 +174,37 @@ def _journal(
 def _assemble(db: Session, payload: PayrollRequest) -> PayrollPreview:
     """Compute the run: per-employee pay and the entry it will post."""
     employees = repository.list_employees(db, active_only=True)
+    departments = get_departments(db)
+    dept_by_key = {dept["name"].lower(): dept for dept in departments}
+    dept_totals: dict[str, Decimal] = {dept["name"]: ZERO for dept in departments}
 
     lines: list[PayrollLineOut] = []
-    office_total = ZERO
-    factory_total = ZERO
     net_total = ZERO
     deduction_totals: dict[str, Decimal] = {}
+    warnings = []
 
     for employee in employees:
         line = _compute_line(db, employee)
         lines.append(line)
-        if employee.department == "factory":
-            factory_total += line.gross
-        else:
-            office_total += line.gross
+        dept = dept_by_key.get((employee.department or "").strip().lower())
+        if dept is None:
+            # The employee's department was removed after they were hired.
+            # Their pay still has to post somewhere: charge the first
+            # department and say so, rather than dropping it silently.
+            dept = departments[0]
+            warnings.append(
+                f"{employee.name} is in removed department "
+                f"'{employee.department}'; pay charged to {dept['name']}."
+            )
+        dept_totals[dept["name"]] = money(dept_totals[dept["name"]] + line.gross)
         for name, amount in line.deductions_detail.items():
             deduction_totals[name] = deduction_totals.get(name, ZERO) + amount
         net_total += line.net
 
-    journal = _journal(db, office_total, factory_total, deduction_totals, net_total)
+    journal = _journal(db, dept_totals, departments, deduction_totals, net_total)
     debits = money(sum((line.debit for line in journal), ZERO))
     credits = money(sum((line.credit for line in journal), ZERO))
 
-    warnings = []
     if not employees:
         warnings.append("There are no active employees, so there is nothing to pay.")
 
@@ -194,7 +213,7 @@ def _assemble(db: Session, payload: PayrollRequest) -> PayrollPreview:
         period_end=payload.period_end,
         pay_date=payload.pay_date,
         lines=lines,
-        gross_total=money(office_total + factory_total),
+        gross_total=money(sum(dept_totals.values(), ZERO)),
         deductions_total=money(sum(deduction_totals.values(), ZERO)),
         net_total=money(net_total),
         journal_lines=journal,
@@ -365,6 +384,8 @@ def create_employee(db: Session, payload: EmployeeIn) -> Employee:
     """Add an employee. The code must be unique."""
     if repository.get_employee(db, payload.code) is not None:
         raise DuplicateError(f"Employee {payload.code} already exists")
+    payload.department = _canonical_department(db, payload.department)
+    payload.designation = _canonical_designation(db, payload.designation)
     employee = Employee(**_fields(payload))
     repository.add_employee(db, employee)
     db.commit()
@@ -380,10 +401,137 @@ def update_employee(db: Session, code: str, payload: EmployeeIn) -> Employee:
     employee = repository.get_employee(db, code)
     if employee is None:
         raise NotFoundError(f"Employee {code} not found")
+    payload.department = _canonical_department(db, payload.department)
+    payload.designation = _canonical_designation(db, payload.designation)
     for field, value in _fields(payload, skip={"code"}).items():
         setattr(employee, field, value)
     db.commit()
     return employee
+
+
+def _checked_departments(raw: object) -> list[dict[str, str]]:
+    """Validate the departments setting shape: names with salary accounts."""
+    if not isinstance(raw, list) or not raw:
+        raise DomainError("payroll.departments must be a non-empty list.")
+    seen: set[str] = set()
+    checked: list[dict[str, str]] = []
+    for entry in raw:
+        if not isinstance(entry, dict):
+            raise DomainError(
+                "Each department must look like "
+                '{"name": "Office", "salary_account": "6010"}.'
+            )
+        name = str(entry.get("name", "")).strip()
+        account = str(entry.get("salary_account", "")).strip()
+        if not name:
+            raise DomainError("Every department needs a name.")
+        if not account:
+            raise DomainError(f"Department '{name}' needs a salary account.")
+        if name.lower() in seen:
+            raise DomainError(f"Duplicate department '{name}'.")
+        seen.add(name.lower())
+        checked.append({"name": name, "salary_account": account})
+    return checked
+
+
+def _checked_designations(raw: object) -> list[str]:
+    """Validate the designations setting shape: a list of titles."""
+    if not isinstance(raw, list) or not raw:
+        raise DomainError("payroll.designations must be a non-empty list.")
+    if not all(isinstance(item, str) and item.strip() for item in raw):
+        raise DomainError("Every designation must be a non-empty title.")
+    names = [item.strip() for item in raw]
+    if len({name.lower() for name in names}) != len(names):
+        raise DomainError("Duplicate designation.")
+    return names
+
+
+def get_departments(db: Session) -> list[dict[str, str]]:
+    """Departments with the salary account each one's pay is charged to."""
+    return _checked_departments(settings_service.get_json(db, "payroll.departments"))
+
+
+def get_designations(db: Session) -> list[str]:
+    """Job titles offered as the Designation dropdown."""
+    return _checked_designations(settings_service.get_json(db, "payroll.designations"))
+
+
+def get_options(db: Session) -> PayrollOptionsOut:
+    """Both dropdown option lists for the employee form."""
+    return PayrollOptionsOut(
+        departments=[DepartmentOption(**dept) for dept in get_departments(db)],
+        designations=get_designations(db),
+    )
+
+
+def set_options(db: Session, payload: PayrollOptionsIn) -> PayrollOptionsOut:
+    """Replace both option lists.
+
+    A department still used by active employees cannot be removed — move
+    those people first. Salary accounts must exist.
+    """
+    departments = _checked_departments([dept.model_dump() for dept in payload.departments])
+    for dept in departments:
+        if accounts_repo.get_account(db, dept["salary_account"]) is None:
+            raise DomainError(
+                f"Unknown salary account {dept['salary_account']} "
+                f"for department '{dept['name']}'."
+            )
+    designations = _checked_designations(payload.designations)
+    removed = {dept["name"].lower() for dept in get_departments(db)} - {
+        dept["name"].lower() for dept in departments
+    }
+    if removed:
+        in_use = sorted(
+            {
+                employee.department
+                for employee in repository.list_employees(db, active_only=True)
+                if employee.department.lower() in removed
+            }
+        )
+        if in_use:
+            raise DomainError(
+                "Cannot remove departments still used by active employees: "
+                + ", ".join(in_use)
+                + ". Move those employees first."
+            )
+    settings_service.update_setting(
+        db, "payroll.departments", SettingUpdate(value=json.dumps(departments))
+    )
+    settings_service.update_setting(
+        db, "payroll.designations", SettingUpdate(value=json.dumps(designations))
+    )
+    return get_options(db)
+
+
+def _canonical_department(db: Session, value: str) -> str:
+    """The configured department name matching ``value`` (case-insensitive)."""
+    wanted = (value or "").strip().lower()
+    departments = get_departments(db)
+    for dept in departments:
+        if dept["name"].lower() == wanted:
+            return dept["name"]
+    raise DomainError(
+        f"Unknown department '{value}'. Choose one of: "
+        + ", ".join(dept["name"] for dept in departments)
+        + "."
+    )
+
+
+def _canonical_designation(db: Session, value: str | None) -> str | None:
+    """The configured designation matching ``value`` (case-insensitive)."""
+    if value is None or not value.strip():
+        return None
+    wanted = value.strip().lower()
+    designations = get_designations(db)
+    for name in designations:
+        if name.lower() == wanted:
+            return name
+    raise DomainError(
+        f"Unknown designation '{value}'. Choose one of: "
+        + ", ".join(designations)
+        + "."
+    )
 
 
 def _fields(payload: EmployeeIn, *, skip: set[str] | None = None) -> dict:

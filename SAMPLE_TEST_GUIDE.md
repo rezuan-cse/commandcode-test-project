@@ -333,7 +333,15 @@ where it started.
 ## Step 5 — Employees and payroll
 
 Click **Payroll → Employees**. For each person below, fill the form and click
-**Save employee** (after the first, click **New** to clear the form):
+**Save employee** (after the first, click **New** to clear the form).
+
+> **Department** and **Designation** are dropdowns, not free text. Their options
+> are managed from the **Manage options** button on this page (admin and
+> accountant): add, rename, or remove entries. Each department also carries the
+> salary account its pay is charged to — Office → 6010, Factory → 5011 by
+> default, which is why the journal entry below splits the way it does. A
+> department still used by active staff cannot be removed until those people
+> are moved.
 
 | Code | Name | Department | Designation | Personal email | Mobile | Joining date | Bank account | Gross salary |
 |---|---|---|---|---|---|---|---|---|
@@ -390,6 +398,10 @@ The run is numbered `PAY-001`.
 
 **Checkpoint:** Trial Balance difference `0.0000`; Total assets `403,980.00`
 (the bank has paid out the net wages).
+
+> If you did the optional Step 4 and reversed the sale, expect Total assets
+> `403,400.00` instead. The 580 difference is that sale's gross profit
+> (1,500 − 920), undone by the reversal — your books are correct either way.
 
 ---
 
