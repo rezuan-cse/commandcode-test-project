@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     # Administration → Data. Disable this on a deployment where the data must
     # never be lost.
     allow_data_reset: bool = True
+    # Serve the interactive API docs (/docs, /redoc, /openapi.json). Handy in
+    # development; disable on a production box, where the docs would advertise
+    # every endpoint to the public.
+    docs_enabled: bool = True
     # Session signing key. Leave unset and a random one is generated per process,
     # which works locally but signs everybody out on restart. Set it on any real
     # deployment. Generate one with: python -c "import secrets;

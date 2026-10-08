@@ -54,8 +54,12 @@ services:
       #   [db] using postgresql database ... on ... (pooled)
       - key: RPCI_DATABASE_URL
         sync: false
+      # Disabled in production: wiping the books must never be one click away
+      # where real figures live. Flip to "true" in the dashboard only while
+      # testing with throwaway data (note: a Blueprint re-sync will set it
+      # back to this value).
       - key: RPCI_ALLOW_DATA_RESET
-        value: "true"
+        value: "false"
       # The accounts that sign in are the client's own, not the seeded demo set.
       #
       # Accounts that already exist are never touched by this, so turning it off
@@ -73,8 +77,15 @@ services:
         value: "5"
       - key: RPCI_LOGIN_LOCKOUT_MINUTES
         value: "15"
+      # The interface is served by this same service, so browsers never need
+      # cross-origin access. Locked to the production URL; "*" would let any
+      # website on the internet call the API.
       - key: RPCI_CORS_ORIGINS
-        value: "*"
+        value: "https://rpci.onrender.com"
+      # The interactive API docs advertise every endpoint to the public.
+      # Useful in development, not on a production box holding real books.
+      - key: RPCI_DOCS_ENABLED
+        value: "false"
       # Session signing key. Render generates it once and keeps it, so sign-ins
       # survive restarts. Without it a random key is used per process and every
       # redeploy signs everybody out.

@@ -16,6 +16,7 @@
 | Keeping the service awake | **cron-job.org** (external account) | Pings `https://rpci.onrender.com/healthz` every 5 min. Render's free tier sleeps after ~15 min. Deliberately **not** in this repository: GitHub's scheduler dropped most runs. See [../guides/deployment.md](../guides/deployment.md). |
 | Health probe | `GET /healthz` | Returns `{"status":"ok"}`. |
 | Deploy (public HTTPS) | Apply `render.yaml` on Render | See [../guides/deployment.md](../guides/deployment.md) and `DEPLOYMENT.md`. |
+| Production hardening | Why the production blueprint is stricter than dev defaults | [../guides/production-hardening.md](../guides/production-hardening.md), incl. the go-live checklist. |
 | Rollback | Redeploy the previous image / re-apply the blueprint | Data lives in Postgres when `RPCI_DATABASE_URL` is set. |
 
 ## Configuration (env var names)
@@ -26,7 +27,7 @@ All are prefixed `RPCI_`. Full table with defaults: [../guides/deployment.md](..
 `RPCI_UTC_OFFSET_HOURS`, `RPCI_DEMO_PASSWORD`, `RPCI_SEED_DEMO_USERS`,
 `RPCI_LOGIN_MAX_ATTEMPTS`, `RPCI_LOGIN_LOCKOUT_MINUTES`, `RPCI_SEED_MODE`,
 `RPCI_SEED_FROM_EXCEL_PATH`, `RPCI_CORS_ORIGINS`, `RPCI_ALLOW_DATA_RESET`,
-`RPCI_DEFAULT_SEGMENT`.
+`RPCI_DOCS_ENABLED`, `RPCI_DEFAULT_SEGMENT`.
 
 ## Accounts and backups
 

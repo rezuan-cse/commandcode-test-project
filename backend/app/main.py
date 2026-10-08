@@ -100,6 +100,12 @@ app = FastAPI(
         "accounts, opening balances, production runs, sales, payroll, and live reports."
     ),
     lifespan=lifespan,
+    # The interactive docs are a development aid. On production they would
+    # advertise every endpoint to the public, so RPCI_DOCS_ENABLED=false
+    # removes them there (the API itself is unaffected).
+    docs_url="/docs" if settings.docs_enabled else None,
+    redoc_url="/redoc" if settings.docs_enabled else None,
+    openapi_url="/openapi.json" if settings.docs_enabled else None,
 )
 
 _origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
