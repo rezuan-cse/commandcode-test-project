@@ -20,8 +20,10 @@ Usage, from the repository root:
 Safety:
 
 * The script refuses to run when the database already holds journal entries,
-  unless ``--force`` is passed. Generate into an empty database, or wipe first
-  from Administration -> Data ("Empty everything").
+  unless ``--force`` is passed. Generate into an empty database, wipe first
+  from Administration -> Data ("Empty everything"), or pass ``--wipe-first``
+  to empty the books (fresh starter chart) and generate in one step.
+  Sign-in accounts are never touched by a wipe.
 * Everything is deterministic for a given ``--seed``: the same seed and month
   count always produce the same data, so a test run is reproducible.
 * Demo master records use a ``DEMO-`` prefix where codes allow it, and every
@@ -64,6 +66,7 @@ from app.modules.items_bom import service as items_svc  # noqa: E402
 from app.modules.items_bom.models import BomComponent  # noqa: E402
 from app.modules.items_bom.repository import add_components  # noqa: E402
 from app.modules.items_bom.schemas import ItemIn  # noqa: E402
+from app.modules.data import service as data_svc  # noqa: E402
 from app.modules.journal_entries import service as journal_svc  # noqa: E402
 from app.modules.parties import service as parties_svc  # noqa: E402
 from app.modules.parties.schemas import PartyIn  # noqa: E402
@@ -370,6 +373,13 @@ def main() -> int:
         action="store_true",
         help="run even if the database already holds journal entries",
     )
+    parser.add_argument(
+        "--wipe-first",
+        action="store_true",
+        help="empty the books (fresh starter chart of accounts) before "
+        "generating, in one step. Sign-in accounts are kept. This is the "
+        "scripted equivalent of Administration -> Data -> 'Empty everything'.",
+    )
     args = parser.parse_args()
 
     if args.months < 1 or args.months > 60:
@@ -389,6 +399,9 @@ def main() -> int:
             start_month, start_year = 12, start_year - 1
 
     init_db()
+    if args.wipe_first:
+        report = data_svc.reset("fresh")
+        print(f"Wiped the books: {report.summary()}")
     db = SessionLocal()
     try:
         existing = journal_svc.list_entries(db, limit=1)
