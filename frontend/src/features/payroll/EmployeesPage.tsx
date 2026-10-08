@@ -7,7 +7,7 @@ import { PermissionNotice } from "../../shared/PermissionNotice";
 import { csvFilename } from "../../shared/csv";
 import { Card, ErrorBox, ExportButton, Field, Pill, Spinner, Toggle } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
-import type { Employee } from "../../shared/types";
+import type { Employee, PayrollOptions } from "../../shared/types";
 
 /** An empty draft, used to tell "adding" from "editing" apart. */
 const BLANK: Employee = {
@@ -37,12 +37,29 @@ export default function EmployeesPage() {
   const canWrite = can("payroll", true);
   const canRead = can("payroll");
   const employees = useAsync(() => api.employees(), []);
+  const options = useAsync(() => api.payrollOptions(), []);
+  const expenseAccounts = useAsync(() => api.accounts({ account_type: "Expense" }), []);
 
   const [draft, setDraft] = useState<Employee | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [activeOnly, setActiveOnly] = useState(false);
+  const [managing, setManaging] = useState(false);
+  const [optDraft, setOptDraft] = useState<PayrollOptions | null>(null);
+  const [savingOptions, setSavingOptions] = useState(false);
+
+  const departments = options.data?.departments ?? [];
+  const designations = options.data?.designations ?? [];
+
+  /**
+   * Match a stored department value to a current option, case-insensitively.
+   * Old records say "office"; the option says "Office" — both mean the same.
+   */
+  const deptName = (value: string): string => {
+    const found = departments.find((d) => d.name.toLowerCase() === value.toLowerCase());
+    return found ? found.name : (departments[0]?.name ?? value);
+  };
 
   useEffect(() => {
     setError(null);
@@ -79,6 +96,40 @@ export default function EmployeesPage() {
       setError(caught instanceof Error ? caught.message : String(caught));
     } finally {
       setSaving(false);
+    }
+  }
+
+  /** Open the options editor with a private copy of the current lists. */
+  function openManage() {
+    if (!options.data) return;
+    setOptDraft(JSON.parse(JSON.stringify(options.data)) as PayrollOptions);
+    setManaging(true);
+    setError(null);
+  }
+
+  async function saveOptions() {
+    if (!optDraft) return;
+    setSavingOptions(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const departments = optDraft.departments
+        .map((d) => ({ name: d.name.trim(), salary_account: d.salary_account }))
+        .filter((d) => d.name);
+      const designations = optDraft.designations
+        .map((name) => name.trim())
+        .filter(Boolean);
+      if (departments.length === 0) throw new Error("At least one department is required.");
+      if (designations.length === 0) throw new Error("At least one designation is required.");
+      await api.updatePayrollOptions({ departments, designations });
+      setManaging(false);
+      setOptDraft(null);
+      setMessage("Options updated.");
+      refresh();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : String(caught));
+    } finally {
+      setSavingOptions(false);
     }
   }
 
@@ -123,22 +174,42 @@ export default function EmployeesPage() {
             </Field>
             <Field label="Department">
               <select
-                value={draft.department}
+                value={deptName(draft.department)}
                 onChange={(event) =>
-                  setDraft({ ...draft, department: event.target.value as Employee["department"] })
+                  setDraft({ ...draft, department: event.target.value })
                 }
               >
-                <option value="office">Office</option>
-                <option value="factory">Factory</option>
+                {departments.map((d) => (
+                  <option key={d.name} value={d.name}>
+                    {d.name}
+                  </option>
+                ))}
               </select>
             </Field>
           </div>
           <div className="form-row" style={{ marginBottom: 14 }}>
             <Field label="Designation">
-              <input
+              <select
                 value={draft.designation ?? ""}
-                onChange={(event) => setDraft({ ...draft, designation: event.target.value })}
-              />
+                onChange={(event) =>
+                  setDraft({ ...draft, designation: event.target.value || null })
+                }
+              >
+                <option value="">—</option>
+                {designations.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+                {draft.designation &&
+                  !designations.some(
+                    (name) => name.toLowerCase() === draft.designation!.toLowerCase(),
+                  ) && (
+                    <option value={draft.designation}>
+                      {draft.designation} (no longer listed)
+                    </option>
+                  )}
+              </select>
             </Field>
             <Field label="Personal email">
               <input
@@ -216,6 +287,146 @@ export default function EmployeesPage() {
         </Card>
       )}
 
+      {canWrite && managing && optDraft && (
+        <Card
+          title="Department and designation options"
+          subtitle="These fill the dropdowns on the employee form. Each department carries the account its salaries are charged to."
+        >
+          {options.loading && <Spinner />}
+          {options.error && <ErrorBox message={options.error} />}
+          <h3 className="small muted" style={{ margin: "0 0 8px" }}>
+            Departments
+          </h3>
+          {optDraft.departments.map((dept, index) => (
+            <div className="form-row" style={{ marginBottom: 8 }} key={index}>
+              <Field label="Name">
+                <input
+                  value={dept.name}
+                  onChange={(event) => {
+                    const next = [...optDraft.departments];
+                    next[index] = { ...next[index], name: event.target.value };
+                    setOptDraft({ ...optDraft, departments: next });
+                  }}
+                />
+              </Field>
+              <Field label="Salary account">
+                <select
+                  value={dept.salary_account}
+                  onChange={(event) => {
+                    const next = [...optDraft.departments];
+                    next[index] = { ...next[index], salary_account: event.target.value };
+                    setOptDraft({ ...optDraft, departments: next });
+                  }}
+                >
+                  {(expenseAccounts.data ?? []).map((account) => (
+                    <option key={account.code} value={account.code}>
+                      {account.code} — {account.name_en}
+                    </option>
+                  ))}
+                  {!(expenseAccounts.data ?? []).some(
+                    (account) => account.code === dept.salary_account,
+                  ) && (
+                    <option value={dept.salary_account}>
+                      {dept.salary_account} (not an expense account)
+                    </option>
+                  )}
+                </select>
+              </Field>
+              <div style={{ display: "flex", alignItems: "flex-end", paddingBottom: 2 }}>
+                <button
+                  onClick={() =>
+                    setOptDraft({
+                      ...optDraft,
+                      departments: optDraft.departments.filter((_, i) => i !== index),
+                    })
+                  }
+                  disabled={optDraft.departments.length <= 1}
+                  title={
+                    optDraft.departments.length <= 1
+                      ? "At least one department is required"
+                      : "Remove this department"
+                  }
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+          <button
+            style={{ marginBottom: 16 }}
+            onClick={() =>
+              setOptDraft({
+                ...optDraft,
+                departments: [
+                  ...optDraft.departments,
+                  { name: "", salary_account: expenseAccounts.data?.[0]?.code ?? "" },
+                ],
+              })
+            }
+          >
+            Add department
+          </button>
+
+          <h3 className="small muted" style={{ margin: "0 0 8px" }}>
+            Designations
+          </h3>
+          {optDraft.designations.map((name, index) => (
+            <div className="form-row" style={{ marginBottom: 8 }} key={index}>
+              <Field label="Title">
+                <input
+                  value={name}
+                  onChange={(event) => {
+                    const next = [...optDraft.designations];
+                    next[index] = event.target.value;
+                    setOptDraft({ ...optDraft, designations: next });
+                  }}
+                />
+              </Field>
+              <div style={{ display: "flex", alignItems: "flex-end", paddingBottom: 2 }}>
+                <button
+                  onClick={() =>
+                    setOptDraft({
+                      ...optDraft,
+                      designations: optDraft.designations.filter((_, i) => i !== index),
+                    })
+                  }
+                  disabled={optDraft.designations.length <= 1}
+                  title={
+                    optDraft.designations.length <= 1
+                      ? "At least one designation is required"
+                      : "Remove this designation"
+                  }
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+          <button
+            style={{ marginBottom: 16 }}
+            onClick={() =>
+              setOptDraft({ ...optDraft, designations: [...optDraft.designations, ""] })
+            }
+          >
+            Add designation
+          </button>
+
+          <div className="row-actions">
+            <button className="primary" onClick={saveOptions} disabled={savingOptions}>
+              {savingOptions ? "Saving…" : "Save options"}
+            </button>
+            <button
+              onClick={() => {
+                setManaging(false);
+                setOptDraft(null);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </Card>
+      )}
+
       <Card
         title="Staff"
         subtitle={
@@ -226,9 +437,12 @@ export default function EmployeesPage() {
         actions={
           <div style={{ display: "flex", gap: 8 }}>
             {canWrite && (
-              <button className="primary" onClick={() => setDraft({ ...BLANK })}>
+              <button className="primary" onClick={() => setDraft({ ...BLANK, department: deptName(BLANK.department) })}>
                 Add employee
               </button>
+            )}
+            {canWrite && options.data && (
+              <button onClick={openManage}>Manage options</button>
             )}
             <ExportButton
               filename={csvFilename("staff")}

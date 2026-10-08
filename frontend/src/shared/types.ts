@@ -599,12 +599,25 @@ export interface VatSummary {
   net_payable: string;
 }
 
+/** One department choice, with the account its salaries are charged to. */
+export interface DepartmentOption {
+  name: string;
+  salary_account: string;
+}
+
+/** The dropdown options behind the employee form's Department and Designation fields. */
+export interface PayrollOptions {
+  departments: DepartmentOption[];
+  designations: string[];
+}
+
 export interface Employee {
   code: string;
   name: string;
   email: string | null;
   designation: string | null;
-  department: "office" | "factory";
+  /** A department name from the managed payroll options (canonical form). */
+  department: string;
   joining_date: string | null;
   bank_account: string | null;
   mobile: string | null;

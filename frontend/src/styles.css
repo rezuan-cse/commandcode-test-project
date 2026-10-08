@@ -1057,6 +1057,13 @@ button:disabled {
   padding: 8px 10px;
 }
 
+/* Numeric columns right-align their headers too; without this the more
+   specific `.receipt-lines th` rule above beats `.numeric` and the headers
+   sit left while the figures sit right. */
+.receipt-lines th.numeric {
+  text-align: right;
+}
+
 .receipt-lines td {
   padding: 10px;
   border-bottom: 1px solid var(--line);

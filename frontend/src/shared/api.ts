@@ -307,6 +307,14 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  payrollOptions: () => request<PayrollOptions>("/payroll/options"),
+
+  updatePayrollOptions: (payload: PayrollOptions) =>
+    request<PayrollOptions>("/payroll/options", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+
   payrollRuns: () => request<PayrollRun[]>("/payroll/runs"),
 
   payrollRun: (id: number | string) => request<PayrollDetail>(`/payroll/runs/${id}`),
