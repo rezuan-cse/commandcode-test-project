@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
@@ -15,6 +15,7 @@ import {
   Spinner,
 } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
+import { ReverseButton } from "../../shared/ReverseButton";
 import type {
   OutstandingInvoice,
   Payment,
@@ -51,7 +52,7 @@ export default function PaymentsPage() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [settling, setSettling] = useState<OutstandingInvoice | null>(null);
   const [applying, setApplying] = useState<Payment | null>(null);
-  const [reversing, setReversing] = useState<{ id: number; reason: string } | null>(null);
+
   const [preview, setPreview] = useState<PaymentPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -149,20 +150,10 @@ export default function PaymentsPage() {
     }
   }
 
-  async function confirmReverse() {
-    if (!reversing) return;
-    setError(null);
-    setBusy(true);
-    try {
-      await api.reversePayment(reversing.id, reversing.reason);
-      setMessage("Reversed. The invoices it settled are outstanding again.");
-      setReversing(null);
-      refresh();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    } finally {
-      setBusy(false);
-    }
+  async function reversePayment(id: number, reason: string) {
+    await api.reversePayment(id, reason);
+    setMessage("Reversed. The invoices it settled are outstanding again.");
+    refresh();
   }
 
   /** The invoices the open form may settle: this partner's, in this direction. */
@@ -185,33 +176,6 @@ export default function PaymentsPage() {
 
       {message && <div className="toast">✓ {message}</div>}
       {error && <ErrorBox message={error} />}
-
-      {reversing && (
-        <Card
-          title="Reverse this receipt or payment"
-          subtitle="The money goes back and the invoices it settled become outstanding again"
-          actions={<button onClick={() => setReversing(null)}>Cancel</button>}
-        >
-          <Field label="Reason" hint="Kept on the record — “returned cheque” is a good one">
-            <input
-              value={reversing.reason}
-              onChange={(event) =>
-                setReversing({ ...reversing, reason: event.target.value })
-              }
-            />
-          </Field>
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <button
-              className="primary"
-              onClick={confirmReverse}
-              disabled={busy || reversing.reason.trim().length < 3}
-            >
-              {busy ? "Reversing…" : "Reverse"}
-            </button>
-            <button onClick={() => setReversing(null)}>Cancel</button>
-          </div>
-        </Card>
-      )}
 
       {canWrite && draft && !applying && (
         <Card
@@ -423,76 +387,6 @@ export default function PaymentsPage() {
         </Card>
       )}
 
-      {canWrite && applying && (
-        <Card
-          title={`Apply ${fmt(applying.on_account)} held for ${applying.party_name}`}
-          subtitle="The money has already been received; this decides which invoices it settles"
-          actions={
-            <button
-              onClick={() => {
-                setApplying(null);
-                setDraft(null);
-              }}
-            >
-              Cancel
-            </button>
-          }
-        >
-          {draft?.allocations.map((row, index) => (
-            <div className="form-row" key={index} style={{ alignItems: "flex-end" }}>
-              <Field label="Invoice">
-                <span className="small">{invoiceLabel(invoices, row) ?? "—"}</span>
-              </Field>
-              <Field label="Amount">
-                <input
-                  className="numeric"
-                  inputMode="decimal"
-                  value={row.amount}
-                  onChange={(event) => {
-                    const allocations = [...draft.allocations];
-                    allocations[index] = { ...row, amount: event.target.value };
-                    setDraft({ ...draft, allocations });
-                  }}
-                />
-              </Field>
-              <div style={{ paddingBottom: 2 }}>
-                <button
-                  onClick={() =>
-                    setDraft({
-                      ...draft,
-                      allocations: draft.allocations.filter((_, i) => i !== index),
-                    })
-                  }
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="primary" onClick={applyCredit} disabled={busy || !draft?.allocations.length}>
-              {busy ? "Applying…" : "Apply"}
-            </button>
-            <button
-              onClick={() => {
-                const chosen = new Set(
-                  draft?.allocations.map(
-                    (row) => row.sale_order_id ?? row.purchase_order_id,
-                  ),
-                );
-                const next = invoicesFor(invoices, applying).find(
-                  (row) => !chosen.has(row.invoice_id),
-                );
-                if (!next || !draft) return;
-                setDraft({ ...draft, allocations: [...draft.allocations, allocFor(next)] });
-              }}
-            >
-              Add invoice
-            </button>
-          </div>
-        </Card>
-      )}
-
       <Card
         title="Outstanding invoices"
         subtitle="What customers owe you, and what you owe suppliers"
@@ -625,7 +519,8 @@ export default function PaymentsPage() {
               </thead>
               <tbody>
                 {payments.data.map((row) => (
-                  <tr key={row.id}>
+                  <Fragment key={row.id}>
+                  <tr>
                     <td>{row.pay_date}</td>
                     <td className="name-cell">{row.voucher_no}</td>
                     <td>
@@ -653,20 +548,115 @@ export default function PaymentsPage() {
                             <button onClick={() => openApply(row)}>Apply</button>
                           )}
                           {!row.is_reversed && (
-                            <button
-                              onClick={() => {
-                                setError(null);
-                                setReversing({ id: row.id, reason: "" });
-                              }}
-                            >
-                              Reverse
-                            </button>
+                            <ReverseButton
+                              onReverse={(reason) => reversePayment(row.id, reason)}
+                            />
                           )}
                         </div>
                       )}
                       {row.is_reversed && <Pill tone="warn">reversed</Pill>}
                     </td>
                   </tr>
+                  {canWrite && applying?.id === row.id && (
+                    <tr className="inline-editor-row">
+                      <td colSpan={9}>
+                        <div style={{ padding: "4px 0 8px" }}>
+                          <p className="small muted" style={{ margin: "0 0 8px" }}>
+                            Apply {fmt(applying.on_account)} held for{" "}
+                            {applying.party_name} — the money has already moved;
+                            this decides which invoices it settles.
+                          </p>
+                          {draft?.allocations.map((alloc, index) => (
+                            <div
+                              className="form-row"
+                              key={index}
+                              style={{ alignItems: "flex-end" }}
+                            >
+                              <Field label="Invoice">
+                                <span className="small">
+                                  {invoiceLabel(invoices, alloc) ?? "—"}
+                                </span>
+                              </Field>
+                              <Field label="Amount">
+                                <input
+                                  className="numeric"
+                                  inputMode="decimal"
+                                  value={alloc.amount}
+                                  onChange={(event) => {
+                                    if (!draft) return;
+                                    const allocations = [...draft.allocations];
+                                    allocations[index] = {
+                                      ...alloc,
+                                      amount: event.target.value,
+                                    };
+                                    setDraft({ ...draft, allocations });
+                                  }}
+                                />
+                              </Field>
+                              <div style={{ paddingBottom: 2 }}>
+                                <button
+                                  onClick={() => {
+                                    if (!draft) return;
+                                    setDraft({
+                                      ...draft,
+                                      allocations: draft.allocations.filter(
+                                        (_, i) => i !== index,
+                                      ),
+                                    });
+                                  }}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button
+                              className="primary"
+                              onClick={applyCredit}
+                              disabled={busy || !draft?.allocations.length}
+                            >
+                              {busy ? "Applying…" : "Apply"}
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (!draft) return;
+                                const chosen = new Set(
+                                  draft.allocations.map(
+                                    (alloc) =>
+                                      alloc.sale_order_id ??
+                                      alloc.purchase_order_id,
+                                  ),
+                                );
+                                const next = invoicesFor(invoices, applying).find(
+                                  (inv) => !chosen.has(inv.invoice_id),
+                                );
+                                if (!next) return;
+                                setDraft({
+                                  ...draft,
+                                  allocations: [
+                                    ...draft.allocations,
+                                    allocFor(next),
+                                  ],
+                                });
+                              }}
+                            >
+                              Add invoice
+                            </button>
+                            <button
+                              onClick={() => {
+                                setApplying(null);
+                                setDraft(null);
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
