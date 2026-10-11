@@ -26,6 +26,7 @@ import type {
   JournalEntry,
   LoginResponse,
   PayrollDetail,
+  PayrollOptions,
   PayrollPostResult,
   PayrollPreview,
   PayrollRun,
