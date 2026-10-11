@@ -121,7 +121,21 @@ function SettingRow({
                 Confirm
               </button>
             )}
-            {saved && <span className="muted small">saved</span>}
+            {dirty && !saving && (
+              <button
+                className="link"
+                onClick={() => {
+                  setDraft(displayValue(setting));
+                  setConfirmed(setting.confirmed_by_client);
+                  setError(null);
+                }}
+                title="Discard your edits and go back to the saved value"
+              >
+                Discard
+              </button>
+            )}
+            {saved && !dirty && <span className="muted small">saved</span>}
+            {dirty && !saving && <Pill tone="warn">unsaved</Pill>}
           </div>
         </td>
       )}

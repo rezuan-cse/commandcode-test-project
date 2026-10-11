@@ -42,6 +42,8 @@ export default function EmployeesPage() {
   const expenseAccounts = useAsync(() => api.accounts({ account_type: "Expense" }), []);
 
   const [draft, setDraft] = useState<Employee | null>(null);
+  /** Explicit edit mode: null = adding, otherwise the code being edited. */
+  const [editCode, setEditCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -86,18 +88,33 @@ export default function EmployeesPage() {
     setError(null);
     setMessage(null);
     try {
-      const existing = (employees.data ?? []).some((row) => row.code === draft.code);
       const payload = { ...draft, gross_salary: draft.gross_salary || "0" };
-      if (existing) await api.updateEmployee(draft.code, payload);
-      else await api.createEmployee(payload);
-      setMessage(existing ? "Employee updated." : "Employee added.");
+      if (editCode) {
+        await api.updateEmployee(editCode, payload);
+        setMessage("Employee updated.");
+      } else {
+        await api.createEmployee(payload);
+        setMessage("Employee added.");
+      }
       setDraft(null);
+      setEditCode(null);
       refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
     } finally {
       setSaving(false);
     }
+  }
+
+  /** In add mode, the code must not collide with an existing employee. */
+  function codeTaken(code: string): boolean {
+    return (
+      editCode === null &&
+      code.trim() !== "" &&
+      (employees.data ?? []).some(
+        (row) => row.code.toLowerCase() === code.trim().toLowerCase(),
+      )
+    );
   }
 
   /** Open the options editor with a private copy of the current lists. */
@@ -156,16 +173,20 @@ export default function EmployeesPage() {
       {error && <ErrorBox message={error} />}
 
       {canWrite && draft && (
-        <Card title={draft.code ? `Edit ${draft.code}` : "Add an employee"}>
+        <Card title={editCode ? `Edit ${editCode}` : "Add an employee"}>
           <div className="form-row" style={{ marginBottom: 14 }}>
             <Field label="Code" required>
               <input
                 value={draft.code}
-                disabled={Boolean(
-                  (employees.data ?? []).some((row) => row.code === draft.code),
-                )}
+                disabled={editCode !== null}
                 onChange={(event) => setDraft({ ...draft, code: event.target.value })}
               />
+              {codeTaken(draft.code) && (
+                <span className="field-hint" style={{ color: "var(--danger, #c0392b)" }}>
+                  An employee with this code already exists — pick another code, or
+                  select their row to edit them.
+                </span>
+              )}
             </Field>
             <Field label="Name" required>
               <input
@@ -280,14 +301,21 @@ export default function EmployeesPage() {
             )}
           </div>
           <div className="row-actions">
-            <button className="primary" onClick={save} disabled={saving || !draft.code || !draft.name}>
-              {saving
-                ? "Saving…"
-                : (employees.data ?? []).some((row) => row.code === draft.code)
-                  ? "Save employee"
-                  : "Add employee"}
+            <button
+              className="primary"
+              onClick={save}
+              disabled={saving || !draft.code || !draft.name || codeTaken(draft.code)}
+            >
+              {saving ? "Saving…" : editCode ? "Save employee" : "Add employee"}
             </button>
-            <button onClick={() => setDraft(null)}>Cancel</button>
+            <button
+              onClick={() => {
+                setDraft(null);
+                setEditCode(null);
+              }}
+            >
+              Cancel
+            </button>
           </div>
         </Card>
       )}
@@ -442,7 +470,13 @@ export default function EmployeesPage() {
         actions={
           <div style={{ display: "flex", gap: 8 }}>
             {canWrite && (
-              <button className="primary" onClick={() => setDraft({ ...BLANK, department: deptName(BLANK.department) })}>
+              <button
+                className="primary"
+                onClick={() => {
+                  setDraft({ ...BLANK, department: deptName(BLANK.department) });
+                  setEditCode(null);
+                }}
+              >
                 Add employee
               </button>
             )}
@@ -510,7 +544,11 @@ export default function EmployeesPage() {
                 {rows.map((row) => (
                   <tr
                     key={row.code}
-                    onClick={() => canWrite && setDraft(row)}
+                    onClick={() => {
+                      if (!canWrite) return;
+                      setDraft(row);
+                      setEditCode(row.code);
+                    }}
                     style={canWrite ? { cursor: "pointer" } : undefined}
                   >
                     <td className="name-cell">{row.code}</td>
@@ -527,7 +565,17 @@ export default function EmployeesPage() {
                       </Pill>
                     </td>
                     <td>
-                      {canWrite && <button onClick={() => setDraft(row)}>Edit</button>}
+                      {canWrite && (
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setDraft(row);
+                            setEditCode(row.code);
+                          }}
+                        >
+                          Edit
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
