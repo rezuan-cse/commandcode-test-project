@@ -79,6 +79,9 @@ export default function PaymentsPage() {
     setError(null);
     setMessage(null);
     setPreview(null);
+    // The new receipt/payment form and the Apply dialog share the draft state,
+    // so opening one must close the other.
+    setApplying(null);
     setSettling(invoice ?? null);
     setDraft({
       direction,
@@ -210,7 +213,7 @@ export default function PaymentsPage() {
         </Card>
       )}
 
-      {canWrite && draft && (
+      {canWrite && draft && !applying && (
         <Card
           title={settling ? `Settle ${settling.invoice_no}` : "New receipt or payment"}
           subtitle={
@@ -677,6 +680,7 @@ export default function PaymentsPage() {
     setError(null);
     setMessage(null);
     setPreview(null);
+    setSettling(null);
     setApplying(payment);
     setDraft({
       direction: payment.direction,
