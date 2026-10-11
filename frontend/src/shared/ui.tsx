@@ -176,14 +176,23 @@ export function Field({
   label,
   children,
   hint,
+  required,
 }: {
   label: string;
   children: ReactNode;
   hint?: string;
+  required?: boolean;
 }) {
   return (
     <label className="field">
-      <span className="field-label">{label}</span>
+      <span className="field-label">
+        {label}
+        {required && (
+          <span className="field-required" aria-hidden="true">
+            {" *"}
+          </span>
+        )}
+      </span>
       {children}
       {hint && <span className="field-hint">{hint}</span>}
     </label>

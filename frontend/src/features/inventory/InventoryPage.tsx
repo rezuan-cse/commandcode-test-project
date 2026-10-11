@@ -149,10 +149,10 @@ export default function InventoryPage() {
         from the accounts.
       </p>
 
-      {(error || message) && (
+      {message && <div className="toast">✓ {message}</div>}
+      {error && (
         <div style={{ marginBottom: 16 }}>
-          {error && <ErrorBox message={error} />}
-          {message && !error && <div className="notice">{message}</div>}
+          <ErrorBox message={error} />
         </div>
       )}
 
@@ -299,7 +299,7 @@ function ItemForm({
       actions={<button onClick={onCancel}>Cancel</button>}
     >
       <div className="form-row">
-        <Field label="Code">
+        <Field label="Code" required>
           <input
             value={draft.code}
             disabled={!draft.isNew}
@@ -307,13 +307,13 @@ function ItemForm({
             onChange={(event) => onChange({ ...draft, code: event.target.value })}
           />
         </Field>
-        <Field label="Name">
+        <Field label="Name" required>
           <input
             value={draft.name}
             onChange={(event) => onChange({ ...draft, name: event.target.value })}
           />
         </Field>
-        <Field label="Unit">
+        <Field label="Unit" required>
           <input
             value={draft.uom}
             placeholder="kg, litre, pcs"

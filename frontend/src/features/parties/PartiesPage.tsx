@@ -379,7 +379,7 @@ function PartyForm({
       actions={<button onClick={onCancel}>Cancel</button>}
     >
       <div className="form-row">
-        <Field label="Code">
+        <Field label="Code" required>
           <input
             value={draft.code}
             disabled={!draft.isNew}
@@ -387,7 +387,7 @@ function PartyForm({
             onChange={(event) => onChange({ ...draft, code: event.target.value })}
           />
         </Field>
-        <Field label="Name">
+        <Field label="Name" required>
           <input
             value={draft.name}
             onChange={(event) => onChange({ ...draft, name: event.target.value })}

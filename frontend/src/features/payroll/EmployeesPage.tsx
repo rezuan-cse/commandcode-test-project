@@ -158,7 +158,7 @@ export default function EmployeesPage() {
       {canWrite && draft && (
         <Card title={draft.code ? `Edit ${draft.code}` : "Add an employee"}>
           <div className="form-row" style={{ marginBottom: 14 }}>
-            <Field label="Code">
+            <Field label="Code" required>
               <input
                 value={draft.code}
                 disabled={Boolean(
@@ -167,7 +167,7 @@ export default function EmployeesPage() {
                 onChange={(event) => setDraft({ ...draft, code: event.target.value })}
               />
             </Field>
-            <Field label="Name">
+            <Field label="Name" required>
               <input
                 value={draft.name}
                 onChange={(event) => setDraft({ ...draft, name: event.target.value })}
@@ -281,7 +281,11 @@ export default function EmployeesPage() {
           </div>
           <div className="row-actions">
             <button className="primary" onClick={save} disabled={saving || !draft.code || !draft.name}>
-              {saving ? "Saving…" : "Save employee"}
+              {saving
+                ? "Saving…"
+                : (employees.data ?? []).some((row) => row.code === draft.code)
+                  ? "Save employee"
+                  : "Add employee"}
             </button>
             <button onClick={() => setDraft(null)}>Cancel</button>
           </div>
