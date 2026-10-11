@@ -37,6 +37,7 @@ export default function EmployeesPage() {
   const canWrite = can("payroll", true);
   const canRead = can("payroll");
   const employees = useAsync(() => api.employees(), []);
+  // Dropdown options come from the managed payroll settings (GET /api/payroll/options).
   const options = useAsync(() => api.payrollOptions(), []);
   const expenseAccounts = useAsync(() => api.accounts({ account_type: "Expense" }), []);
 
