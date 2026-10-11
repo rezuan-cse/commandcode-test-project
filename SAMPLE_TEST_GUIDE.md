@@ -97,13 +97,20 @@ row should read `0.0000`, and Total assets on the Dashboard should be `500,000.0
 
 ## Step 1 — Purchase: buy raw materials
 
+> **First, create the supplier record.** Click **Customers & Suppliers → Add
+> customer or supplier**. Code `SUP-001`, Name `Sample Supplier`, Type
+> `Supplier`, then **Add record**. This matters: the Receipts & Payments page
+> settles invoices through their linked party record, and its dropdowns only
+> list records — a name typed as free text on the purchase won't appear there,
+> and the invoice shows "not linked to a record".
+
 Click **Purchase Entry**.
 
 **Header**
 
 | Field | Value to enter |
 |---|---|
-| **Supplier** | `Sample Supplier` |
+| **Supplier** | Select `Sample Supplier` from the dropdown |
 | **Purchase date** | `2026-01-10` |
 | **Settlement** | *On credit (supplier payable)* |
 
@@ -222,11 +229,16 @@ and overhead).
 
 ## Step 3 — Sale: sell finished goods
 
+> **First, create the customer record.** Click **Customers & Suppliers → Add
+> customer or supplier**. Code `CUS-001`, Name `Karim Enterprise`, Type
+> `Customer`, then **Add record**. Same reason as Step 1: only a linked record
+> can be settled later in Receipts & Payments.
+
 Click **Sales Entry**.
 
 | Field | Value to enter |
 |---|---|
-| **Customer** | `Karim Enterprise` |
+| **Customer** | Select `Karim Enterprise` from the dropdown |
 | **Sale date** | `2026-01-25` |
 
 **Line 1**
@@ -517,12 +529,13 @@ those tabs.
 
 ### 8a — Record the receipt
 
-1. Open **Receipts & Payments** (the **Receipts** tab).
-2. **Party:** `Karim Enterprise` — the invoice list shows the Step 3 sale with
-   **1,500.00 outstanding**.
-3. **Date:** `2026-02-10`. **Amount:** `1500`. Leave the money account as
-   **1010 — Cash and Bank**.
-4. The amount allocates itself to the invoice. Click **Post receipt**.
+1. Open **Receipts & Payments** and click **Receive money**. A **New receipt or
+   payment** form opens with Type set to *Receipt — money in*.
+2. **Customer:** select `Karim Enterprise` — the **Invoices this settles**
+   section now lists the Step 3 sale with **1,500.00 outstanding**, because the
+   sale was linked to that party record back in Step 3.
+3. **Date:** `2026-02-10`. **Amount:** `1500`. Leave the account as **1010**.
+4. The amount allocates itself to the invoice. Click **Record**.
 
 **Expected.** A message such as *"RCV-001 recorded against Karim Enterprise."*
 The journal entry it posts:
@@ -537,9 +550,9 @@ assets are unchanged at 403,980.00 — cash simply replaced the IOU.
 
 ### 8b — Record the payment
 
-1. Switch to the **Payments** tab.
-2. **Party:** `Sample Supplier` — outstanding **4,200.00**.
-3. **Date:** `2026-02-12`. **Amount:** `4200`. Post.
+1. Click **Pay supplier**. Type is now *Payment — money out*.
+2. **Supplier:** select `Sample Supplier` — outstanding **4,200.00**.
+3. **Date:** `2026-02-12`. **Amount:** `4200`. Click **Record**.
 
 **Expected.** *"PMT-001 recorded against Sample Supplier."*
 
@@ -650,9 +663,12 @@ the menu is not the security; the signed token is.
 
 ## Step 12 — Parties, people, and exports
 
-1. **Customers & Suppliers.** `Sample Supplier` and `Karim Enterprise` were
-   created automatically the first time you typed their names. Open each and
-   fill in phone and email — the next receipt or payment will find them.
+1. **Customers & Suppliers.** You created `Sample Supplier` and
+   `Karim Enterprise` as records back in Steps 1 and 3 — that is why their
+   invoices are linked and settleable. Open each and fill in phone and email.
+   (If you had typed the names as free text instead of selecting the records,
+   the invoices would show "not linked to a record" and the Receipts &
+   Payments dropdowns would not list them.)
 2. **Roles & Access** (Admin). The matrix shows every role against every
    screen — compare it with what you saw in Step 11. **Add user** creates a
    login; it is admin-only.
