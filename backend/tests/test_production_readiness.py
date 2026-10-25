@@ -251,3 +251,79 @@ def test_a_data_reset_keeps_the_accounts(client, db, login) -> None:
     # And the same credentials still work.
     status, _body = login(ADMIN, DEMO_PASSWORD)
     assert status == 200
+
+
+# --- Refusing to boot with a dangerous production configuration -------------
+
+
+def _settings_with(monkeypatch, **env: str):
+    """Build Settings from an explicit environment, ignoring the ambient one."""
+    from app.core.config import Settings
+
+    for key in (
+        "RPCI_ENVIRONMENT",
+        "RPCI_DATABASE_URL",
+        "RPCI_JWT_SECRET",
+        "RPCI_SEED_MODE",
+    ):
+        monkeypatch.delenv(key, raising=False)
+    for key, value in env.items():
+        monkeypatch.setenv(key, value)
+    return Settings()
+
+
+def test_production_refuses_to_start_on_sqlite(monkeypatch) -> None:
+    """A missing DATABASE_URL must stop the app, not serve an empty database.
+
+    This is the failure that costs the client their books quietly: the container
+    starts, the login works, and every figure is zero. Refusing to boot turns it
+    into an obvious deployment error instead.
+    """
+    import pytest
+
+    with pytest.raises(Exception) as raised:
+        _settings_with(
+            monkeypatch,
+            RPCI_ENVIRONMENT="production",
+            RPCI_DATABASE_URL="sqlite:////data/rpci_demo.db",
+            RPCI_JWT_SECRET="a-real-secret",
+        )
+
+    assert "RPCI_DATABASE_URL" in str(raised.value)
+
+
+def test_production_requires_a_jwt_secret(monkeypatch) -> None:
+    """Without a fixed key every restart signs every user out."""
+    import pytest
+
+    with pytest.raises(Exception) as raised:
+        _settings_with(
+            monkeypatch,
+            RPCI_ENVIRONMENT="production",
+            RPCI_DATABASE_URL="postgresql://rpci:pw@db:5432/rpci",
+            RPCI_JWT_SECRET="   ",
+        )
+
+    assert "RPCI_JWT_SECRET" in str(raised.value)
+
+
+def test_production_accepts_a_complete_configuration(monkeypatch) -> None:
+    """The guards must not get in the way of a correct deployment."""
+    settings = _settings_with(
+        monkeypatch,
+        RPCI_ENVIRONMENT="production",
+        RPCI_DATABASE_URL="postgresql://rpci:pw@db:5432/rpci",
+        RPCI_JWT_SECRET="a-real-secret",
+    )
+
+    assert settings.environment == "production"
+    # And the plain scheme is still routed to the psycopg 3 driver.
+    assert settings.database_url == "postgresql+psycopg://rpci:pw@db:5432/rpci"
+
+
+def test_local_development_still_defaults_to_sqlite(monkeypatch) -> None:
+    """The convenience of a local run is untouched: no guards outside production."""
+    settings = _settings_with(monkeypatch, RPCI_SEED_MODE="fresh")
+
+    assert settings.environment == "development"
+    assert settings.database_url.startswith("sqlite")

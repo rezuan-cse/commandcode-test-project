@@ -105,9 +105,14 @@ nothing can sign in yet. Make one:
 
 ```bash
 docker compose -f docker-compose.prod.yml exec app \
-  python scripts/create_user.py --email you@example.com \
+  python /app/scripts/create_user.py --email you@example.com \
   --name "Your Name" --role admin
 ```
+
+The path is **absolute on purpose**. `exec` starts in the image's working directory,
+`/app/backend`, and `scripts/` lives at `/app/scripts` — so a relative
+`python scripts/create_user.py` fails with "No such file or directory". Either the
+absolute path above, or `-w /app` to change the directory, works.
 
 It prints a strong password once. Every later account is better made from
 **Roles & Access**, where the role and per-user grants are set together.

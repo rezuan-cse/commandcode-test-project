@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     """Runtime settings for the RPCI demo backend."""
 
     model_config = SettingsConfigDict(env_prefix="RPCI_", extra="ignore")
+
+    # "production" turns the two guards at the bottom of this class on. Anything
+    # else — including the default — leaves the app in its convenient local mode.
+    environment: str = "development"
 
     database_url: str = f"sqlite:///{PROJECT_ROOT / 'rpci_demo.db'}"
     demo_password: str = "rpci"
@@ -82,6 +86,45 @@ class Settings(BaseSettings):
             if value.startswith(prefix):
                 return "postgresql+psycopg://" + value[len(prefix):]
         return value
+
+    @model_validator(mode="after")
+    def refuse_dangerous_production_defaults(self) -> Settings:
+        """Fail loudly on a production box that would silently lose data.
+
+        Two defaults are fine locally and wrong on a deployment holding real
+        books, and both fail *quietly* — which is the worst way to fail:
+
+        * **A SQLite file.** If ``RPCI_DATABASE_URL`` is missing, the app would
+          start on an empty local database. Nothing errors; the books simply look
+          empty, and the first person to notice is an employee. Refusing to start
+          turns a silent data-loss into an obvious misconfiguration.
+
+        * **A generated signing key.** Left unset, a random key is made per
+          process, so every restart signs everybody out. Annoying rather than
+          destructive, but still a configuration error worth catching at boot.
+
+        Both checks only apply to ``RPCI_ENVIRONMENT=production``, so local runs,
+        the test suite and SQLite development are unaffected.
+        """
+        if self.environment.strip().lower() != "production":
+            return self
+
+        if self.database_url.startswith("sqlite"):
+            raise ValueError(
+                "RPCI_ENVIRONMENT=production requires a real database, but "
+                f"RPCI_DATABASE_URL is {self.database_url!r}. Set it to the "
+                "PostgreSQL connection string, or unset RPCI_ENVIRONMENT if this "
+                "really is a local run."
+            )
+
+        if not self.jwt_secret.strip():
+            raise ValueError(
+                "RPCI_ENVIRONMENT=production requires RPCI_JWT_SECRET, otherwise "
+                "every restart signs all users out. Generate one with: "
+                "python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+            )
+
+        return self
 
 
 settings = Settings()

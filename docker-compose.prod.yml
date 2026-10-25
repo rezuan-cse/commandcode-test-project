@@ -58,6 +58,10 @@ services:
       db:
         condition: service_healthy
     environment:
+      # Turns on the boot-time guards in config.py: the app refuses to start if
+      # RPCI_DATABASE_URL falls back to SQLite or RPCI_JWT_SECRET is unset, rather
+      # than booting an empty database and looking like the books vanished.
+      RPCI_ENVIRONMENT: production
       # psycopg 3 is the installed driver; config.py rewrites the plain scheme.
       RPCI_DATABASE_URL: postgresql://${POSTGRES_USER:-rpci}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-rpci}
       # A brand-new, empty database gets the standard starter chart of accounts.

@@ -7,6 +7,12 @@ it has no users at all — and nothing to sign in with. This makes the first one
     backend/.venv/bin/python scripts/create_user.py \\
         --email admin@resinovabd.com --name "Md. Sarwar Hossain" --role admin
 
+Inside the container the path must be absolute, because ``docker compose exec``
+starts in ``/app/backend``, not ``/app``:
+
+    docker compose -f docker-compose.prod.yml exec app \\
+        python /app/scripts/create_user.py --email … --role admin
+
 Pass ``--password`` to choose one; leave it out and a strong one is generated and
 printed. Either way the password is shown once and stored only as a bcrypt hash,
 so write it down before the terminal scrolls.

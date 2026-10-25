@@ -25,6 +25,12 @@ COPY backend/requirements.txt ./backend/requirements.txt
 RUN pip install --no-cache-dir -r backend/requirements.txt
 
 COPY backend/ ./backend/
+# Operator scripts (create_user.py). The app image is the only place with the
+# application's dependencies and the live database, so the first administrator
+# has to be made from inside this container:
+#   docker compose -f docker-compose.prod.yml exec app \
+#       python scripts/create_user.py --email … --role admin
+COPY scripts/ ./scripts/
 # JSON array form, because the workbook filename contains a space.
 COPY ["RPCI Accounts.xlsx", "./RPCI Accounts.xlsx"]
 COPY --from=frontend /build/dist ./frontend/dist
