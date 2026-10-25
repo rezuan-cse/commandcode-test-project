@@ -1,0 +1,112 @@
+# Production stack for a single VPS: Postgres, the application, and Caddy.
+#
+# This is deliberately NOT the local development compose file. Two differences
+# that matter:
+#
+#   * the database is a real Postgres on the box, not SQLite in a volume, because
+#     this holds the client's books and SQLite in a container is a file that dies
+#     with the container;
+#   * TLS is handled by Caddy, which fetches and renews a certificate on its own.
+#
+# Usage, from the repository root on the server:
+#
+#     cp deploy/.env.production.example .env.production
+#     # edit .env.production — the database password and the JWT secret
+#     docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#
+# The database is never published to the host: only Caddy is reachable, on 80/443.
+# The application port is bound to localhost so it can be curled for a health check
+# without being exposed to the internet.
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rpci}
+      POSTGRES_USER: ${POSTGRES_USER:-rpci}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.production}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Tuned modestly for a 4-core / 8 GB box running one small application. The
+    # defaults assume much less memory; these leave the rest for Postgres's own
+    # work and for the app container.
+    command: >
+      postgres
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c max_connections=40
+      -c timezone=UTC
+    healthcheck:
+      # The application must not start before the database can answer, or its
+      # first boot fails and restarts in a loop.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rpci} -d ${POSTGRES_DB:-rpci}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    # No `ports:` on purpose. Nothing outside this compose network may reach the
+    # database directly.
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # psycopg 3 is the installed driver; config.py rewrites the plain scheme.
+      RPCI_DATABASE_URL: postgresql://${POSTGRES_USER:-rpci}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-rpci}
+      # A brand-new, empty database gets the standard starter chart of accounts.
+      RPCI_SEED_MODE: fresh
+      RPCI_SEED_FROM_EXCEL_PATH: /app/RPCI Accounts.xlsx
+      # Sign-ins survive a restart only because this is fixed. Generate with:
+      #   python -c "import secrets; print(secrets.token_urlsafe(48))"
+      RPCI_JWT_SECRET: ${RPCI_JWT_SECRET:?set RPCI_JWT_SECRET in .env.production}
+      RPCI_ACCESS_TOKEN_MINUTES: "720"
+      RPCI_UTC_OFFSET_HOURS: "6"
+      # Caddy terminates TLS and proxies, so the browser only ever talks to one
+      # origin. Set this to the real site address.
+      RPCI_CORS_ORIGINS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env.production}
+      # The interactive API docs advertise every endpoint. Not on a box holding
+      # real books.
+      RPCI_DOCS_ENABLED: "false"
+      # Wiping the books must never be one click away.
+      RPCI_ALLOW_DATA_RESET: "false"
+      # The client's own accounts, not the seeded demo set.
+      RPCI_SEED_DEMO_USERS: "false"
+      RPCI_LOGIN_MAX_ATTEMPTS: "5"
+      RPCI_LOGIN_LOCKOUT_MINUTES: "15"
+    ports:
+      # Bound to localhost: reachable from the box (health checks, an SSH tunnel)
+      # but never from the internet. Caddy reaches it over the compose network.
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env.production}
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

@@ -64,7 +64,7 @@ backend/.venv/bin/python scripts/seed_from_excel.py --check
 |---|---|
 | Find the code for a feature | [docs/map/PRODUCT.md](docs/map/PRODUCT.md) |
 | Run, test, deploy, env vars | [docs/map/OPERATIONS.md](docs/map/OPERATIONS.md) |
-| Architecture and coding rules | [docs/guides/architecture.md](docs/guides/architecture.md) |
+| Deploy on your own VPS | [docs/guides/vps-deployment.md](docs/guides/vps-deployment.md) |
 | What each test covers | [docs/guides/testing.md](docs/guides/testing.md) |
 | What is built, how to demo it | [docs/guides/product-guide.md](docs/guides/product-guide.md) |
 | Out of scope / open items | [docs/guides/scope-and-open-items.md](docs/guides/scope-and-open-items.md) |

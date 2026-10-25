@@ -1,0 +1,39 @@
+# Caddy configuration.
+#
+# Caddy obtains and renews a Let's Encrypt certificate automatically, provided the
+# domain's DNS A record points at this server and ports 80 and 443 are both open —
+# the challenge comes in on 80, so it cannot be firewalled off.
+#
+# SITE_ADDRESS comes from .env.production. It can be:
+#   rpci.example.com            a real domain  → automatic public certificate
+#   erp.company.local           an internal name → Caddy uses its own local CA, and
+#                               staff must trust that certificate once
+#   :80                         no TLS at all — only sensible behind a tunnel
+
+{$SITE_ADDRESS} {
+	# The application. Everything goes to it: the API under /api, the SPA and its
+	# assets everywhere else, because FastAPI serves the built frontend itself.
+	reverse_proxy app:8000
+
+	# Uploads: the workbook import is the only large request. A generous ceiling
+	# avoids a confusing 413 if the client's real workbook is bigger than the
+	# sample one.
+	request_body {
+		max_size 64MB
+	}
+
+	# Financial data and payroll behind a login should not be cached by anything
+	# between the browser and this box.
+	header {
+		Cache-Control "no-store"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+
+	log {
+		output stderr
+		format console
+	}
+}

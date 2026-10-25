@@ -23,12 +23,11 @@ frontend/dist/
 frontend/coverage/
 *.tsbuildinfo
 
-# Environment
+# Environment. `.env.production` holds the database password and the session
+# signing key, so it is ignored by pattern rather than by name — a new
+# `.env.staging` should not have to be remembered. The example beside it is kept.
 .env
-
-# Editors and OS
-.DS_Store
-.idea/
-.vscode/
-.neon
+.env.*
+!.env.example
+!**/.env.production.example
 .env.local
