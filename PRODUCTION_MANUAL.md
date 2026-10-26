@@ -1567,20 +1567,28 @@ else works from there.
 - **Prerequisites:** Signed in (Test Case 1).
 - **Steps:**
   1. Click **Roles & Access** in the **Administration** group.
-  2. Find the **Permission matrix** and read your role's row.
-  3. Scroll to **Live permission probe**.
-  4. Click the button that reads **Call the API as "{your role}"**.
-  5. Read the result line.
-- **Expected Behavior:** Either a green message, `GET /api/accounts allowed for
-  "{role}"`, or a red message, `GET /api/accounts blocked for "{role}": …`. As
-  Admin you should be allowed.
-- **Actual Results & Calculation Explanation:** The button makes a real request to
-  the server using your session. The server reads the role from your signed
-  session — never from anything the screen sends — and compares it with the
-  permission table. Reading the chart of accounts is allowed for Admin,
-  Accountant and Owner/Viewer, and refused for Store/Production and Sales Staff.
-  That is why the answer comes from the server: hiding a menu is a convenience,
-  not the security.
+  2. Read the **Permission matrix**. Find the row for **Store/Production Staff**
+     and the column for **accounts**; it reads **No access**.
+  3. Read the **Menus by role** table below it. The same role is not offered the
+     **Ledger** group.
+  4. Sign out, then sign in as a user holding that role.
+  5. Try to open the chart of accounts directly by typing `/accounts` at the end
+     of the site address.
+- **Expected Behavior:** As Store/Production Staff the **Ledger** menu is absent.
+  At `/accounts` the screen loads but cannot fetch its data, and shows an error
+  naming the reason: **"The Chart of Accounts screen is not available to the
+  Store/Production Staff role. An administrator can grant access if it is
+  needed."** No account data appears.
+- **Actual Results & Calculation Explanation:** Every request carries a signed
+  session token. The server reads the role from that token — never from anything
+  the screen sends — and compares it with the permission table before answering.
+  The menu is hidden, and the screen is not offered, so nobody wastes time on it;
+  but the refusal that matters is the one the server makes when the request
+  arrives. That is why typing the address directly still fails: the data never
+  leaves the server.
+- **Why this matters:** It is the difference between a locked door and a door with
+  a sign on it. A determined user can edit the address bar, so the check that
+  counts is the one made on every request.
 
 ---
 
@@ -2356,10 +2364,13 @@ else works from there.
 7. **Roles & Access** — check the permission matrix matches the jobs people do,
    and **delete the five demo accounts** (`admin@rpci.demo` and the rest) once
    your own administrators exist and can sign in.
-8. **Data** — import your workbook, or start fresh and begin entering.
-9. **Backups** — set up the nightly `backup_db.py` run, keep the files off the
-   machine that hosts the database, and **restore one into a scratch database** to
-   prove it works.
+8. **Data** — import your workbook, or start fresh and begin entering. Once your
+   real figures are in, **do not use Restore sample workbook** — it replaces the
+   books. Ask for it to be removed from the screen before handover.
+9. **Backups** — on a VPS, install the nightly cron for `deploy/backup.sh`; on a
+   hosted deployment use `scripts/backup_db.py`. Either way, keep the files off the
+   machine that hosts the database, and **restore one** to prove it works. A backup
+   that has never been restored is a guess.
 10. **Try the two new guards once**, so you have seen them: close a period and be
     refused (Test Case 23), and lock an account and release it (Test Case 24).
 11. **Item master** — add your real products under **Inventory & BOM**, or import

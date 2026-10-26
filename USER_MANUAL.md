@@ -613,20 +613,29 @@ It will always be zero. If it is ever not zero, something has gone badly wrong.
 
 This screen shows the permission table from section 4.
 
-It also has a **Live permission probe**. Press the button and the screen calls the
-server as whoever you are currently acting as.
+Two tables appear. **Permission matrix** lists every role against every area, and
+says what that role may do there — **Full**, **View**, or **No access**. **Menus by
+role** shows the menu groups each role is offered.
 
-- If you are Admin, Accountant, or Owner, you will see a green message.
-- If you are Store or Sales staff, you will see a red message with the word
-  `403`.
+If you are an administrator, two more things appear:
 
-403 is the standard code for "you are not allowed". Seeing it proves the block is
-real.
+- **User accounts** — add a colleague, change their name or address, choose their
+  role, reset their password, clear their second factor, or disable the account.
+  Under each person you can also grant or deny one area on top of their role, for
+  the case where someone needs one extra screen without being given a whole role.
+- **Administrative actions** — a record of every account change, with who did it,
+  to whom, and when. Nothing here can be edited, which is the point.
 
-Try it: sign out, sign in as **`sales@rpci.demo`**. The Ledger menu is gone,
-because that role may not read the accounts. Then sign in as
-**`accountant@rpci.demo`** and open Purchase Entry — the screen opens for reading,
-with the form replaced by a note explaining that the role cannot post.
+**Try it.** Sign in as a member of Store/Production Staff and look at the menu. The
+**Ledger** group is absent, because that role may not read the accounts. Type
+`/accounts` at the end of the site address and the screen still will not show any
+accounts: it reports that the screen is not available to your role. The menu is
+hidden as a convenience; the refusal comes from the server, which is why editing
+the address bar gets you nowhere.
+
+Then sign in as an Accountant and open Purchase Entry. The screen opens for
+reading, with the form replaced by a note explaining that the role may view
+purchases but not post them.
 
 ---
 
