@@ -94,35 +94,76 @@ export default function LoginPage() {
 
   return (
     <div className="login-shell">
-      <div className="login-panel">
-        <div className="login-brand">
-          <Logo variant="light" />
-          <span className="brand-sub">Accounting &amp; Production ERP</span>
+      {/* The brand side. On a wide screen it is the left half; on a phone it
+          collapses to a compact header above the form, because a tall decorative
+          panel would push the sign-in fields below the fold. */}
+      <aside className="login-brandpane">
+        <div className="login-brandpane-inner">
+          <div className="login-wordmark">
+            <Logo variant="dark" />
+            <span className="login-company">Resinova Bangladesh</span>
+            <span className="login-tagline">Accounting &amp; Production ERP</span>
+          </div>
+
+          <p className="login-pitch">
+            The company ledger, production floor and payroll in one place. Every
+            stock movement posts its own balanced entry, so the books and the
+            warehouse always agree.
+          </p>
+
+          <ul className="login-proof">
+            <li>
+              <strong>Double-entry by default</strong>
+              <span>Each posting commits with its stock and journal, or not at all.</span>
+            </li>
+            <li>
+              <strong>Costed as you work</strong>
+              <span>Weighted-average on every receipt, run and sale.</span>
+            </li>
+            <li>
+              <strong>Auditable, never edited</strong>
+              <span>A mistake is reversed, so both entries stay on record.</span>
+            </li>
+          </ul>
+
+          <p className="login-foot">Resinova Bangladesh · Dhaka</p>
         </div>
+      </aside>
 
-        {error && <ErrorBox message={error} />}
+      <main className="login-formpane">
+        <div className="login-panel">
+          {/* Shown only on narrow screens, where the brand pane is collapsed.
+              The logo image is hidden here because it reads "Resinova" and the
+              line below it reads "Resinova Bangladesh" — the repeat looked like
+              a mistake. The full company name carries that slot instead. */}
+          <div className="login-brand login-brand-compact">
+            <span className="login-company">Resinova Bangladesh</span>
+            <span className="login-tagline">Accounting &amp; Production ERP</span>
+          </div>
 
-        {challengeToken === null ? (
-          <Card title="Sign in" subtitle="Enter your email and password">
-            <form onSubmit={handlePassword}>
-              <Field label="Email">
-                <input
-                  type="email"
-                  autoComplete="username"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                />
-              </Field>
-              <Field label="Password">
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                />
-              </Field>
-              <button className="primary" type="submit" disabled={busy}>
-                {busy ? "Signing in…" : "Sign in"}
+          {error && <ErrorBox message={error} />}
+
+          {challengeToken === null ? (
+            <Card title="Sign in" subtitle="Enter your email and password">
+              <form onSubmit={handlePassword}>
+                <Field label="Email">
+                  <input
+                    type="email"
+                    autoComplete="username"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                  />
+                </Field>
+                <Field label="Password">
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
+                </Field>
+                <button className="primary" type="submit" disabled={busy}>
+                  {busy ? "Signing in…" : "Sign in"}
               </button>
             </form>
           </Card>
@@ -203,7 +244,13 @@ export default function LoginPage() {
             </p>
           </Card>
         )}
-      </div>
+
+          <p className="login-help">
+            Trouble signing in? Ask your administrator to reset your password from
+            <strong> Roles &amp; Access</strong>.
+          </p>
+        </div>
+      </main>
     </div>
   );
 }
