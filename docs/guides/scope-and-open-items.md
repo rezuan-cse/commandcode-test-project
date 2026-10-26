@@ -49,6 +49,47 @@ or approve a posting. Everything the client has not confirmed lives in the `sett
 table, flagged **pending client**, and is editable from **Administration →
 Configuration** — nothing unconfirmed is hardcoded.
 
+### `RPCI Accounts.xlsx` does not reconcile, and cannot be fixed from this side
+
+The client's own working workbook has an Inventory Ledger that does not agree with
+its general ledger:
+
+| | Value |
+|---|---|
+| Inventory Ledger (memo sheet) | 775,500 |
+| General ledger inventory accounts (12xx) | 301,400 |
+| **Variance** | **474,100** |
+
+Confirmed by reading the workbook directly, independent of this application, so it
+is in the file rather than in the import. Three separate causes:
+
+1. **The memo sheet never posts journals.** The workbook's own *Instructions* sheet
+   states this: the Inventory Ledger tracks quantity and cost only. The two sides
+   are kept in step by hand, and here they are not.
+2. **Three scratch rows with keyboard-mashed references** — `srthrfgh`, `fgfd`, and
+   one with no reference at all — carry the entire stock balance
+   (`RMA-014` production-in 750,000; `RMC-003` purchase-in 32,500; `RMC-003`
+   production-out 7,000). **No journal entry exists for any of them.** The journal
+   holds only four vouchers: PROD-001, PROD-002, PROD-003, SALE-001.
+3. **The opening-stock rows are blank.** The GL opening balances declare 300,000 of
+   inventory across accounts 1200/1210/1240/1250, but the Inventory Ledger's
+   `Opening Stock` rows carry no quantity or value, so the stock ledger starts from
+   nothing.
+
+**This is not fixable by inventing figures.** Making the two sides agree requires the
+real opening quantity and cost for each item, which only the client's accountant has.
+The system therefore reproduces the workbook faithfully and lets the integrity check
+flag the difference, rather than quietly forcing it to zero — see
+`backend/tests/test_workbook_reconciliation.py`, which asserts this exact variance so
+a future change cannot hide it.
+
+**Use `SAMPLE_TEST_WORKBOOK.xlsx` for testing.** It reconciles exactly (6,000 =
+6,000, all four checks pass) and uses round figures that can be checked by hand.
+
+**To close this item**, ask the client for:
+- the opening quantity and unit cost of each item at the cutover date, and
+- the purchase and production vouchers behind those three stock rows.
+
 Known "still to do" behaviours:
 
 - **The VAT summary and the Mushak documents.** VAT is captured on every posting and

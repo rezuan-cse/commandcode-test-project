@@ -1710,20 +1710,41 @@ else works from there.
 
 - **User Persona:** **Admin**.
 - **Objective:** Put items and stock into the system.
-- **Prerequisites:** Signed in as Admin.
+- **Prerequisites:** Signed in as Admin; `SAMPLE_TEST_WORKBOOK.xlsx` to hand.
 - **Steps:**
   1. Click **Data**.
   2. Read the warning under **Import an existing workbook**.
-  3. In the **Start over** card, click **Restore sample workbook**.
-  4. Wait for the message, then open **Inventory & BOM**.
-- **Expected Behavior:** A green confirmation appears, and the Inventory screen now
-  lists items with quantities and average costs.
-- **Actual Results & Calculation Explanation:** Restoring the sample workbook
-  loads a complete set of accounts, items, opening balances, journal history and
-  stock movements. Every stock movement was replayed through the same
-  weighted-average engine the system uses for new postings, which is why the
-  figures match the source data exactly. This is the same path an import of your
-  own workbook takes.
+  3. Under **Import an existing workbook**, click **Workbook (.xlsx)** and choose
+     **`SAMPLE_TEST_WORKBOOK.xlsx`**.
+  4. Leave **Replace the books (empty them first)** ticked.
+  5. Click **Import workbook**.
+  6. Wait for the green message, then open **Inventory & BOM**.
+  7. Open the **Dashboard** and read the **Data integrity** panel.
+- **Expected Behavior:** A green confirmation appears. **Inventory & BOM** lists
+  five items with quantities and average costs, and **all four** integrity checks
+  show a green tick, including *General Ledger inventory equals stock ledger
+  value* at a variance of `0.0000`.
+- **Actual Results & Calculation Explanation:** The import loads a complete set of
+  accounts, items, opening balances, journal history and stock movements, then
+  replays every stock movement through the same weighted-average engine the system
+  uses for new postings. That is why the figures match the source file exactly.
+
+> **Use `SAMPLE_TEST_WORKBOOK.xlsx`, not `RPCI Accounts.xlsx`.** The sample file is
+> built for this walkthrough: round figures you can check by hand, and a stock
+> ledger that reconciles with its own general ledger.
+>
+> `RPCI Accounts.xlsx` is the client's own working file, and its **Inventory
+> Ledger** sheet does not reconcile with its general ledger: the memo ledger
+> carries **775,500** of stock against **301,400** in the accounts, a variance of
+> **474,100**. The cause is in the workbook, not the software — the memo sheet
+> never posts journals (its own *Instructions* sheet says so), and it contains
+> three scratch rows with keyboard-mashed references (`srthrfgh`, `fgfd`) that
+> have no matching journal entry. Its opening-stock rows are also blank. The
+> integrity check is doing exactly its job by flagging this.
+>
+> If you import `RPCI Accounts.xlsx`, expect that one check to flag until the
+> client's accountant supplies the real opening quantities and the missing
+> postings. See [docs/guides/scope-and-open-items.md](docs/guides/scope-and-open-items.md).
 
 ---
 
@@ -2364,9 +2385,13 @@ else works from there.
 7. **Roles & Access** — check the permission matrix matches the jobs people do,
    and **delete the five demo accounts** (`admin@rpci.demo` and the rest) once
    your own administrators exist and can sign in.
-8. **Data** — import your workbook, or start fresh and begin entering. Once your
-   real figures are in, **do not use Restore sample workbook** — it replaces the
-   books. Ask for it to be removed from the screen before handover.
+8. **Data** — import your workbook, or start fresh and begin entering. **Check all
+   four integrity checks show a green tick straight after the import.** If the
+   inventory check flags, the workbook's stock ledger and general ledger disagree —
+   resolve that with the accountant before entering live data, because every stock
+   figure afterwards is computed from it. (The client's `RPCI Accounts.xlsx` flags
+   this way today; `SAMPLE_TEST_WORKBOOK.xlsx` does not.) Once real figures are in,
+   importing replaces the books, so import deliberately.
 9. **Backups** — on a VPS, install the nightly cron for `deploy/backup.sh`; on a
    hosted deployment use `scripts/backup_db.py`. Either way, keep the files off the
    machine that hosts the database, and **restore one** to prove it works. A backup

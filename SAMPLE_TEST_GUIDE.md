@@ -34,8 +34,8 @@ The walkthrough starts as **Admin**. Two later steps ask you to sign in as
 
 | File | What it is |
 |---|---|
-| `SAMPLE_TEST_WORKBOOK.xlsx` | The sample workbook to import |
-| `RPCI Accounts.xlsx` | The client workbook (the same shape, real figures) |
+| `SAMPLE_TEST_WORKBOOK.xlsx` | **Use this one.** The sample workbook to import: round figures, and it reconciles on all four integrity checks |
+| `RPCI Accounts.xlsx` | The client's own workbook. Its Inventory Ledger does **not** reconcile with its general ledger (variance 474,100), so one integrity check flags if you import it — see the note below |
 | `scripts/make_sample_workbook.py` | Rebuilds the sample workbook at any time |
 
 Rebuild it whenever you like:
@@ -49,6 +49,16 @@ backend/.venv/bin/python scripts/make_sample_workbook.py
 > Data screen. That is deliberate — it stops a stray click wiping the books. To
 > reload the sample data, use **Import an existing workbook** instead: importing
 > replaces the books and is always available.
+
+> **A note on `RPCI Accounts.xlsx`.** That is the client's real working file, and
+> its Inventory Ledger does not agree with its general ledger: 775,500 of stock
+> against 301,400 in the accounts. The cause is in the workbook, not the software —
+> its memo sheet never posts journals, three of its rows have keyboard-mashed
+> references (`srthrfgh`, `fgfd`) with no journal entries behind them, and its
+> opening-stock rows are blank. Importing it therefore flags one integrity check.
+> This walkthrough uses **`SAMPLE_TEST_WORKBOOK.xlsx`**, which reconciles exactly,
+> so all four checks pass. Fixing the client file needs their accountant's real
+> opening quantities.
 
 ---
 
