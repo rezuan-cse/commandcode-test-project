@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/AuthContext";
 import { useDemo } from "../../shared/DemoContext";
+import { useAsync } from "../../shared/useAsync";
 import { Card, ErrorBox } from "../../shared/ui";
 
 /**
@@ -13,6 +14,7 @@ import { Card, ErrorBox } from "../../shared/ui";
 export default function DataPage() {
   const { user } = useAuth();
   const { refresh } = useDemo();
+  const meta = useAsync(() => api.meta(), []);
   const [file, setFile] = useState<File | null>(null);
   const [replace, setReplace] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -20,6 +22,11 @@ export default function DataPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   const isAdmin = user?.role === "Admin";
+  // The server refuses a reset when RPCI_ALLOW_DATA_RESET is off. Showing buttons
+  // that always fail is worse than not showing them, so the whole "Start over"
+  // card is hidden in that case. Importing a workbook is unaffected — it is the
+  // supported way to load data, and stays available even there.
+  const canReset = meta.data?.data_reset !== false;
 
   if (!isAdmin) {
     return (
@@ -97,28 +104,30 @@ export default function DataPage() {
         </div>
       </Card>
 
-      <Card title="Start over" subtitle="These actions cannot be undone">
-        <div className="row-actions">
-          <button
-            disabled={busy}
-            onClick={() => run(async () => (await api.resetData("fresh")).message)}
-          >
-            Start fresh (starter accounts)
-          </button>
-          <button
-            disabled={busy}
-            onClick={() => run(async () => (await api.resetData("workbook")).message)}
-          >
-            Restore sample workbook
-          </button>
-          <button
-            disabled={busy}
-            onClick={() => run(async () => (await api.resetData("none")).message)}
-          >
-            Empty everything
-          </button>
-        </div>
-      </Card>
+      {canReset && (
+        <Card title="Start over" subtitle="These actions cannot be undone">
+          <div className="row-actions">
+            <button
+              disabled={busy}
+              onClick={() => run(async () => (await api.resetData("fresh")).message)}
+            >
+              Start fresh (starter accounts)
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => run(async () => (await api.resetData("workbook")).message)}
+            >
+              Restore sample workbook
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => run(async () => (await api.resetData("none")).message)}
+            >
+              Empty everything
+            </button>
+          </div>
+        </Card>
+      )}
     </>
   );
 }

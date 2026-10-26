@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { useAuth } from "../../shared/AuthContext";
+import { api } from "../../shared/api";
+import { useAsync } from "../../shared/useAsync";
 import { Card, ErrorBox, Field, Logo } from "../../shared/ui";
 
 /**
  * The demo accounts, shown so a reviewer can switch roles without guesswork.
+ *
+ * Only rendered where the deployment really seeds these accounts — see
+ * `meta.demo_accounts`. Offering them on a production box filled the form with
+ * credentials the server would never accept, which reads as a broken system.
  *
  * `canChange` lists what the role may actually change. It used to say "can do",
  * which read as though anything not listed was inaccessible — when in fact those
@@ -44,8 +50,12 @@ const DEMO_ACCOUNTS = [
 
 export default function LoginPage() {
   const { signIn, submitCode } = useAuth();
-  const [email, setEmail] = useState("admin@rpci.demo");
-  const [password, setPassword] = useState("rpci");
+  const meta = useAsync(() => api.meta(), []);
+  // Until the answer arrives, offer neither: the worst case is a brief absence of
+  // the shortcut card, where guessing could offer credentials that do not exist.
+  const showDemoAccounts = meta.data?.demo_accounts === true;
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -153,44 +163,46 @@ export default function LoginPage() {
           </Card>
         )}
 
-        <Card title="Demo accounts" subtitle="All use the password rpci">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Can change</th>
-                  <th>Can also read</th>
-                </tr>
-              </thead>
-              <tbody>
-                {DEMO_ACCOUNTS.map((account) => (
-                  <tr
-                    key={account.email}
-                    onClick={() => {
-                      setEmail(account.email);
-                      setPassword("rpci");
-                    }}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <td style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
-                      {account.email}
-                    </td>
-                    <td>{account.role}</td>
-                    <td>{account.canChange}</td>
-                    <td className="muted small">{account.canSee}</td>
+        {showDemoAccounts && (
+          <Card title="Demo accounts" subtitle="All use the password rpci">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Can change</th>
+                    <th>Can also read</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="small muted" style={{ marginTop: 10, marginBottom: 0 }}>
-            Click a row to fill the form. Signing in as different people is how you
-            see the permission rules applied. Menus a role cannot read are hidden,
-            and screens it may read but not change are shown without their forms.
-          </p>
-        </Card>
+                </thead>
+                <tbody>
+                  {DEMO_ACCOUNTS.map((account) => (
+                    <tr
+                      key={account.email}
+                      onClick={() => {
+                        setEmail(account.email);
+                        setPassword("rpci");
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <td style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
+                        {account.email}
+                      </td>
+                      <td>{account.role}</td>
+                      <td>{account.canChange}</td>
+                      <td className="muted small">{account.canSee}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="small muted" style={{ marginTop: 10, marginBottom: 0 }}>
+              Click a row to fill the form. Signing in as different people is how you
+              see the permission rules applied. Menus a role cannot read are hidden,
+              and screens it may read but not change are shown without their forms.
+            </p>
+          </Card>
+        )}
       </div>
     </div>
   );

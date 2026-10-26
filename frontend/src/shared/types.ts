@@ -19,6 +19,23 @@ export type Segment =
 
 export type Access = "none" | "view" | "full";
 
+/**
+ * What a deployment actually offers, from `GET /api/meta`.
+ *
+ * The interface uses this to avoid offering things that are not there: a demo
+ * sign-in card on a deployment with no demo accounts, or a reset button the
+ * server will refuse. Both used to be shown regardless, which made a correctly
+ * configured production box look broken.
+ */
+export interface DeploymentMeta {
+  /** Demo accounts are really created here, so the sign-in shortcut is truthful. */
+  demo_accounts: boolean;
+  /** "Start over" is permitted. Importing a workbook is always allowed. */
+  data_reset: boolean;
+  /** The interactive API docs are served. */
+  api_docs: boolean;
+}
+
 export interface Account {
   code: string;
   name_en: string;

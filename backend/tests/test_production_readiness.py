@@ -327,3 +327,52 @@ def test_local_development_still_defaults_to_sqlite(monkeypatch) -> None:
 
     assert settings.environment == "development"
     assert settings.database_url.startswith("sqlite")
+
+
+# --- What the deployment advertises ------------------------------------------
+
+
+def test_meta_reports_the_deployment_honestly(client) -> None:
+    """The interface reads this before a session exists, so it must be public.
+
+    Two screens depend on it: the sign-in card and the Data page. Both used to
+    show controls that could only fail.
+    """
+    response = client.get("/api/meta")
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+
+    # Booleans only. No secrets, no client figures — this endpoint is unauthenticated.
+    assert set(body) == {"demo_accounts", "data_reset", "api_docs"}
+    assert all(isinstance(value, bool) for value in body.values())
+
+
+def test_meta_reflects_the_configured_switches(client, monkeypatch) -> None:
+    """The reported value is the real setting, not a hardcoded constant."""
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "allow_data_reset", False)
+    monkeypatch.setattr(settings, "seed_demo_users", False)
+
+    body = client.get("/api/meta").json()
+
+    assert body["data_reset"] is False
+    assert body["demo_accounts"] is False
+
+
+def test_a_disabled_reset_is_refused_by_the_server(client, login, monkeypatch) -> None:
+    """Hiding the button is convenience; the refusal is the real boundary.
+
+    Someone can still POST to the endpoint with a valid admin token, so the server
+    must refuse regardless of what the interface chose to display.
+    """
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "allow_data_reset", False)
+    headers = _headers(login)
+
+    response = client.post("/api/data/reset?mode=fresh", headers=headers)
+
+    assert response.status_code == 403
+    assert "disabled" in response.json()["detail"].lower()

@@ -11,6 +11,7 @@ import type {
   BomComponent,
   BomExplosion,
   DataResult,
+  DeploymentMeta,
   Employee,
   GeneralLedger,
   IntegrityReport,
@@ -125,6 +126,15 @@ async function request<T>(
 }
 
 export const api = {
+  /**
+   * What this deployment offers. Public, so the sign-in screen can read it before
+   * a session exists — it carries no secrets and no client data.
+   *
+   * `handleUnauthorized` is off because this is called with no token at all, and a
+   * 401 here must not be mistaken for an expired session.
+   */
+  meta: () => request<DeploymentMeta>("/meta", undefined, false),
+
   accounts: (params?: { segment?: string; account_type?: string; search?: string }) => {
     const query = new URLSearchParams();
     if (params?.segment) query.set("segment", params.segment);

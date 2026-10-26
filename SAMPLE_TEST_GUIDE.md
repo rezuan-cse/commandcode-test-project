@@ -7,33 +7,48 @@ Everything below uses round figures, so you can check the maths by hand.
 
 ## Before you start
 
-The system lives at **https://rpci.onrender.com/**. The landing page is a
-sign-in; while it is in testing there are public demo accounts, all with the
-password **`rpci`**:
+The system lives at the address you deployed it to. On the current VPS that is
+**`https://103.51.129.98.sslip.io/`** — replace it with the client's real domain
+once it moves.
 
-| Email | Role |
+**You need one account per role** to run this walkthrough, because several steps
+ask you to sign in as a different job. The demo accounts described in older
+versions of this guide do **not** exist on a production deployment
+(`RPCI_SEED_DEMO_USERS=false`), so create them first:
+
+1. Sign in as **Admin**.
+2. Open **Administration → Roles & Access → User accounts**.
+3. Add one person per role, and note the generated password each time:
+
+| Role | Suggested email |
 |---|---|
-| `admin@rpci.demo` | Admin — everything, including Administration |
-| `accountant@rpci.demo` | Accountant — post and view, no administration |
-| `store@rpci.demo` | Store — inventory and production |
-| `sales@rpci.demo` | Sales — customers, sales, receipts |
-| `owner@rpci.demo` | Owner — view reports, no posting |
+| Accountant | `accountant@resinovabd.com` |
+| Store/Production Staff | `store@resinovabd.com` |
+| Sales Staff | `sales@resinovabd.com` |
+| Owner/Viewer | `owner@resinovabd.com` |
 
-This walkthrough starts as **Admin** (`admin@rpci.demo`). Step 7 asks you to
-sign in as the **Sales** user (`sales@rpci.demo`) — same password.
+The walkthrough starts as **Admin**. Two later steps ask you to sign in as
+**Sales Staff** and **Store/Production Staff**.
 
 **Files**
 
 | File | What it is |
 |---|---|
 | `SAMPLE_TEST_WORKBOOK.xlsx` | The sample workbook to import |
-| `scripts/make_sample_workbook.py` | Rebuilds the workbook at any time |
+| `RPCI Accounts.xlsx` | The client workbook (the same shape, real figures) |
+| `scripts/make_sample_workbook.py` | Rebuilds the sample workbook at any time |
 
 Rebuild it whenever you like:
 
 ```bash
 backend/.venv/bin/python scripts/make_sample_workbook.py
 ```
+
+> **A note on "Start over".** The production configuration sets
+> `RPCI_ALLOW_DATA_RESET=false`, so the **Start over** card is not shown on the
+> Data screen. That is deliberate — it stops a stray click wiping the books. To
+> reload the sample data, use **Import an existing workbook** instead: importing
+> replaces the books and is always available.
 
 ---
 
@@ -483,23 +498,25 @@ On the **Dashboard → Data integrity** card, all four checks should show a tick
 - **VAT is not appearing** — check **Charge VAT** is on, and that the item's
   **segment** is in **Segments VAT applies to**.
 - **Nothing to buy, make or sell** — the books are empty of items. Import the
-  sample workbook again (**Data → Restore sample workbook**) or your own file.
+  sample workbook again (**Data → Import an existing workbook**) or your own file.
 
 ## Resetting between runs
 
-To start the walkthrough again from a clean slate, either:
+To start the walkthrough again from a clean slate:
 
-- **Data → Restore sample workbook** (reloads this exact starting position), or
-- **Data → Start fresh (starter accounts)** (empties everything and loads only the
-  standard accounts).
+- **Data → Import an existing workbook**, with **Replace the books** ticked. This
+  reloads the sample workbook and is the only route on a production deployment.
 
-> On the production deployment (`rpci.onrender.com`) the **Start over** buttons
-> are disabled — clicking one answers *"Starting the books over is disabled on
-> this deployment."* That switch (`RPCI_ALLOW_DATA_RESET`) is deliberately off
-> outside local testing. To reset the hosted database, either re-import the
-> workbook with **Replace the books** ticked (importing is not behind the
-> switch), or wipe and regenerate from your own machine with
-> `scripts/generate_demo_data.py --wipe-first` (see `docs/map/OPERATIONS.md`).
+> The production configuration sets `RPCI_ALLOW_DATA_RESET=false`, so the **Start
+> over** card is **not shown at all** on the Data screen — there is nothing to
+> click and no error to see. That is deliberate: it stops a stray click wiping the
+> client's books. Importing is deliberately not behind that switch, because
+> importing *is* the supported way to load data, so it stays available.
+>
+> On a local development machine `RPCI_ALLOW_DATA_RESET` defaults to on, and the
+> three **Start over** buttons appear. To wipe and regenerate the hosted database
+> from your own machine instead, use `scripts/generate_demo_data.py --wipe-first`
+> (see `docs/map/OPERATIONS.md`).
 
 ---
 
@@ -616,15 +633,18 @@ level means "not watched".
 Everything so far was posted by an entry screen. Sometimes the books need a
 hand-written adjustment — say 800 of office stationery bought for cash, with
 no purchase invoice. The Journal page lists entries but has no entry form, so
-adjustments go through the API:
+adjustments go through the API. Replace the address and the credentials with
+your own:
 
 ```bash
-TOKEN=$(curl -s -X POST https://rpci.onrender.com/api/auth/login \
+SITE=https://103.51.129.98.sslip.io
+
+TOKEN=$(curl -s -X POST $SITE/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@rpci.demo","password":"rpci"}' \
+  -d '{"email":"admin@example.com","password":"YOUR-PASSWORD"}' \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
-curl -s -X POST https://rpci.onrender.com/api/journal-entries \
+curl -s -X POST $SITE/api/journal-entries \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{
     "voucher_no": "JRN-001",
     "entry_date": "2026-03-15",
@@ -636,6 +656,10 @@ curl -s -X POST https://rpci.onrender.com/api/journal-entries \
   }'
 ```
 
+> This step needs a network path to the API. On a deployment with
+> `RPCI_DOCS_ENABLED=false` the interactive docs pages are gone, but the API itself
+> works normally — the `curl` commands above are unaffected.
+
 **Expected.** A `201`, and the entry appears in **Journal Entries** as
 `JRN-001`. The same rules apply as everywhere else: debits must equal
 credits, the voucher number must be unique, and the date must fall in an open
@@ -646,20 +670,20 @@ operating expenses for the period rise by 800.
 
 ## Step 11 — Who gets to do what: the roles tour
 
-Sign out and sign in as each demo user (password `rpci` for all). What changes
-is the menu — and the server enforces it too, so a hidden screen stays closed
-even if you type its address.
+Sign out and sign in as each of the accounts you created in **Before you start**.
+What changes is the menu — and the server enforces it too, so a hidden screen stays
+closed even if you type its address.
 
 | Sign in as | What you get |
 |---|---|
-| `accountant@rpci.demo` | No Administration group at all. Journal Entries, Parties, Receipts & Payments, Payroll and Reports work fully; Chart of Accounts, Inventory & BOM, Production and Purchase/Sales entries open read-only with a "View only for your role" banner. |
-| `store@rpci.demo` | Inventory & BOM and Production Entry fully; Parties fully; Receipts & Payments view-only. No journal, no sales, no payroll, no reports, no administration. |
-| `sales@rpci.demo` | Parties and Purchase/Sales Entry fully; Inventory view-only; Receipts & Payments view-only. Nothing else. |
-| `owner@rpci.demo` | Everything view-only, except Reports which are full. Administration opens read-only. |
+| **Accountant** | No Administration group at all. Journal Entries, Parties, Receipts & Payments, Payroll and Reports work fully; Chart of Accounts, Inventory & BOM, Production and Purchase/Sales entries open read-only with a "View only for your role" banner. |
+| **Store/Production Staff** | Inventory & BOM and Production Entry fully; Parties fully; Receipts & Payments view-only. No journal, no sales, no payroll, no reports, no administration. |
+| **Sales Staff** | Parties and Purchase/Sales Entry fully; Inventory view-only; Receipts & Payments view-only. Nothing else. |
+| **Owner/Viewer** | Everything view-only, except Reports which are full. Administration opens read-only. |
 
-Try it: as Sales, open **Journal Entries** directly at
-`https://rpci.onrender.com/journal`. The screen loads but offers no actions —
-the menu is not the security; the signed token is.
+Try it: as Sales Staff, open **Journal Entries** directly by adding `/journal` to
+your site address. The screen loads but offers no actions — the menu is not the
+security; the signed token is.
 
 ## Step 12 — Parties, people, and exports
 

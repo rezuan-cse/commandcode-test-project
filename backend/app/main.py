@@ -127,6 +127,31 @@ async def domain_error_handler(request: Request, exc: DomainError) -> JSONRespon
     return JSONResponse(status_code=exc.status_code, content={"detail": str(exc)})
 
 
+@app.get("/api/meta", tags=["meta"])
+def deployment_meta() -> dict[str, bool]:
+    """What this deployment actually offers, for the interface to read.
+
+    Public and deliberately narrow: three booleans, no secrets, no counts of the
+    client's data. The sign-in screen and the Data screen need these *before* a
+    session exists, which is why they cannot come from an authenticated endpoint.
+
+    Without this the interface could only guess, and it guessed wrong: the sign-in
+    screen advertised five demo accounts on a deployment that seeds none, so
+    clicking one filled the form with credentials that would never be accepted.
+    A login screen offering accounts that do not exist reads as a broken system.
+    """
+    return {
+        # Offer the demo sign-in card only where those accounts are really created.
+        "demo_accounts": settings.seed_demo_users,
+        # Importing a workbook is separate from this and stays available: it is
+        # the supported way to load data. Only "start over" is switched off.
+        "data_reset": settings.allow_data_reset,
+        # Whether the interactive API docs are served, so the interface does not
+        # link to pages that 404.
+        "api_docs": settings.docs_enabled,
+    }
+
+
 @app.get("/healthz", tags=["meta"])
 def healthz() -> dict[str, str]:
     """Liveness probe."""
