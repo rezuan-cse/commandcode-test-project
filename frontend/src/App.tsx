@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./shared/AuthContext";
 import { useDemo } from "./shared/DemoContext";
-import { Logo, Spinner } from "./shared/ui";
+import { Spinner } from "./shared/ui";
 import DashboardPage from "./features/dashboard/DashboardPage";
 import AccountsPage from "./features/accounts/AccountsPage";
 import JournalPage from "./features/journal/JournalPage";
@@ -74,7 +74,13 @@ export default function App() {
     <div className="shell">
       <aside className={`sidebar ${navOpen ? "open" : ""}`}>
         <div className="brand">
-          <Logo variant="dark" />
+          {/* The full trading name, not the short wordmark. The artwork draws
+              "Resinova" alone, which left the sidebar naming the product but not
+              the company; adding a second line would have repeated the word, so
+              the name itself carries "Bangladesh". */}
+          <span className="brand-mark brand-mark-full">
+            <span className="brand-r">R</span>esinova Bangladesh
+          </span>
           <span className="brand-sub">Accounting &amp; Production ERP</span>
         </div>
         <nav>

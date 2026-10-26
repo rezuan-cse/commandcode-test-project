@@ -88,6 +88,16 @@ body {
   font-size: 1.14em;
 }
 
+/* The sidebar carries the full trading name, so it needs a size that fits the
+   244px rail without wrapping. Checked against the longest string the client is
+   likely to keep ("Resinova Bangladesh"). */
+.brand-mark-full {
+  font-size: 16px;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
 /* The logo artwork, sized by height so the lockup keeps its own proportions
    whatever the file's intrinsic size turns out to be. */
 .brand-logo {
