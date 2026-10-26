@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../../shared/AuthContext";
 import { api } from "../../shared/api";
 import { useAsync } from "../../shared/useAsync";
-import { Card, ErrorBox, Field, Logo } from "../../shared/ui";
+import { Card, ErrorBox, Field } from "../../shared/ui";
 
 /**
  * The demo accounts, shown so a reviewer can switch roles without guesswork.
@@ -99,9 +99,14 @@ export default function LoginPage() {
           panel would push the sign-in fields below the fold. */}
       <aside className="login-brandpane">
         <div className="login-brandpane-inner">
+          {/* One wordmark, not two. The logo artwork draws "Resinova", and the
+              company line beneath it said "Resinova Bangladesh", so the name
+              appeared twice on top of itself. The blue initial keeps the brand
+              mark's identity and the rest reads as the full trading name. */}
           <div className="login-wordmark">
-            <Logo variant="dark" />
-            <span className="login-company">Resinova Bangladesh</span>
+            <span className="login-company login-company-lg">
+              <span className="brand-r">R</span>esinova Bangladesh
+            </span>
             <span className="login-tagline">Accounting &amp; Production ERP</span>
           </div>
 
@@ -137,7 +142,9 @@ export default function LoginPage() {
               line below it reads "Resinova Bangladesh" — the repeat looked like
               a mistake. The full company name carries that slot instead. */}
           <div className="login-brand login-brand-compact">
-            <span className="login-company">Resinova Bangladesh</span>
+            <span className="login-company">
+              <span className="brand-r">R</span>esinova Bangladesh
+            </span>
             <span className="login-tagline">Accounting &amp; Production ERP</span>
           </div>
 

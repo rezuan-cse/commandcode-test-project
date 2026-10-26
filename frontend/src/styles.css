@@ -949,6 +949,22 @@ button:disabled {
   color: #ffffff;
 }
 
+/* The blue initial that identifies the brand. `.brand-mark .brand-r` scopes the
+   colour to the sidebar wordmark, so the sign-in screen needs its own rule. */
+.login-company .brand-r {
+  color: var(--accent);
+  font-size: 1.1em;
+}
+
+/* On the brand pane the name is the largest thing on the screen: it is the
+   company's own introduction, not a label above a form. */
+.login-company-lg {
+  font-size: 27px;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
 .login-tagline {
   font-size: 12px;
   font-weight: 500;
