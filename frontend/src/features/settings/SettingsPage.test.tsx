@@ -9,7 +9,20 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../shared/api", () => ({
-  api: { settings: vi.fn(), updateSetting: vi.fn() },
+  api: {
+    // The period provider asks this on mount for the dates to open on.
+    meta: vi.fn().mockResolvedValue({
+      demo_accounts: false,
+      data_reset: true,
+      api_docs: false,
+      needs_setup: false,
+      company_name: "Resinova Bangladesh",
+      suggested_from: "2026-07-01",
+      suggested_as_of: "2026-10-31",
+    }),
+    settings: vi.fn(),
+    updateSetting: vi.fn(),
+  },
 }));
 
 const session = vi.hoisted(() => ({ role: "Admin" as string }));

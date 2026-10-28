@@ -13,11 +13,22 @@ const SEGMENT_BLURB: Record<string, string> = {
   Application: "Service and application income",
 };
 
+/** Green above zero, red below, neutral at zero: an empty ledger is not a good month. */
+function netProfitTone(value: string): "neutral" | "positive" | "negative" {
+  const amount = Number(value);
+  if (amount > 0) return "positive";
+  if (amount < 0) return "negative";
+  return "neutral";
+}
+
 export default function DashboardPage() {
   const { asOf, dateFrom } = useDemo();
   const pnl = useAsync(() => api.pnl(dateFrom, asOf), [dateFrom, asOf]);
   const bs = useAsync(() => api.balanceSheet(asOf), [asOf]);
   const integrity = useAsync(() => api.integrity(asOf), [asOf]);
+  // Advisory, and deliberately not part of the loading gate below: the figures
+  // should appear even if the checklist is slow or unavailable.
+  const setup = useAsync(() => api.setupChecklist(), []);
 
   if (pnl.loading || bs.loading || integrity.loading) return <Spinner />;
   if (pnl.error || bs.error || integrity.error) {
@@ -27,6 +38,8 @@ export default function DashboardPage() {
   const profit = pnl.data!;
   const balance = bs.data!;
   const checks = integrity.data!;
+  const setupItems = setup.data?.items ?? [];
+  const setupDone = setupItems.filter((item) => item.done).length;
 
   return (
     <>
@@ -36,6 +49,27 @@ export default function DashboardPage() {
         balances, and posted journal entries. Nothing on this page is stored separately — every
         figure is derived on request.
       </p>
+
+      {setup.data && !setup.data.complete && (
+        <Card
+          title="Getting started"
+          subtitle={`${setupDone} of ${setupItems.length} steps done — this card disappears when the last one is`}
+        >
+          <div className="check-list">
+            {setupItems.map((item) => (
+              <div className={`check-item ${item.done ? "pass" : ""}`} key={item.key}>
+                <span className="check-icon">{item.done ? "✓" : "○"}</span>
+                <div>
+                  <div className="check-name">
+                    {item.done ? item.label : <Link to={item.link}>{item.label} →</Link>}
+                  </div>
+                  <div className="check-detail">{item.detail}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-5" style={{ marginBottom: 20 }}>
         <Stat
@@ -49,7 +83,7 @@ export default function DashboardPage() {
         <Stat
           label="Net profit"
           value={fmt(profit.net_profit)}
-          tone={Number(profit.net_profit) >= 0 ? "positive" : "negative"}
+          tone={netProfitTone(profit.net_profit)}
         />
       </div>
 
@@ -124,7 +158,9 @@ export default function DashboardPage() {
             <Stat
               label="Current period profit"
               value={fmt(balance.current_period_profit)}
-              tone="positive"
+              // Zero is not a profit. Green at zero made an empty set of books look
+              // like a good month.
+              tone={netProfitTone(balance.current_period_profit)}
             />
           </div>
           <p className="small muted" style={{ marginTop: 14, marginBottom: 0 }}>
@@ -154,8 +190,15 @@ export default function DashboardPage() {
           {!checks.all_passed && (
             <p className="small muted" style={{ marginTop: 12, marginBottom: 0 }}>
               The last check compares the general ledger's inventory accounts against the stock
-              ledger. They disagree because the original workbook's stock sheet was a memo record
-              that never posted journals — see the Inventory screen for the detail.
+              ledger. They disagree when stock has been recorded without a matching journal
+              entry — imported memo figures that were never posted, or a stock movement entered
+              outside a transaction. The Inventory screen shows the detail.
+            </p>
+          )}
+          {checks.all_passed && profit.total_revenue === "0.0000" && (
+            <p className="small muted" style={{ marginTop: 12, marginBottom: 0 }}>
+              These checks compare nothing yet: there are no journal entries, so zero equals
+              zero. They start meaning something with the first posting.
             </p>
           )}
         </Card>

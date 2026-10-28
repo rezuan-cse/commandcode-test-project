@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { api } from "../../shared/api";
+import { useAuth } from "../../shared/AuthContext";
+import { useDemo } from "../../shared/DemoContext";
 import { fmt, fmtDateTime } from "../../shared/format";
 import { csvFilename } from "../../shared/csv";
 import { Card, Empty, ExportButton, Pill, Spinner, ErrorBox } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
 import type { JournalEntry } from "../../shared/types";
+import JournalEntryForm from "./JournalEntryForm";
 
 const SOURCE_TONE: Record<string, "neutral" | "positive" | "info" | "warn"> = {
   Manual: "neutral",
@@ -14,6 +17,9 @@ const SOURCE_TONE: Record<string, "neutral" | "positive" | "info" | "warn"> = {
 };
 
 export default function JournalPage() {
+  const { can } = useAuth();
+  const { asOf } = useDemo();
+  const canWrite = can("journal_entries", true);
   const { data, loading, error } = useAsync(() => api.journalEntries(), []);
   const [openId, setOpenId] = useState<number | null>(null);
 
@@ -25,6 +31,8 @@ export default function JournalPage() {
         production or sales posting. Each one is enforced balanced before it can be stored —
         the API refuses an unbalanced entry and the database would reject it too.
       </p>
+
+      {canWrite && <JournalEntryForm existing={data ?? []} defaultDate={asOf} />}
 
       {loading && <Spinner />}
       {error && <ErrorBox message={error} />}

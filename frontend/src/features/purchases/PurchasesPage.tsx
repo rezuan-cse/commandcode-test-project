@@ -146,7 +146,17 @@ export default function PurchasesPage() {
         />
       )}
 
-      {canWrite && (
+      {canWrite && !items.loading && options.length === 0 && (
+        // Same reason as the sales screen: an empty picker with no explanation.
+        <Card title="New purchase">
+          <p className="small muted" style={{ margin: 0 }}>
+            There are no items yet. Add an item under Inventory &amp; BOM before recording a
+            purchase, or import a workbook from Administration → Data.
+          </p>
+        </Card>
+      )}
+
+      {canWrite && options.length > 0 && (
       <Card
         title="New purchase"
         subtitle="Receiving stock updates the average cost used by every later movement"

@@ -6,7 +6,10 @@ is seeded at first boot — with zero balances and nothing else. The client's ow
 workbook can replace it at any time from Administration → Data.
 
 The codes cover every account the automatic postings use, so sales, purchases,
-production and payroll all have somewhere to post from day one.
+production and payroll all have somewhere to post from day one, plus the accounts a
+company starting from nothing needs to record its own affairs: a bank account,
+machinery, loans and the usual expense heads. Nothing here is a balance — a new
+company's figures arrive as journal entries it posts itself.
 """
 
 from __future__ import annotations
@@ -54,6 +57,36 @@ STARTER_ACCOUNTS: list[tuple[str, str, AccountType, Segment, NormalBalance]] = [
     ("6000", "Operating Expenses", AccountType.EXPENSE, Segment.SHARED, NormalBalance.DEBIT),
     ("6010", "Office Salaries", AccountType.EXPENSE, Segment.SHARED, NormalBalance.DEBIT),
     ("6200", "Sales Commission", AccountType.EXPENSE, Segment.SHARED, NormalBalance.DEBIT),
+    # --- What a going concern needs on top of the posting accounts ---------
+    # A company starting from nothing has no balances but does have a bank
+    # account, machinery, and rent to pay. Without these, every one of them would
+    # be posted into "Operating Expenses" or "Cash and Bank" and the reports would
+    # never separate them. None of these codes is used by an automatic posting, so
+    # adding them cannot change how a sale or a run is costed.
+    #
+    # Assets
+    ("1020", "Bank — Current Account", AccountType.ASSET, Segment.SHARED, NormalBalance.DEBIT),
+    ("1030", "Bank — Short-Term Deposit", AccountType.ASSET, Segment.SHARED, NormalBalance.DEBIT),
+    ("1300", "Advances and Deposits", AccountType.ASSET, Segment.SHARED, NormalBalance.DEBIT),
+    ("1400", "Plant and Machinery", AccountType.ASSET, Segment.SHARED, NormalBalance.DEBIT),
+    ("1410", "Accumulated Depreciation — Plant", AccountType.ASSET, Segment.SHARED, NormalBalance.CREDIT),
+    ("1420", "Furniture and Fixtures", AccountType.ASSET, Segment.SHARED, NormalBalance.DEBIT),
+    # Liabilities
+    ("2110", "Loans", AccountType.LIABILITY, Segment.SHARED, NormalBalance.CREDIT),
+    ("2300", "Accrued Expenses", AccountType.LIABILITY, Segment.SHARED, NormalBalance.CREDIT),
+    ("2400", "Advances from Customers", AccountType.LIABILITY, Segment.SHARED, NormalBalance.CREDIT),
+    ("2500", "Provision for Tax", AccountType.LIABILITY, Segment.SHARED, NormalBalance.CREDIT),
+    # Equity
+    ("3200", "Director's Loan", AccountType.EQUITY, Segment.SHARED, NormalBalance.CREDIT),
+    # Expenses
+    ("5100", "Depreciation", AccountType.EXPENSE, Segment.SHARED, NormalBalance.DEBIT),
+    ("6100", "Rent", AccountType.EXPENSE, Segment.SHARED, NormalBalance.DEBIT),
+    ("6110", "Utilities", AccountType.EXPENSE, Segment.SHARED, NormalBalance.DEBIT),
+    ("6120", "Transport", AccountType.EXPENSE, Segment.SHARED, NormalBalance.DEBIT),
+    ("6130", "Professional Fees", AccountType.EXPENSE, Segment.SHARED, NormalBalance.DEBIT),
+    ("6140", "Repairs and Maintenance", AccountType.EXPENSE, Segment.SHARED, NormalBalance.DEBIT),
+    ("6300", "Bank Charges", AccountType.EXPENSE, Segment.SHARED, NormalBalance.DEBIT),
+    ("6400", "Marketing", AccountType.EXPENSE, Segment.SHARED, NormalBalance.DEBIT),
 ]
 
 

@@ -105,6 +105,9 @@ def test_a_silly_value_is_refused(client, db, login) -> None:
 def test_a_change_takes_effect_without_a_restart(client, db, login) -> None:
     """Turn VAT on and the very next sale carries it — no redeploy involved."""
     headers = _headers(login)
+    # Start from off so the change is visible: VAT now ships switched on, and this
+    # test is about the switch working, not about which way it starts.
+    assert _set(client, headers, "vat.charge_vat", "false").status_code == 200
 
     # Stock bought while VAT is off, so the cost is clean.
     purchases.post(

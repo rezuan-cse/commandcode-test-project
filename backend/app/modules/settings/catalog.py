@@ -98,11 +98,23 @@ def _specs() -> list[SettingSpec]:
                     "the Mushak returns.", confirmed=True, sort_order=50),
         SettingSpec("company.tin", "TIN", "company", "string", "155979113247",
                     "Tax identification number.", confirmed=True, sort_order=60),
+        # Bangladesh runs 1 July – 30 June. Reports split the current period from
+        # retained earnings on this boundary, so it has to be the real one.
+        SettingSpec("company.fiscal_year_start_month", "Fiscal year starts in month",
+                    "company", "number", 7, "1–12. The month the accounting year "
+                    "begins: 7 is 1 July, the Bangladesh fiscal year.",
+                    confirmed=True, sort_order=70),
 
         # --- VAT -------------------------------------------------------------
-        SettingSpec("vat.charge_vat", "Charge VAT", "vat", "bool", False,
+        # On by default: this company is VAT-registered (its BIN is the one already
+        # seeded above), and a registered business has to charge VAT from its first
+        # invoice. Shipping with VAT off meant the first sales were posted without
+        # it, and correcting that afterwards needs a reversal per invoice. The rate
+        # stays editable, and the slab detail is still awaiting the accountant — the
+        # value is live, the confidence is not.
+        SettingSpec("vat.charge_vat", "Charge VAT", "vat", "bool", True,
                     "Whether the system adds VAT to sales and purchases. "
-                    "TBD (client).", sort_order=10),
+                    "Confirm the rate with the accountant.", sort_order=10),
         SettingSpec("vat.standard_rate_pct", "Standard rate (%)", "vat", "number",
                     15, "Standard VAT rate. TBD (client).", sort_order=20),
         SettingSpec("vat.prices_include_vat", "Prices include VAT", "vat", "bool",

@@ -10,7 +10,21 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../shared/api", () => ({
-  api: { sale: vi.fn(), settings: vi.fn(), items: vi.fn() },
+  api: {
+    // The period provider asks this on mount for the dates to open on.
+    meta: vi.fn().mockResolvedValue({
+      demo_accounts: false,
+      data_reset: true,
+      api_docs: false,
+      needs_setup: false,
+      company_name: "Resinova Bangladesh",
+      suggested_from: "2026-07-01",
+      suggested_as_of: "2026-10-31",
+    }),
+    sale: vi.fn(),
+    settings: vi.fn(),
+    items: vi.fn(),
+  },
 }));
 
 import { api } from "../../shared/api";

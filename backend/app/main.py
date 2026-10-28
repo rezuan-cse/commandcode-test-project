@@ -6,13 +6,13 @@ from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
-from app.core.db import SessionLocal, describe_database, describe_timezone, init_db
+from app.core.db import SessionLocal, describe_database, describe_timezone, get_db, init_db
 from app.core.exceptions import DomainError
 from app.modules.accounts.router import router as accounts_router
 from app.modules.approvals.router import router as approvals_router
@@ -30,6 +30,7 @@ from app.modules.purchases.router import router as purchases_router
 from app.modules.reports.router import router as reports_router
 from app.modules.sales.router import router as sales_router
 from app.modules.settings.router import router as settings_router
+from app.modules.setup.router import router as setup_router
 from app.modules.users_roles.router import router as access_router
 from app.modules.vat_tax.router import router as vat_router
 
@@ -128,18 +129,23 @@ async def domain_error_handler(request: Request, exc: DomainError) -> JSONRespon
 
 
 @app.get("/api/meta", tags=["meta"])
-def deployment_meta() -> dict[str, bool]:
+def deployment_meta(db=Depends(get_db)) -> dict:
     """What this deployment actually offers, for the interface to read.
 
-    Public and deliberately narrow: three booleans, no secrets, no counts of the
-    client's data. The sign-in screen and the Data screen need these *before* a
-    session exists, which is why they cannot come from an authenticated endpoint.
+    Public and deliberately narrow: a few booleans and the company's name, no
+    secrets and no counts of the client's data. The sign-in screen and the Data
+    screen need these *before* a session exists, which is why they cannot come
+    from an authenticated endpoint.
 
     Without this the interface could only guess, and it guessed wrong: the sign-in
     screen advertised five demo accounts on a deployment that seeds none, so
     clicking one filled the form with credentials that would never be accepted.
     A login screen offering accounts that do not exist reads as a broken system.
     """
+    from app.modules.setup import service as setup_service
+
+    period_from, period_to = setup_service.suggested_period(db)
+
     return {
         # Offer the demo sign-in card only where those accounts are really created.
         "demo_accounts": settings.seed_demo_users,
@@ -149,6 +155,18 @@ def deployment_meta() -> dict[str, bool]:
         # Whether the interactive API docs are served, so the interface does not
         # link to pages that 404.
         "api_docs": settings.docs_enabled,
+        # A hosted deployment seeds no demo accounts, so a fresh database has
+        # nobody who can sign in. The sign-in screen offers to create the first
+        # administrator while this is true.
+        "needs_setup": setup_service.needs_setup(db),
+        # Shown on the setup screen so the person knows which company they are
+        # setting up. Not a secret: it is already printed across the sign-in page.
+        "company_name": setup_service.state(db).company_name,
+        # The period the interface opens on. With history, the latest posting; with
+        # none, today — instead of the sample workbook's dates, which made a new
+        # company post everything dated 2026-10-31.
+        "suggested_from": period_from.isoformat(),
+        "suggested_as_of": period_to.isoformat(),
     }
 
 
@@ -160,6 +178,7 @@ def healthz() -> dict[str, str]:
 
 for router in (
     auth_router,
+    setup_router,
     accounts_router,
     opening_router,
     journal_router,

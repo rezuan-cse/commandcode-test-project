@@ -66,10 +66,17 @@ def period_lines(
 
 def period_lines_by_segment(
     db: Session, date_from: date | None, date_to: date | None
-) -> list[tuple[JournalLine, AccountType]]:
-    """Return journal lines joined to their account type, for P&L work."""
+) -> list[tuple[JournalLine, AccountType, Segment]]:
+    """Return journal lines with their **account's** type and segment.
+
+    The segment comes from the account, not from the line. A line may carry any
+    segment the caller sent, and the P&L groups by segment — so trusting the line
+    let a revenue line tagged "Shared" fall outside every trading segment and vanish
+    from the profit and loss while still sitting on the balance sheet. The account
+    has exactly one segment; that is the one that counts.
+    """
     stmt = (
-        select(JournalLine, Account.account_type)
+        select(JournalLine, Account.account_type, Account.segment)
         .join(Account, Account.code == JournalLine.account_code)
         .join(JournalEntry, JournalEntry.id == JournalLine.entry_id)
     )
@@ -77,4 +84,4 @@ def period_lines_by_segment(
         stmt = stmt.where(JournalEntry.entry_date >= date_from)
     if date_to is not None:
         stmt = stmt.where(JournalEntry.entry_date <= date_to)
-    return [(line, acc_type) for line, acc_type in db.execute(stmt).all()]
+    return [(line, acc_type, segment) for line, acc_type, segment in db.execute(stmt).all()]

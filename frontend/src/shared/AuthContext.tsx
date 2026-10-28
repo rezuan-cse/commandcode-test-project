@@ -34,6 +34,14 @@ interface AuthState {
   submitCode: (challengeToken: string, code: string) => Promise<void>;
   signOut: () => void;
   refreshUser: () => Promise<void>;
+  /**
+   * Adopt a session the server has already handed back.
+   *
+   * Used by first-run setup: the endpoint that creates the first administrator
+   * returns a token, so the person is signed in rather than being sent back to a
+   * login form they have just filled in.
+   */
+  adoptSession: (accessToken: string, user: UserRow) => void;
   /** This user's access level for a resource. */
   level: (resource: string) => Access | undefined;
   /** Whether this user may read, or change, a resource. */
@@ -99,6 +107,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(await api.me());
   }, []);
 
+  const adoptSession = useCallback((accessToken: string, nextUser: UserRow) => {
+    setAccessToken(accessToken);
+    setUser(nextUser);
+  }, []);
+
   const level = useCallback(
     (resource: string): Access | undefined => user?.permissions?.[resource],
     [user],
@@ -111,8 +124,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ user, checking, signIn, submitCode, signOut, refreshUser, level, can }),
-    [user, checking, signIn, submitCode, signOut, refreshUser, level, can],
+    () => ({
+      user,
+      checking,
+      signIn,
+      submitCode,
+      signOut,
+      refreshUser,
+      adoptSession,
+      level,
+      can,
+    }),
+    [
+      user,
+      checking,
+      signIn,
+      submitCode,
+      signOut,
+      refreshUser,
+      adoptSession,
+      level,
+      can,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

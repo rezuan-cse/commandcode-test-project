@@ -111,5 +111,7 @@ Known "still to do" behaviours:
 - Remove or disable **Restore sample workbook** from Administration → Data.
 - Delete the five demo sign-in accounts once the client's own administrator exists,
   and turn off the shortcut card on the sign-in screen.
-- Put the client's BIN and TIN into Configuration → Company details.
+- Confirm the VAT rate with the accountant. VAT ships switched on at 15% with
+  prices excluding VAT, because the company is VAT-registered; the rate slabs
+  themselves are still to be confirmed.
 - Confirm a backup has been taken *and restored* at least once.

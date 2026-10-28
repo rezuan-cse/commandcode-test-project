@@ -65,8 +65,23 @@ def _has_line(entry, account: str) -> Decimal:
     return Decimal(credit) - Decimal(debit)
 
 
-def test_vat_is_off_by_default(db) -> None:
-    """Without confirmation, a sale carries no tax."""
+def test_vat_is_on_at_the_standard_rate_by_default(db) -> None:
+    """A VAT-registered company charges tax from its first sale.
+
+    Ships on because the company's BIN is registered: the alternative was posting
+    the first invoices without VAT and reversing every one of them later.
+    """
+    _receive_stock(db)
+    result = _sell(db)
+    assert result.preview.revenue == 6000
+    assert result.preview.vat_total == 900
+    assert result.preview.grand_total == 6900
+    assert result.order.vat_total == 900
+
+
+def test_vat_can_be_switched_off(db) -> None:
+    """And it is still a setting, not a hardcoded assumption."""
+    _set(db, "vat.charge_vat", "false")
     _receive_stock(db)
     result = _sell(db)
     assert result.order.vat_total == 0

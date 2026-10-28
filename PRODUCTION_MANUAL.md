@@ -362,7 +362,7 @@ three ways:
 - **Segment** — A business line an account, item and journal line is tagged
   with: **Import, Manufacturing, Packaging, Trading, Application** or
   **Shared**. Segment tags are what make segment-wise reporting possible.
-- **Starter chart of accounts** — The standard set of 29 accounts a brand-new
+- **Starter chart of accounts** — The standard set of 48 accounts a brand-new
   system begins with, so it is usable straight away.
 - **Stock (on hand)** — How much of an item you have right now. It is always
   *worked out* from the ledger, never typed in.
@@ -743,9 +743,15 @@ appear here over time; if one is not what you need, ask, and it can be added.
 ### Data (Admin only)
 
 - **Import an existing workbook** — choose an `.xlsx` file, leave *Replace the
-  books* ticked, and press **Import workbook**.
-- **Start over** — **Start fresh (starter accounts)**, **Restore sample
-  workbook**, or **Empty everything**.
+  books* ticked, and press **Import workbook**. This is the migration path.
+- **Starting a new company** — press **Start fresh**. The books are emptied and the
+  standard starter chart of accounts is loaded, so a company with no history can
+  begin entering its own figures. Shown only where the server permits it.
+- **Restore sample workbook** — loads the demonstration data, for training or for
+  checking the screens against known figures.
+
+There is deliberately no "empty everything": a system with no chart of accounts
+cannot post anything, and rebuilding one by hand invites mistakes.
 
 # Section 2 — System Calculations & Backend Logic
 
@@ -1531,9 +1537,81 @@ who you are, what you are trying to do, what must be in place first, the exact
 steps, what you should see, and how the system reached the result.
 
 A note that applies throughout: the system starts from a **starter chart of
-accounts** with **no items and no stock**. So the tests that buy, make or sell
-things ask you to load sample data first (Test Case 8). Once loaded, everything
-else works from there.
+accounts** with **no items and no stock**. Two starting points are supported and
+they are equals:
+
+- **a brand-new company** with no previous records — follow *Day one for a new
+  company* below, then carry on with the test cases;
+- **existing books to bring across** — load the sample workbook first (Test Case 8)
+  and work from there, or import your own (Test Case 20).
+
+---
+
+# Day one for a new company
+
+A company with no history does not need a workbook, and does not have one. Nothing
+is pre-filled, so nothing has to be cleared out later, and its opening position is
+recorded by the company itself rather than imported.
+
+**Step 1 — the first administrator.** On a new deployment the sign-in screen asks
+for an administrator instead of a password, because there is nobody to sign in as
+yet. Enter your name, email and a password. You are signed in immediately. That
+screen closes for good once an account exists; after that, accounts are added from
+**Administration → Roles & Access**.
+
+**Step 2 — follow the checklist.** The Dashboard carries a **Getting started**
+card listing what is left, and each item links to the screen that completes it. It
+disappears when the last one is done. It is advisory: nothing is blocked.
+
+**Step 3 — company details.** Configuration → **Company details**: name, address,
+telephone, BIN and TIN. These print on the receipt and, later, the tax invoice.
+
+**Step 4 — VAT.** It ships **on at 15%** with prices excluding VAT, because a
+VAT-registered company has to charge tax from its first invoice. Confirm the rate
+with your accountant under Configuration → **VAT**; the value is editable at any
+time and the badge stays **pending client** until someone confirms it.
+
+**Step 5 — the chart of accounts.** 48 accounts come as standard, including every
+account the automatic postings use plus bank accounts, plant, loans and the usual
+expense heads. Add your own from **Chart of Accounts → Add account**. The code is
+fixed once the account exists because every other record points at it.
+
+**Step 6 — opening capital.** This is the step that has no equivalent in a
+conversion, and it used to have no screen. Go to **Journal Entries → New journal
+entry**, and post the capital introduced on the first day of trading:
+
+| Account | Debit | Credit |
+|---|---|---|
+| 1010 Cash and Bank | 500,000.00 | |
+| 3000 Share Capital | | 500,000.00 |
+
+Enter the date, a voucher number (suggested for you), and a narration such as
+*Share capital introduced*. The form shows the running total and will not post
+until debits equal credits.
+
+**Step 7 — items and recipes.** **Inventory & BOM → Add item**, then click an item
+and use the **Recipe** card to say what one unit is made from. Without a recipe an
+item is treated as a purchased material and Production Entry has nothing to scale.
+
+**Step 8 — customers and suppliers.** **Customers & Suppliers → Add**. A business
+customer's **BIN** is printed on the tax invoice; a walk-in retail customer can
+leave it blank.
+
+**Step 9 — trade.** Purchase Entry → Production Entry → Sales Entry → Receipts &
+Payments, as Test Cases 9 to 15 describe.
+
+**Expected Behavior:** after each posting the Dashboard's four integrity checks
+stay green, the Trial Balance nets to zero, and the Balance Sheet balances. The
+checklist reaches 8 of 8 once a sale is posted and a second user exists.
+
+**Actual Results & Calculation Explanation:** a new company has no prior figures,
+so there is nothing to import and no opening-balance sheet to fill in. Its opening
+position is one journal entry, which is an ordinary voucher: it goes through the
+same balance rule as everything else, appears in the general ledger, and is
+reversed rather than edited if it was wrong. Every later figure — stock value,
+average cost, profit, tax — is derived from postings like that one.
+
+---
 
 ---
 
@@ -1683,26 +1761,29 @@ else works from there.
 
 ---
 
-## Test Case 7 — Switch VAT on
+## Test Case 7 — Check the VAT settings, and how a sale is taxed
 
 - **User Persona:** **Admin**.
-- **Objective:** Add VAT to sales and purchases at the agreed rate.
+- **Objective:** Confirm VAT is charged at the right rate, and see it on a sale.
 - **Prerequisites:** Signed in as Admin; the rate confirmed with your tax adviser.
 - **Steps:**
   1. Click **Configuration**.
-  2. In the **VAT** card, find **Charge VAT** and switch it to **on**, then
-     **Save**.
-  3. Find **Standard rate (%)**, set the rate, and **Save**.
-  4. Find **Prices include VAT** and set it to match how you quote customers
-     (**off** means prices are before VAT), then **Save**.
-  5. Confirm the **Input VAT account** and **Output VAT account** are the accounts
-     you intend.
-- **Expected Behavior:** The badges show the new state; each save shows **"saved"**.
-- **Actual Results & Calculation Explanation:** VAT was off, so every posting
-  behaved as if no tax existed. With **Charge VAT** on, sales add **output VAT**
-  and purchases add **input VAT** at the configured rate (see Section 2.5 for the
-  arithmetic, including the inclusive-prices case). Nothing is hardcoded, so the
-  books behave exactly as before until this switch is turned on.
+  2. In the **VAT** card, check **Charge VAT** is **on** (it ships on, because the
+     company is VAT-registered) and note the **Standard rate (%)**.
+  3. If the accountant confirms a different rate, set it and **Save**.
+  4. Check **Prices include VAT** matches how you quote customers (**off** means
+     prices are before VAT).
+  5. Confirm the **Input VAT account** (1130) and **Output VAT account** (2200).
+  6. Post a sale (Test Case 11) and open its receipt.
+- **Expected Behavior:** Each save shows **"saved"**. On the sale, a sale of
+  `25,000.00` before VAT carries `3,750.00` of VAT at 15%, so the invoice and the
+  receivable are `28,750.00`.
+- **Actual Results & Calculation Explanation:** sales credit **output VAT** to
+  account 2200 and purchases debit **input VAT** to 1130 at the configured rate
+  (Section 2.5 covers the arithmetic, including the inclusive-prices case). The
+  rate is recorded on each sale as it is posted, so a later rate change does not
+  rewrite history. Nothing is hardcoded: switching **Charge VAT** off returns every
+  posting to the untaxed behaviour immediately.
 
 ---
 
@@ -1769,7 +1850,7 @@ recipes straight into the database, so it never touches the forms that create th
   It empties the books and re-creates the starter chart of accounts, keeping the
   sign-in accounts.
 
-Afterwards the Dashboard should show **29 accounts, no items, no journal entries**,
+Afterwards the Dashboard should show **48 accounts, no items, no journal entries**,
 and all four integrity checks green — zero equals zero, which is the correct answer
 for an empty set of books.
 
@@ -2120,18 +2201,17 @@ path came from a workbook.
 - **Prerequisites:** Signed in as Admin.
 - **Steps:**
   1. Click **Data**.
-  2. In the **Start over** card, click **Start fresh (starter accounts)**.
+  2. In the **Starting a new company** card, click **Start fresh**.
   3. Acknowledge the result, then open **Chart of Accounts**.
   4. Open **Inventory & BOM**.
 - **Expected Behavior:** A green confirmation appears. The Chart of Accounts shows
   the starter accounts, and the Inventory screen lists nothing.
 - **Actual Results & Calculation Explanation:** The action empties every table and
-  loads the standard starter chart of accounts — 29 accounts with no balances, no
+  loads the standard starter chart of accounts — 48 accounts with no balances, no
   items and no stock. It then restores the sign-in accounts and configuration, so
-  you can still get in. **Empty everything** does the same but loads no accounts at
-  all, which leaves the books unusable until data is entered or imported. Both
-  actions are irreversible, and an administrator may switch them off for a
-  deployment whose data must never be lost.
+  you can still get in. This is how a company with no previous books begins. The
+  action is irreversible, and an administrator may switch it off for a deployment
+  whose data must never be lost.
 
 ---
 

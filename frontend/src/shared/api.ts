@@ -44,6 +44,7 @@ import type {
   SalePostResult,
   SalePreview,
   SessionResponse,
+  SetupChecklist,
   Setting,
   TotpEnableResponse,
   TotpSetupResponse,
@@ -135,6 +136,19 @@ export const api = {
    */
   meta: () => request<DeploymentMeta>("/meta", undefined, false),
 
+  /** Whether the system still needs its first administrator. Public endpoint. */
+  setupState: () =>
+    request<{ needs_setup: boolean; company_name: string }>("/setup/state", undefined, false),
+
+  /** Create the first administrator and receive a session for them. */
+  createFirstAdmin: (payload: { full_name: string; email: string; password: string }) =>
+    request<SessionResponse & { message: string }>("/setup/admin", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  setupChecklist: () => request<SetupChecklist>("/setup/checklist"),
+
   accounts: (params?: { segment?: string; account_type?: string; search?: string }) => {
     const query = new URLSearchParams();
     if (params?.segment) query.set("segment", params.segment);
@@ -143,6 +157,34 @@ export const api = {
     const suffix = query.toString() ? `?${query}` : "";
     return request<Account[]>(`/accounts${suffix}`);
   },
+
+  /** Add an account to the chart. The code is the key and cannot be changed later. */
+  createAccount: (payload: {
+    code: string;
+    name_en: string;
+    name_bn?: string | null;
+    account_type: string;
+    segment: string;
+    normal_balance: string;
+  }) =>
+    request<Account>("/accounts", { method: "POST", body: JSON.stringify(payload) }),
+
+  /** Correct an account's name, type, segment, normal balance or active flag. */
+  updateAccount: (
+    code: string,
+    payload: {
+      name_en?: string;
+      name_bn?: string | null;
+      account_type?: string;
+      segment?: string;
+      normal_balance?: string;
+      is_active?: boolean;
+    },
+  ) =>
+    request<Account>(`/accounts/${encodeURIComponent(code)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
 
   generalLedger: (dateFrom: string, dateTo: string) =>
     request<GeneralLedger>(
@@ -257,6 +299,25 @@ export const api = {
     request<InventoryRow[]>(`/inventory${itemCode ? `?item_code=${itemCode}` : ""}`),
 
   journalEntries: () => request<JournalEntry[]>("/journal-entries"),
+
+  /** Post a manual journal entry. The server refuses an unbalanced one. */
+  postJournalEntry: (payload: {
+    voucher_no: string;
+    entry_date: string;
+    narration?: string | null;
+    reference?: string | null;
+    lines: {
+      account_code: string;
+      segment: string;
+      debit: string;
+      credit: string;
+      narration?: string | null;
+    }[];
+  }) =>
+    request<JournalEntry>("/journal-entries", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 
   productionRuns: () => request<ProductionRun[]>("/production"),
 

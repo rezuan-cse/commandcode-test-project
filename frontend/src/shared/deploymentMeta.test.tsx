@@ -100,6 +100,52 @@ describe("the sign-in screen", () => {
   });
 });
 
+describe("a deployment with no accounts yet", () => {
+  it("asks for the first administrator instead of showing a sign-in form", async () => {
+    // A hosted deployment seeds no demo accounts, so there was nothing to sign in
+    // with and no way to create the first account at all.
+    meta.value = {
+      demo_accounts: false,
+      data_reset: false,
+      api_docs: false,
+      needs_setup: true,
+      company_name: "Resinova Bangladesh",
+    } as never;
+
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Create your administrator" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Sign in" })).toBeNull();
+    expect(screen.queryByText("Demo accounts")).toBeNull();
+    expect(screen.queryByText(/Trouble signing in/)).toBeNull();
+  });
+
+  it("shows the normal sign-in form once an account exists", async () => {
+    meta.value = {
+      demo_accounts: false,
+      data_reset: false,
+      api_docs: false,
+      needs_setup: false,
+      company_name: "Resinova Bangladesh",
+    } as never;
+
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Sign in" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Create your administrator" })).toBeNull();
+  });
+});
+
 describe("the Data screen", () => {
   it("hides Start over when the server would refuse it", async () => {
     meta.value = { demo_accounts: false, data_reset: false, api_docs: false };
@@ -110,8 +156,10 @@ describe("the Data screen", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("Import an existing workbook")).toBeTruthy();
-    expect(screen.queryByText("Start over")).toBeNull();
+    // Both ways to begin are still described, but neither button is offered.
+    expect(await screen.findByText("Starting a new company")).toBeTruthy();
+    expect(await screen.findByText("Coming from an existing system")).toBeTruthy();
+    expect(screen.queryByText("Start fresh")).toBeNull();
     expect(screen.queryByText("Restore sample workbook")).toBeNull();
   });
 
@@ -129,7 +177,7 @@ describe("the Data screen", () => {
     expect(await screen.findByText("Import workbook")).toBeTruthy();
   });
 
-  it("offers Start over where it is permitted", async () => {
+  it("offers both ways to begin where reset is permitted", async () => {
     meta.value = { demo_accounts: false, data_reset: true, api_docs: false };
 
     render(
@@ -138,7 +186,24 @@ describe("the Data screen", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("Start over")).toBeTruthy();
+    // A company with no workbook gets an equal footing with one that has.
+    expect(await screen.findByText("Start fresh")).toBeTruthy();
+    expect(await screen.findByText("Import workbook")).toBeTruthy();
     expect(await screen.findByText("Restore sample workbook")).toBeTruthy();
+  });
+
+  it("never offers to empty everything", async () => {
+    meta.value = { demo_accounts: false, data_reset: true, api_docs: false };
+
+    render(
+      <MemoryRouter>
+        <DataPage />
+      </MemoryRouter>,
+    );
+
+    // A system with no chart of accounts cannot post anything, and there is no way
+    // back from this screen. The mode still exists in the API for tests.
+    await screen.findByText("Start fresh");
+    expect(screen.queryByText("Empty everything")).toBeNull();
   });
 });

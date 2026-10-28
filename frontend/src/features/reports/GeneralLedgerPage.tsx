@@ -17,8 +17,7 @@ export default function GeneralLedgerPage() {
       <h1>General Ledger</h1>
       <p className="page-intro">
         Opening balance, period movement, and closing balance for every account, for {dateFrom} to{" "}
-        {asOf}. This is the same layout as the client's workbook, but computed rather than
-        maintained by hand.
+        {asOf}. Both are derived from the posted entries rather than maintained by hand.
       </p>
 
       {loading && <Spinner />}

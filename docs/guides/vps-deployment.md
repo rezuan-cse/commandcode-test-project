@@ -117,9 +117,14 @@ absolute path above, or `-w /app` to change the directory, works.
 It prints a strong password once. Every later account is better made from
 **Roles & Access**, where the role and per-user grants are set together.
 
-Then, in **Configuration → Company details**, paste the client's **BIN**
-(`002016027-0208`) and **TIN** (`155979113247`) and save. The seeded defaults are
-used only for a database that does not have those rows yet.
+In **Configuration → Company details**, the **BIN** (`002016027-0208`) and **TIN**
+(`155979113247`) are already seeded, along with the name and address. Check them
+against the registration certificate and correct anything that differs — the
+defaults are only used for a database that does not have those rows yet.
+
+A hosted deployment that seeds no demo accounts has nobody who can sign in on a
+fresh database. There the sign-in screen offers to create the first administrator
+instead; `scripts/create_user.py` remains the way to do it from a shell.
 
 ---
 

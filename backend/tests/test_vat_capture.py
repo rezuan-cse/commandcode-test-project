@@ -90,6 +90,8 @@ def test_an_untaxed_sale_records_a_zero_rate(client, db, login) -> None:
     """Zero is a real answer, and different from "posted before we recorded rates"."""
     headers = _headers(login)
     _stock(db)
+    # VAT ships switched on, so switch it off to exercise the untaxed path.
+    _set(client, headers, "vat.charge_vat", "false")
 
     line = _sell(client, headers)["lines"][0]
     assert Decimal(line["vat_rate_pct"]) == 0

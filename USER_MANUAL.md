@@ -261,9 +261,11 @@ Each account has:
 **Who can use it:** Admin, Accountant, and Owner can see it. Store and Sales staff
 cannot.
 
-**Note:** In the demo this screen is for looking only. There is no button to add a
-new account. All other screens pick accounts from this list — you can never type a
-free account name anywhere.
+**Adding an account:** Admin and Accountant have an **Add account** button, and can
+edit any existing row. The *code* is fixed once the account exists, because every
+other record points at it; the name, type, segment, normal balance and active flag
+can all be corrected. All other screens pick accounts from this list — you can never
+type a free account name anywhere.
 
 ---
 
@@ -304,8 +306,12 @@ Notice the two totals are the same. That is what "balanced" means.
 **Who can use it:** Admin, Accountant, and Owner can see it. Store and Sales staff
 cannot.
 
-**Who can add one:** Admin and Accountant. (In the demo there is no button for it
-on this screen — it would be added in the full version.)
+**Who can add one:** Admin and Accountant. The **New journal entry** form sits at
+the top of the screen: choose an account for each line, put the amount on one side
+only, and the form will not post until debits equal credits. This is how a new
+company records the capital it started with — debit Cash and Bank, credit Share
+Capital — and how depreciation or a correction is entered without touching a
+purchase or sale.
 
 ---
 

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.enums import AccountType, Segment
 from app.core.exceptions import DomainError
 from app.core.money import money, to_decimal, ZERO
+from app.core.period import fiscal_start_for
 from app.modules.inventory_ledger import service as ledger
 from app.modules.items_bom import repository as items_repo
 from app.modules.reports import repository as repo
@@ -156,16 +157,18 @@ def _segment_totals(
     }
     expenses = ZERO
     other_income = ZERO
-    for line, account_type in repo.period_lines_by_segment(db, date_from, date_to):
+    for line, account_type, account_segment in repo.period_lines_by_segment(
+        db, date_from, date_to
+    ):
         amount = to_decimal(line.debit) - to_decimal(line.credit)
         if account_type == AccountType.REVENUE:
             bucket = per_segment.setdefault(
-                line.segment, {"revenue": ZERO, "cogs": ZERO}
+                account_segment, {"revenue": ZERO, "cogs": ZERO}
             )
             bucket["revenue"] = money(bucket["revenue"] + (-amount))
         elif account_type == AccountType.COGS:
             bucket = per_segment.setdefault(
-                line.segment, {"revenue": ZERO, "cogs": ZERO}
+                account_segment, {"revenue": ZERO, "cogs": ZERO}
             )
             bucket["cogs"] = money(bucket["cogs"] + amount)
         elif account_type == AccountType.EXPENSE:
@@ -186,10 +189,9 @@ def cumulative_net_profit(db: Session, up_to: date) -> Decimal:
     per_segment, expenses, other_income, _ = _segment_totals(db, None, up_to)
     total_revenue = ZERO
     total_cogs = ZERO
-    for segment in SEGMENTS:
-        bucket = per_segment.get(segment, {"revenue": ZERO, "cogs": ZERO})
-        total_revenue = money(total_revenue + money(bucket["revenue"]))
-        total_cogs = money(total_cogs + money(bucket["cogs"]))
+    for segment in per_segment.values():
+        total_revenue = money(total_revenue + money(segment["revenue"]))
+        total_cogs = money(total_cogs + money(segment["cogs"]))
     return money(total_revenue - total_cogs - expenses + other_income)
 
 
@@ -199,7 +201,18 @@ def pnl_by_segment(db: Session, date_from: date, date_to: date) -> PnlOut:
     rows: list[SegmentPnlRow] = []
     total_revenue = ZERO
     total_cogs = ZERO
-    for segment in SEGMENTS:
+    # The five trading segments are always shown, so an empty month still reads as
+    # five empty columns. Anything else carrying revenue or cost is shown too —
+    # otherwise the rows would not add up to the totals beneath them.
+    display = list(SEGMENTS) + sorted(
+        (
+            segment
+            for segment, bucket in per_segment.items()
+            if segment not in SEGMENTS and (bucket["revenue"] or bucket["cogs"])
+        ),
+        key=lambda segment: segment.value,
+    )
+    for segment in display:
         bucket = per_segment.get(segment, {"revenue": ZERO, "cogs": ZERO})
         revenue = money(bucket["revenue"])
         cogs = money(bucket["cogs"])
@@ -424,7 +437,10 @@ def balance_sheet(db: Session, as_of: date) -> BalanceSheetOut:
             equity.append(row)
             equity_gl = money(equity_gl + (-net))
 
-    current_year = date(as_of.year, 1, 1)
+    # The accounting year is July–June here, not January–December. Using the
+    # calendar year split one trading year across two "current periods" and put
+    # profit earned from July into the previous year's retained earnings.
+    current_year = fiscal_start_for(db, as_of)
     pnl = pnl_by_segment(db, current_year, as_of)
     # Profit earned before the current year is retained earnings: it sits in
     # the asset and liability balances, so it must appear on the equity side.

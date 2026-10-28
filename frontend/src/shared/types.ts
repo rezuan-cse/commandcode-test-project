@@ -34,6 +34,28 @@ export interface DeploymentMeta {
   data_reset: boolean;
   /** The interactive API docs are served. */
   api_docs: boolean;
+  /** The system has no account at all, so it needs its first administrator. */
+  needs_setup: boolean;
+  /** Who the setup screen is setting up. Not a secret; it is on the sign-in page. */
+  company_name: string;
+  /** First day of the period the interface should open on. */
+  suggested_from: string;
+  /** Last day of that period: the latest posting, or today when there are none. */
+  suggested_as_of: string;
+}
+
+/** One step from an empty system to a first sale. */
+export interface SetupChecklistItem {
+  key: string;
+  label: string;
+  detail: string;
+  link: string;
+  done: boolean;
+}
+
+export interface SetupChecklist {
+  items: SetupChecklistItem[];
+  complete: boolean;
 }
 
 export interface Account {

@@ -421,7 +421,10 @@ export default function PaymentsPage() {
         {outstanding.loading && <Spinner />}
         {outstanding.error && <ErrorBox message={outstanding.error} />}
         {outstanding.data && invoices.length === 0 && (
-          <Empty message="Every invoice is settled. Nothing is outstanding." />
+          // "Every invoice is settled" asserted a history that a new company does
+          // not have yet: it read as though work had been done and matched, when in
+          // fact no invoice had ever been raised.
+          <Empty message="No invoices outstanding." />
         )}
         {invoices.length > 0 && (
           <div className="table-wrap">

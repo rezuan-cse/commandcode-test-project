@@ -9,7 +9,7 @@ deliberately left open while the system is in client testing.
 ### 1. Data reset is off (`RPCI_ALLOW_DATA_RESET=false`)
 
 **Why:** with the switch on, any administrator can empty the entire books from
-Administration → Data ("Empty everything" / "Start over"). That is a useful
+Administration → Data (start the books over). That is a useful
 tool while testing with throwaway data, but on a deployment holding real
 figures it puts the whole ledger one click away from destruction — by mistake,
 or by a compromised admin session. There is no undo; recovery would depend on

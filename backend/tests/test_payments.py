@@ -16,6 +16,7 @@ from __future__ import annotations
 from datetime import date
 from decimal import Decimal
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.modules.journal_entries import repository as journal_repo
@@ -28,6 +29,23 @@ ADMIN = "admin@rpci.demo"
 OWNER = "owner@rpci.demo"
 POSTING_DATE = date(2026, 10, 12)
 MONEY_ACCOUNT = "1010"
+
+
+@pytest.fixture(autouse=True)
+def _without_vat(db):
+    """These tests are about money moving, not about tax.
+
+    VAT now ships switched on because the company is VAT-registered, which puts 15%
+    on top of every invoice and would leave a "settled" invoice 15% short. Turning it
+    off here keeps each invoice equal to its revenue, so a failure means the payment
+    logic broke rather than that a rate changed. VAT itself has its own tests.
+    """
+    from app.modules.settings import service as settings_service
+    from app.modules.settings.schemas import SettingUpdate
+
+    settings_service.seed_defaults(db)
+    settings_service.update_setting(db, "vat.charge_vat", SettingUpdate(value="false"))
+    db.commit()
 
 
 def _headers(login, email: str = ADMIN) -> dict[str, str]:

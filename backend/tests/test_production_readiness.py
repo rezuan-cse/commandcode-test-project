@@ -343,9 +343,24 @@ def test_meta_reports_the_deployment_honestly(client) -> None:
     assert response.status_code == 200, response.text
     body = response.json()
 
-    # Booleans only. No secrets, no client figures — this endpoint is unauthenticated.
-    assert set(body) == {"demo_accounts", "data_reset", "api_docs"}
-    assert all(isinstance(value, bool) for value in body.values())
+    # Booleans and the company's name. No secrets, no client figures — this
+    # endpoint is unauthenticated.
+    assert set(body) == {
+        "demo_accounts",
+        "data_reset",
+        "api_docs",
+        "needs_setup",
+        "company_name",
+        "suggested_from",
+        "suggested_as_of",
+    }
+    for flag in ("demo_accounts", "data_reset", "api_docs", "needs_setup"):
+        assert isinstance(body[flag], bool)
+    # Named so the first-run screen can say which company it is setting up.
+    assert isinstance(body["company_name"], str)
+    # The period the interface opens on: dates, not client figures.
+    assert len(body["suggested_from"]) == 10
+    assert len(body["suggested_as_of"]) == 10
 
 
 def test_meta_reflects_the_configured_switches(client, monkeypatch) -> None:

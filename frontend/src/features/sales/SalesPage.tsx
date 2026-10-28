@@ -145,7 +145,19 @@ export default function SalesPage() {
         />
       )}
 
-      {canWrite && (
+      {canWrite && !items.loading && options.length === 0 && (
+        // With no items the line picker was empty and the Post button never
+        // appeared, because the preview is skipped when there are no lines. The
+        // screen looked broken rather than unready.
+        <Card title="New sale">
+          <p className="small muted" style={{ margin: 0 }}>
+            There are no items yet. Add an item under Inventory &amp; BOM before recording a
+            sale, or import a workbook from Administration → Data.
+          </p>
+        </Card>
+      )}
+
+      {canWrite && options.length > 0 && (
       <Card title="New sale" subtitle="Inventory is valued at average cost automatically">
         <div className="form-row" style={{ marginBottom: 14 }}>
           <Field label="Customer">

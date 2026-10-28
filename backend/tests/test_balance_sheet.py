@@ -5,6 +5,10 @@ The balance sheet adds the current year's profit to equity. Profit earned
 balances, so without a home on the equity side any books spanning more than
 one year can never balance. That is pinned down here.
 
+The year boundary is the configured fiscal year, which is 1 July for this company,
+not 1 January. These dates are chosen against that boundary: 2026-08-10 is inside
+the year ending 2027-06-30, 2026-05-15 is before it.
+
 (The test database comes pre-seeded with the sample workbook, so the tests
 assert the *movement* caused by the new postings, not absolute figures.)
 """
@@ -43,7 +47,7 @@ def test_prior_year_profit_is_retained_earnings(db) -> None:
     in current-period profit, and the sheet balances."""
     before = reports.balance_sheet(db, AS_OF)
     journal_service.post_manual_entry(db, _sale("S-2025", date(2025, 6, 15), "1000"))
-    journal_service.post_manual_entry(db, _sale("S-2026", date(2026, 3, 10), "400"))
+    journal_service.post_manual_entry(db, _sale("S-2026", date(2026, 8, 10), "400"))
 
     sheet = reports.balance_sheet(db, AS_OF)
 
@@ -58,7 +62,7 @@ def test_current_year_sale_needs_no_retained_earnings(db) -> None:
     """A sale this year moves current-period profit only; retained earnings
     are untouched and the sheet stays balanced."""
     before = reports.balance_sheet(db, AS_OF)
-    journal_service.post_manual_entry(db, _sale("S-2026", date(2026, 3, 10), "400"))
+    journal_service.post_manual_entry(db, _sale("S-2026", date(2026, 8, 10), "400"))
 
     sheet = reports.balance_sheet(db, AS_OF)
 

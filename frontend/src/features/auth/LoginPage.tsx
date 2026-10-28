@@ -3,6 +3,7 @@ import { useAuth } from "../../shared/AuthContext";
 import { api } from "../../shared/api";
 import { useAsync } from "../../shared/useAsync";
 import { Card, ErrorBox, Field } from "../../shared/ui";
+import FirstRunSetup from "./FirstRunSetup";
 
 /**
  * The demo accounts, shown so a reviewer can switch roles without guesswork.
@@ -54,6 +55,9 @@ export default function LoginPage() {
   // Until the answer arrives, offer neither: the worst case is a brief absence of
   // the shortcut card, where guessing could offer credentials that do not exist.
   const showDemoAccounts = meta.data?.demo_accounts === true;
+  // No account exists yet, so there is nothing to sign in with. The server says so;
+  // this screen asks before a session can exist.
+  const needsSetup = meta.data?.needs_setup === true;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -150,7 +154,9 @@ export default function LoginPage() {
 
           {error && <ErrorBox message={error} />}
 
-          {challengeToken === null ? (
+          {needsSetup ? (
+            <FirstRunSetup companyName={meta.data?.company_name} />
+          ) : challengeToken === null ? (
             <Card title="Sign in" subtitle="Enter your email and password">
               <form onSubmit={handlePassword}>
                 <Field label="Email">
@@ -211,7 +217,7 @@ export default function LoginPage() {
           </Card>
         )}
 
-        {showDemoAccounts && (
+        {showDemoAccounts && !needsSetup && (
           <Card title="Demo accounts" subtitle="All use the password rpci">
             <div className="table-wrap">
               <table>
@@ -252,10 +258,12 @@ export default function LoginPage() {
           </Card>
         )}
 
-          <p className="login-help">
-            Trouble signing in? Ask your administrator to reset your password from
-            <strong> Roles &amp; Access</strong>.
-          </p>
+          {!needsSetup && (
+            <p className="login-help">
+              Trouble signing in? Ask your administrator to reset your password from
+              <strong> Roles &amp; Access</strong>.
+            </p>
+          )}
         </div>
       </main>
     </div>
