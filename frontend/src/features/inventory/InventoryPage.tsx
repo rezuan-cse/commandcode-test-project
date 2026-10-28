@@ -6,7 +6,7 @@ import { fmt, fmtQty } from "../../shared/format";
 import { csvFilename } from "../../shared/csv";
 import { Card, Empty, ErrorBox, ExportButton, Field, Pill, Spinner, Toggle } from "../../shared/ui";
 import { useAsync } from "../../shared/useAsync";
-import type { BomExplosion, Item } from "../../shared/types";
+import type { BomComponent, BomExplosion, Item } from "../../shared/types";
 
 /** The item classifications the system understands, in the order a user expects. */
 const CATEGORIES = [
@@ -266,7 +266,14 @@ export default function InventoryPage() {
         )}
       </Card>
 
-      {selected && <ItemDetail code={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <ItemDetail
+          code={selected}
+          onClose={() => setSelected(null)}
+          items={items.data ?? []}
+          canWrite={canWrite}
+        />
+      )}
     </>
   );
 }
@@ -392,11 +399,63 @@ function ItemForm({
   );
 }
 
-function ItemDetail({ code, onClose }: { code: string; onClose: () => void }) {
+function ItemDetail({
+  code,
+  onClose,
+  items,
+  canWrite,
+}: {
+  code: string;
+  onClose: () => void;
+  items: Item[];
+  canWrite: boolean;
+}) {
   const ledger = useAsync(() => api.inventory(code), [code]);
+  const recipe = useAsync(() => api.bom(code), [code]);
+  const { refresh } = useDemo();
   const [qty, setQty] = useState("50");
   const [explosion, setExplosion] = useState<BomExplosion | null>(null);
   const [explodeError, setExplodeError] = useState<string | null>(null);
+  const [componentCode, setComponentCode] = useState("");
+  const [componentQty, setComponentQty] = useState("1");
+  const [bomBusy, setBomBusy] = useState(false);
+  const [bomError, setBomError] = useState<string | null>(null);
+  const [bomMessage, setBomMessage] = useState<string | null>(null);
+
+  async function addComponent() {
+    setBomBusy(true);
+    setBomError(null);
+    setBomMessage(null);
+    try {
+      await api.addBomComponent(code, {
+        component_code: componentCode,
+        qty_per_unit: componentQty,
+      });
+      setBomMessage(`${componentCode} added to the recipe.`);
+      setComponentCode("");
+      setComponentQty("1");
+      refresh();
+    } catch (error) {
+      setBomError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBomBusy(false);
+    }
+  }
+
+  async function removeComponent(itemCode: string) {
+    setBomBusy(true);
+    setBomError(null);
+    setBomMessage(null);
+    try {
+      await api.removeBomComponent(code, itemCode);
+      setBomMessage(`${itemCode} removed from the recipe.`);
+      refresh();
+    } catch (error) {
+      setBomError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBomBusy(false);
+    }
+  }
 
   async function runExplode() {
     setExplodeError(null);
@@ -458,6 +517,98 @@ function ItemDetail({ code, onClose }: { code: string; onClose: () => void }) {
             </tbody>
           </table>
         </div>
+      )}
+
+      <h2 style={{ marginBottom: 8 }}>Recipe</h2>
+      <p className="small muted" style={{ marginTop: 0 }}>
+        What one unit of {code} is made from. Production Entry scales these quantities to the
+        run size, so a wrong figure here becomes a wrong material cost on every run.
+      </p>
+
+      {recipe.loading && <Spinner />}
+      {recipe.error && <ErrorBox message={recipe.error} />}
+      {recipe.data && recipe.data.length === 0 && (
+        <Empty message="No components yet — this item is treated as a purchased material, and cannot be produced." />
+      )}
+      {recipe.data && recipe.data.length > 0 && (
+        <div className="table-wrap" style={{ marginBottom: 14 }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th className="numeric">Qty per unit</th>
+                <th>Unit</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {recipe.data.map((row: BomComponent) => (
+                <tr key={row.component_code}>
+                  <td>
+                    <strong>{row.component_code}</strong>{" "}
+                    <span className="muted small">{row.component_name}</span>
+                  </td>
+                  <td className="numeric">{fmtQty(row.qty_per_unit)}</td>
+                  <td>{row.uom}</td>
+                  <td className="numeric">
+                    {canWrite && (
+                      <button
+                        className="ghost"
+                        onClick={() => removeComponent(row.component_code)}
+                        disabled={bomBusy}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {canWrite && (
+        <div className="form-row" style={{ marginBottom: 16 }}>
+          <label className="field">
+            <span className="field-label">Add component</span>
+            <select value={componentCode} onChange={(event) => setComponentCode(event.target.value)}>
+              <option value="">Choose an item…</option>
+              {items
+                .filter((item) => item.code !== code)
+                .map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {item.code} — {item.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label className="field">
+            <span className="field-label">Qty per unit</span>
+            <input
+              className="numeric"
+              inputMode="decimal"
+              value={componentQty}
+              onChange={(event) => setComponentQty(event.target.value)}
+            />
+          </label>
+          <div style={{ display: "flex", alignItems: "flex-end" }}>
+            <button
+              className="primary"
+              onClick={addComponent}
+              disabled={bomBusy || !componentCode || !componentQty}
+            >
+              Add to recipe
+            </button>
+          </div>
+        </div>
+      )}
+
+      {bomError && <ErrorBox message={bomError} />}
+      {bomMessage && (
+        <p className="small" style={{ color: "var(--positive)", marginTop: 0 }}>
+          {bomMessage}
+        </p>
       )}
 
       <h2 style={{ marginBottom: 8 }}>BOM explosion</h2>

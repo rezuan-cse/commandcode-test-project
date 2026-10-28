@@ -1748,6 +1748,62 @@ else works from there.
 
 ---
 
+## Test Case 8B — Testing from a blank system, with no workbook at all
+
+You do not have to import anything to exercise this software. A fresh deployment
+starts with a standard chart of accounts and nothing else, and every record the
+operational screens need can be created in the interface. This path is worth
+running **in addition** to the workbook cases: the import writes parties, items and
+recipes straight into the database, so it never touches the forms that create them.
+
+**Step 1 — get a blank system.** Choose one:
+
+- **Hosted (Render/Neon):** in the Render dashboard, delete and recreate the
+  database, or point `RPCI_DATABASE_URL` at a new Neon database. The next boot seeds
+  the starter chart of accounts.
+- **Your own VPS:** `docker compose -f docker-compose.prod.yml down -v` removes the
+  database volume, then `up -d --build` starts clean. **`-v` deletes the data** —
+  only do this on a test deployment.
+- **In the interface:** Administration → **Data** → **Start over** → *Start fresh*.
+  This is hidden while `RPCI_ALLOW_DATA_RESET=false`, which is how production ships.
+  It empties the books and re-creates the starter chart of accounts, keeping the
+  sign-in accounts.
+
+Afterwards the Dashboard should show **29 accounts, no items, no journal entries**,
+and all four integrity checks green — zero equals zero, which is the correct answer
+for an empty set of books.
+
+**Step 2 — enter the minimum data by hand.**
+
+1. **Customers & Suppliers** → add a supplier and a customer.
+2. **Inventory & BOM** → add a raw material and a finished good.
+3. Click the finished good, then in the **Recipe** card add the raw material with a
+   quantity per unit. This is what tells Production Entry what one unit is made of;
+   without it the item is treated as a purchased material and cannot be produced.
+
+**Step 3 — run the cycle.** Purchase Entry → Production Entry → Sales Entry →
+Receipts & Payments, exactly as Test Cases 9 to 15 describe.
+
+**Expected Behavior:** after every posting all four integrity checks stay green,
+the Trial Balance nets to zero, and the Balance Sheet balances. The figures are
+checkable by hand. With the numbers this walkthrough uses:
+
+| Step | Result |
+|---|---|
+| Buy 100 of the raw material at 10.00 | Inventory 1,000.00, Accounts Payable 1,000.00 |
+| Produce 10 units using 20 of it plus 50.00 labour | Output unit cost `(200 + 50) ÷ 10` = **25.00** |
+| Sell 5 at 40.00 | Revenue 200.00, COGS 125.00, gross profit **75.00** |
+| Receive 200.00, pay the supplier 1,000.00 | Cash `200 − 1,000 − 50` = **−850.00** |
+| Balance Sheet | Assets `−850 + 800 + 125` = **75.00** = profit 75.00 |
+
+**Actual Results & Calculation Explanation:** the labour cost is absorbed into the
+cost of what was produced rather than expensed immediately, so half of it sits in
+finished-goods stock and only the half that was sold reaches the profit and loss
+account as part of COGS. That is why profit is 75.00 and not 25.00. Nothing in this
+path came from a workbook.
+
+---
+
 ## Test Case 9 — Record a purchase and watch the average cost change
 
 - **User Persona:** **Store/Production Staff** or **Admin**.

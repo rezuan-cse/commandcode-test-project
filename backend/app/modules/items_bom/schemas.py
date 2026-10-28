@@ -53,6 +53,14 @@ class ItemUpdate(BaseModel):
     is_active: bool | None = None
 
 
+class BomComponentIn(BaseModel):
+    """Payload for adding or re-quantifying one BOM edge."""
+
+    component_code: str = Field(min_length=1, max_length=24)
+    qty_per_unit: Decimal = Field(gt=0)
+    stage: int = Field(default=1, ge=1)
+
+
 class BomComponentOut(BaseModel):
     """One BOM edge."""
 

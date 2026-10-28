@@ -237,7 +237,18 @@ export const api = {
       body: JSON.stringify({ reason }),
     }),
 
-  bom: (code: string) => request<BomComponent[]>(`/items/${code}/bom`),
+    bom: (code: string) => request<BomComponent[]>(`/items/${code}/bom`),
+
+    addBomComponent: (code: string, payload: { component_code: string; qty_per_unit: string }) =>
+      request<BomComponent[]>(`/items/${code}/bom`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+
+    removeBomComponent: (code: string, componentCode: string) =>
+      request<BomComponent[]>(`/items/${code}/bom/${encodeURIComponent(componentCode)}`, {
+        method: "DELETE",
+      }),
 
   explode: (code: string, qty: string) =>
     request<BomExplosion>(`/items/${code}/explode?qty=${encodeURIComponent(qty)}`),

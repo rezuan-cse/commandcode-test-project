@@ -10,8 +10,9 @@ from app.core.exceptions import DomainError, DuplicateError, NotFoundError
 from app.core.money import money, to_decimal
 from app.modules.inventory_ledger import service as ledger_service
 from app.modules.items_bom import repository
-from app.modules.items_bom.models import Item
+from app.modules.items_bom.models import BomComponent, Item
 from app.modules.items_bom.schemas import (
+    BomComponentIn,
     BomComponentOut,
     BomExplosionLine,
     BomExplosionOut,
@@ -147,6 +148,92 @@ def list_components(db: Session, parent_code: str) -> list[BomComponentOut]:
             )
         )
     return out
+
+
+def _reaches(db: Session, start_code: str, target_code: str) -> bool:
+    """True when ``target_code`` is reachable by walking down from ``start_code``.
+
+    Used to refuse a recipe that would contain itself. A cycle here would make
+    :func:`explode_bom` recurse forever, and would make production's material cost
+    circular, so it is rejected at the point of entry rather than defended against
+    on every later read.
+    """
+    seen: set[str] = set()
+    stack = [start_code]
+    while stack:
+        code = stack.pop()
+        if code == target_code:
+            return True
+        if code in seen:
+            continue
+        seen.add(code)
+        stack.extend(edge.component_code for edge in repository.components_of(db, code))
+    return False
+
+
+def add_component(
+    db: Session, parent_code: str, payload: BomComponentIn
+) -> list[BomComponentOut]:
+    """Add one component to a parent's recipe, or correct its quantity.
+
+    Both items must exist, the component cannot be the parent itself, and the edge
+    cannot close a loop. Re-adding an existing component updates its quantity and
+    stage rather than creating a second edge — a recipe says how much of an input
+    one unit needs, and two rows saying different things cannot both be right.
+    """
+    parent = get_item(db, parent_code)
+    component_code = payload.component_code.strip().upper()
+    if component_code == parent.code.upper():
+        raise DomainError(
+            f"{parent.code} cannot be a component of itself."
+        )
+    component = repository.get_item(db, component_code)
+    if component is None:
+        raise NotFoundError(f"Item {component_code} not found")
+
+    if _reaches(db, component.code, parent.code):
+        raise DomainError(
+            f"Adding {component.code} to {parent.code} would make the recipe "
+            f"contain itself: {component.code} already needs {parent.code}."
+        )
+
+    existing = repository.get_component(db, parent.code, component.code)
+    if existing is None:
+        repository.add_component(
+            db,
+            BomComponent(
+                parent_code=parent.code,
+                component_code=component.code,
+                qty_per_unit=payload.qty_per_unit,
+                stage=payload.stage,
+            ),
+        )
+    else:
+        existing.qty_per_unit = payload.qty_per_unit
+        existing.stage = payload.stage
+
+    db.commit()
+    return list_components(db, parent.code)
+
+
+def remove_component(
+    db: Session, parent_code: str, component_code: str
+) -> list[BomComponentOut]:
+    """Remove one component from a parent's recipe.
+
+    A recipe is not history: it says what a unit needs *now*. Removing an edge
+    therefore has no accounting consequence — past production runs keep the costs
+    they were posted at, because those live on the production order, not here.
+    """
+    parent = get_item(db, parent_code)
+    edge = repository.get_component(db, parent.code, component_code.strip().upper())
+    if edge is None:
+        raise NotFoundError(
+            f"{component_code} is not a component of {parent.code}"
+        )
+    repository.delete_component(db, edge)
+    db.commit()
+    return list_components(db, parent.code)
 
 
 def explode_bom(db: Session, parent_code: str, qty: Decimal, level: int = 1) -> list[BomExplosionLine]:

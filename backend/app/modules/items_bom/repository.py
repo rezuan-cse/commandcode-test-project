@@ -45,6 +45,30 @@ def add_components(db: Session, components: list[BomComponent]) -> None:
     db.flush()
 
 
+def get_component(
+    db: Session, parent_code: str, component_code: str
+) -> BomComponent | None:
+    """Fetch one BOM edge, if it exists."""
+    stmt = select(BomComponent).where(
+        BomComponent.parent_code == parent_code,
+        BomComponent.component_code == component_code,
+    )
+    return db.execute(stmt).scalars().first()
+
+
+def add_component(db: Session, edge: BomComponent) -> BomComponent:
+    """Persist one BOM edge."""
+    db.add(edge)
+    db.flush()
+    return edge
+
+
+def delete_component(db: Session, edge: BomComponent) -> None:
+    """Remove one BOM edge."""
+    db.delete(edge)
+    db.flush()
+
+
 def history_count(db: Session, code: str) -> int:
     """How many records anywhere refer to this item.
 

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.modules.items_bom import service
 from app.modules.items_bom.schemas import (
+    BomComponentIn,
     BomComponentOut,
     BomExplosionOut,
     ItemIn,
@@ -76,6 +77,32 @@ def get_item(code: str, db: Session = Depends(get_db)) -> ItemOut:
 def list_bom(code: str, db: Session = Depends(get_db)) -> list[BomComponentOut]:
     """List an item's direct BOM components."""
     return service.list_components(db, code)
+
+
+@router.post("/{code}/bom", response_model=list[BomComponentOut], status_code=201)
+def add_bom_component(
+    code: str,
+    payload: BomComponentIn,
+    principal: Principal = Depends(require("items_bom", write=True)),
+    db: Session = Depends(get_db),
+) -> list[BomComponentOut]:
+    """Add a component to an item's recipe, or correct its quantity.
+
+    Refused if either item is unknown, if the component is the parent itself, or
+    if the edge would close a loop. Returns the parent's full recipe.
+    """
+    return service.add_component(db, code, payload)
+
+
+@router.delete("/{code}/bom/{component_code}", response_model=list[BomComponentOut])
+def remove_bom_component(
+    code: str,
+    component_code: str,
+    principal: Principal = Depends(require("items_bom", write=True)),
+    db: Session = Depends(get_db),
+) -> list[BomComponentOut]:
+    """Remove one component from an item's recipe. Returns the remaining recipe."""
+    return service.remove_component(db, code, component_code)
 
 
 @router.get("/{code}/explode", response_model=BomExplosionOut, dependencies=[CAN_READ])
