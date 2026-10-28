@@ -66,5 +66,6 @@ backend/.venv/bin/python scripts/seed_from_excel.py --check
 | Run, test, deploy, env vars | [docs/map/OPERATIONS.md](docs/map/OPERATIONS.md) |
 | Deploy on your own VPS | [docs/guides/vps-deployment.md](docs/guides/vps-deployment.md) |
 | What each test covers | [docs/guides/testing.md](docs/guides/testing.md) |
+| What values to type when testing, and which sheet to follow | [TEST_DATA_SHEET.md](TEST_DATA_SHEET.md) |
 | What is built, how to demo it | [docs/guides/product-guide.md](docs/guides/product-guide.md) |
 | Out of scope / open items | [docs/guides/scope-and-open-items.md](docs/guides/scope-and-open-items.md) |

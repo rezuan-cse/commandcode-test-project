@@ -23,6 +23,9 @@ cd backend && .venv/bin/python -m pytest tests -q
 | `test_reports_comparison.py` | Period comparison: the movement between two months, a fall reported as negative, no percentage change against a period with nothing in it, a margin compared in points, and the figures agreeing with the plain P&L |
 | `test_low_stock.py` | Reorder level and the low-stock list: a blank level means "not watched" and is never listed, an item exactly at its level is listed, the shortfall and its cost are right, enough stock clears it, and an inactive item is left off |
 | `test_settings.py` | The client owns their configuration: every setting in the catalogue can be changed through the API, a silly value is refused, a change takes effect without a restart, a client's value is never reset by the boot-time seeding, and only an administrator may change one |
+| `test_setup.py` | First run: a database with no accounts offers the setup screen, the first administrator is created and signed in, the endpoint refuses once any account exists, a short password or blank name is rejected, and the address is normalised |
+| `test_new_company.py` | The no-workbook path over HTTP: creating and renaming accounts, posting opening capital and still balancing, an unbalanced entry refused, the fiscal-year split (July and January), the setup checklist ticking as data arrives, and the suggested reporting period following the latest posting or today |
+| `test_bom_editing.py` | Recipes over HTTP: adding a component, re-adding to correct a quantity, removing one, unknown and self-referencing components refused, a loop refused at any depth, non-positive quantities refused, and a new recipe driving an explosion with no workbook involved |
 
 The interface has its own tests, because the figures shown on screen must round
 the same way the ledger does:
@@ -37,6 +40,7 @@ cd frontend && npm test
 | `shared/csv.test.ts` | CSV escaping: commas and quotes in a customer name stay in one cell, a stored amount is written unformatted so it still sums in Excel, and an empty export still has headings |
 | `features/sales/SalesPage.test.tsx` | The sale price follows the chosen item, a typed price is never overwritten, and a view-only role sees no form |
 | `features/sales/ReceiptPage.test.tsx` | The receipt itemises the posted lines and totals and does not claim to be a VAT invoice |
+| `shared/deploymentMeta.test.tsx` | What the deployment offers matches what the interface shows: demo accounts only where they exist, both starting points on the Data screen, no "empty everything", and the first-administrator form only while no account exists |
 
 ## Verifying the numbers
 
@@ -44,7 +48,7 @@ The import is checked against the workbook, both by the test suite and by a
 standalone script:
 
 ```bash
-cd backend && .venv/bin/python -m pytest tests -q          # 124 tests
+cd backend && .venv/bin/python -m pytest tests -q          # 293 tests
 cd .. && backend/.venv/bin/python scripts/seed_from_excel.py --check
 ```
 
