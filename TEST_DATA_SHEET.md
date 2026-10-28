@@ -327,6 +327,22 @@ Press **Pay supplier**.
 
 Dashboard, As of `2026-08-31`, Period from `2026-07-01`.
 
+**Every step, checked as you go.** If one of these is wrong, the mistake was made
+at that step — check it before carrying on. All figures are `assets =
+liabilities + equity`; the trial balance difference must be `0.00` each time.
+
+| After | Assets | L + E | Balanced |
+|---|---|---|---|
+| A7 opening capital | `500,000.00` | `500,000.00` | yes |
+| A11 purchase | `672,500.00` | `672,500.00` | yes |
+| A12 production | `672,500.00` | `672,500.00` | yes |
+| A13 sale | `683,750.00` | `683,750.00` | yes |
+| A14 receipt | `683,750.00` | `683,750.00` | yes |
+| A15 supplier paid | `511,250.00` | `511,250.00` | yes |
+| A17 payroll (optional) | `484,250.00` | `484,250.00` | yes |
+
+**The final position:**
+
 | Figure | Expected |
 |---|---|
 | Revenue | `25,000.00` |
