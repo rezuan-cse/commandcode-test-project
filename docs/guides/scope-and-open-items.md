@@ -102,8 +102,9 @@ Known "still to do" behaviours:
   it. Requiring a change at next sign-in needs a small extra flow.
 - **The sample workbook import stays in the build but must not be offered at
   handover.** Administration → **Data** currently exposes **Restore sample
-  workbook**, which replaces the books. It is useful for testing and dangerous once
-  the client's real figures are in. It is to be removed, or made unavailable, before
+  workbook**, which replaces the books (the sign-in accounts and the confirmed
+  configuration are kept). It is useful for testing and dangerous once the
+  client's real figures are in. It is to be removed, or made unavailable, before
   the system is handed over.
 
 ## Before handover

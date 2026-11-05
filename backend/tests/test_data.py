@@ -6,6 +6,7 @@ administrator can import a workbook or start over at any time.
 
 from __future__ import annotations
 
+import json
 from datetime import date
 from pathlib import Path
 
@@ -18,6 +19,9 @@ from app.modules.accounts.models import Account
 from app.modules.data import service as data_service
 from app.modules.inventory_ledger import service as ledger
 from app.modules.reports import service as reports
+from app.modules.settings import service as settings_service
+from app.modules.settings.models import Setting
+from app.modules.settings.schemas import SettingUpdate
 from app.seed.starter import STARTER_ACCOUNTS, seed_starter
 
 AS_OF = date(2026, 10, 31)
@@ -73,6 +77,44 @@ def test_import_replaces_the_books_from_a_workbook(db) -> None:
 
     db.expire_all()
     assert reports.balance_sheet(db, AS_OF).total_assets == 801600
+
+
+def _confirm_vat_rate(db) -> None:
+    """Store a value that differs from the catalogue default, marked confirmed."""
+    settings_service.seed_defaults(db)
+    db.commit()
+    settings_service.update_setting(
+        db,
+        "vat.standard_rate_pct",
+        SettingUpdate(value="7.5", confirmed_by_client=True),
+    )
+
+
+def _assert_vat_rate_still_confirmed(db) -> None:
+    db.expire_all()
+    setting = db.get(Setting, "vat.standard_rate_pct")
+    assert setting is not None, "the client's configuration was removed"
+    assert json.loads(setting.value) == "7.5"
+    assert setting.confirmed_by_client is True
+
+
+def test_reset_keeps_the_settings_the_client_confirmed(db) -> None:
+    """Starting the books over must not undo the answers the client gave."""
+    _confirm_vat_rate(db)
+
+    data_service.reset("none")
+
+    _assert_vat_rate_still_confirmed(db)
+
+
+def test_import_keeps_the_settings_the_client_confirmed(db) -> None:
+    """Replacing the books with a workbook must not reset the configuration."""
+    _confirm_vat_rate(db)
+    content = Path(settings.seed_from_excel_path).read_bytes()
+
+    data_service.import_bytes(content, replace=True)
+
+    _assert_vat_rate_still_confirmed(db)
 
 
 def test_import_endpoint_requires_an_administrator(

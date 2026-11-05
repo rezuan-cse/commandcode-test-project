@@ -200,7 +200,9 @@ picture of how the business actually runs.
 
 Nothing in the walkthrough is destructive. On a local or test deployment,
 **Administration → Data** can start the books over at any point, so a reviewer
-can try things without wondering whether what they see is their own doing.
+can try things without wondering whether what they see is their own doing. The
+sign-in accounts and the confirmed configuration are kept; only the books are
+replaced.
 (On the production deployment the Start-over buttons are disabled by
 `RPCI_ALLOW_DATA_RESET=false`; there, re-importing the workbook with
 **Replace the books** ticked is the way back to a clean slate.)

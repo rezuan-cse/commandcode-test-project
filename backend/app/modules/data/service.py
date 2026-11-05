@@ -10,7 +10,7 @@ from __future__ import annotations
 import io
 
 from app.core.config import settings
-from app.core.db import KEEP_ACCOUNTS, SessionLocal, clear_all_data
+from app.core.db import KEEP_ON_RESET, SessionLocal, clear_all_data
 from app.seed.loader import (
     SeedReport,
     ensure_demo_users,
@@ -23,9 +23,10 @@ from app.seed.starter import seed_starter
 def _restore_basics(session) -> None:
     """Re-create what a wipe removes that is not the client's data.
 
-    The configuration is rebuilt from the catalogue, and the demo accounts are
-    recreated only when they are wanted. User accounts themselves are never
-    cleared by a reset, so this cannot be the step that locks somebody out.
+    The client's confirmed configuration is kept; only keys that are missing are
+    added from the catalogue. The demo accounts are recreated only when they are
+    wanted. User accounts themselves are never cleared by a reset, so this cannot
+    be the step that locks somebody out.
     """
     from app.modules.settings import service as settings_service
 
@@ -40,12 +41,13 @@ def reset(mode: str | None = None) -> SeedReport:
     Modes: ``fresh`` (starter chart of accounts), ``workbook`` (the sample
     workbook), or ``none`` (leave the books empty).
 
-    The accounts that sign in are kept: emptying the books is an accounting
-    decision and should not remove the people who use the system.
+    The accounts that sign in and the values they confirmed are kept: emptying
+    the books is an accounting decision, and it should not remove the people who
+    use the system or put their configuration back to placeholder defaults.
     """
     chosen = mode or settings.seed_mode
     with SessionLocal() as session:
-        clear_all_data(session, keep=KEEP_ACCOUNTS)
+        clear_all_data(session, keep=KEEP_ON_RESET)
         if chosen == "workbook":
             report = seed_if_empty(session)
         elif chosen == "none":

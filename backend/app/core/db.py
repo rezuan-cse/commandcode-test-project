@@ -263,6 +263,16 @@ def sync_schema() -> list[str]:
 # one whose only administrator is the person clicking Reset, has no way back in.
 KEEP_ACCOUNTS = frozenset({"users", "user_permissions", "recovery_codes"})
 
+# The values the client has confirmed — VAT rates, payroll structure, company
+# details — are configuration, not books. Emptying or replacing the books must
+# not throw them away: each one was a question answered by a person, and a reset
+# would otherwise quietly put the system back to its placeholder defaults.
+KEEP_CONFIGURATION = frozenset({"settings"})
+
+# What starting the books over preserves: the people who sign in, and what they
+# have confirmed.
+KEEP_ON_RESET = KEEP_ACCOUNTS | KEEP_CONFIGURATION
+
 
 def clear_all_data(session: Session, *, keep: frozenset[str] = frozenset()) -> None:
     """Delete every row, children before parents.

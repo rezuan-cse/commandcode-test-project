@@ -17,7 +17,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.db import KEEP_ACCOUNTS, clear_all_data
+from app.core.db import KEEP_ON_RESET, clear_all_data
 from app.core.enums import (
     AccountType,
     ItemCategory,
@@ -307,9 +307,10 @@ def import_workbook(
 
     data = load_workbook_data(source)  # type: ignore[arg-type]
     if replace:
-        # The books are replaced, the accounts are not: an import should never
-        # be the reason nobody can sign in.
-        clear_all_data(db, keep=KEEP_ACCOUNTS)
+        # The books are replaced, the accounts and confirmed settings are not:
+        # an import should never be the reason nobody can sign in, or the
+        # reason the client's confirmed VAT and payroll rules vanish.
+        clear_all_data(db, keep=KEEP_ON_RESET)
 
     _load_accounts(db, data)
     _load_items(db, data)
