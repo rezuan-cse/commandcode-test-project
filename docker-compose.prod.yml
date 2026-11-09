@@ -101,8 +101,12 @@ services:
     depends_on:
       - app
     ports:
+      # Caddy maps its HTTPS port to 8443 because nginx on this box already
+      # owns 443, so resuming 443 would fail with "address already in use".
+      # Revert to "443:443" once nginx is moved, and to the usual default
+      # HTTPS port once the domain is public.
       - "80:80"
-      - "443:443"
+      - "8443:443"
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
