@@ -1502,7 +1502,7 @@ button:disabled {
 .mushak-parties {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 0;
   margin-bottom: 18px;
 }
 
@@ -1517,6 +1517,19 @@ button:disabled {
 .mushak-parties p {
   margin: 0 0 3px;
   font-size: 14px;
+}
+
+/* The sample runs a hairline between the seller and the buyer, so the two
+   blocks read as separate parties rather than one blended column. The padding
+   replaces the grid gap so the rule sits in the middle of the space between
+   them. */
+.mushak-parties > div:first-child {
+  border-right: 1px solid var(--line-strong);
+  padding-right: 20px;
+}
+
+.mushak-parties > div:nth-child(2) {
+  padding-left: 20px;
 }
 
 .mushak-name {
@@ -1602,6 +1615,18 @@ button:disabled {
 @media (max-width: 560px) {
   .mushak-parties {
     grid-template-columns: 1fr;
+  }
+
+  .mushak-parties > div:first-child {
+    border-right: none;
+    border-bottom: 1px solid var(--line-strong);
+    padding-right: 0;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+  }
+
+  .mushak-parties > div:nth-child(2) {
+    padding-left: 0;
   }
 
   .mushak-totals dl {
