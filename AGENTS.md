@@ -33,6 +33,24 @@ doc in the same change.
   [docs/guides/architecture.md](docs/guides/architecture.md).
 - **Do not commit, push or deploy unless asked.**
 
+## Live deployment
+
+- Production branch: `production` (not `main`).
+- VPS project directory: `/storage/resinova`.
+- Every `docker compose` command on the VPS needs
+  `--env-file .env.production`, or interpolation fails with `required variable
+  POSTGRES_PASSWORD is missing a value`.
+- `deploy/Caddyfile` is bind-mounted read-only into the `caddy` container, so a
+  plain `up` does not pick up edits — use `up -d --force-recreate caddy`.
+- The public face is a **Cloudflare Tunnel**: the box publishes no inbound port
+  and Cloudflare serves the TLS certificate. The current published hostname is
+  `resinovabd.xploren.com` (`SITE_ADDRESS=resinovabd.xploren.com`), which is for
+  client testing only. At handover the address moves to the client's own hosted
+  name (e.g. `erp.resinovabd.com`): add a published-application route for the new
+  hostname in the Cloudflare dashboard, set `SITE_ADDRESS` in `.env.production`
+  to the new hostname, restart the app, and check the new URL.
+- See [docs/guides/vps-deployment.md](docs/guides/vps-deployment.md) §7.
+
 ## Workflow
 
 - Work on `main` unless told otherwise.

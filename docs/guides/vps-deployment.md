@@ -212,6 +212,24 @@ between a bad deploy and a lost quarter.
 - **Restart:** `docker compose -f docker-compose.prod.yml --env-file .env.production restart app`
 - **Shell in the app:** `docker compose -f docker-compose.prod.yml --env-file .env.production exec app sh`
 - **Database shell:** `docker compose -f docker-compose.prod.yml --env-file .env.production exec db psql -U rpci -d rpci`
+- **Compose flag:** every `docker compose` command on this box needs
+  `--env-file .env.production`. The file is deliberately not named `.env`, so
+  without the flag interpolation fails with `required variable POSTGRES_PASSWORD
+  is missing a value` before anything runs.
+- **After editing a bind-mounted file** (`deploy/Caddyfile` is bind-mounted
+  into the `caddy` container read-only), a plain `up` is not enough — Compose
+  will not recreate a container for a content change to a bind mount. Force
+  it: `up -d --force-recreate caddy`. Verify with `exec caddy cat
+  /etc/caddy/Caddyfile`, then watch the logs for requests returning 200
+  instead of 308 redirects.
+- **Hostname for testing:** the tunnel currently publishes
+  `resinovabd.xploren.com` (a subdomain of a zone owned in Cloudflare) and
+  `SITE_ADDRESS=resinovabd.xploren.com`. That name is for client testing only —
+  at handover the address moves to the client's own hostname
+  (e.g. `erp.resinovabd.com`). Renaming it means, in this order: create the new
+  published-application route in the Cloudflare dashboard for the new hostname;
+  update `SITE_ADDRESS` in `.env.production` to the new hostname and restart the
+  app; then check the new URL in a browser.
 - **Disk:** the NVMe holds the OS, images, dumps and the database. `df -h` and
   `docker system prune -af` occasionally; dumps are pruned automatically.
 - **Reboot:** all four containers are `restart: unless-stopped`, so the stack comes
