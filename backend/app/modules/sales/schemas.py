@@ -78,6 +78,9 @@ class SaleOut(ReversalOut):
     order_no: str
     sale_date: date
     customer: str
+    # The customer as a record, when one was chosen. A tax invoice shows the
+    # customer's address and BIN from that record, so the document needs the link.
+    party_code: str | None = None
     revenue: Decimal
     vat_total: Decimal = Decimal("0")
     cogs: Decimal

@@ -1443,6 +1443,170 @@ button:disabled {
   margin-bottom: 0;
 }
 
+/* ---------- Mushak 6.3 tax invoice ----------
+
+   A statutory document, so the treatment is deliberately plainer than the rest
+   of the interface: it looks like something a VAT office would accept, not like
+   a web page. Black on white, ruled table, totals boxed at the right, and the
+   seller/buyer pair side by side the way the sample lays them out. */
+.mushak {
+  max-width: 900px;
+}
+
+.mushak-title {
+  text-align: center;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.mushak-title h1 {
+  font-size: 24px;
+  letter-spacing: 0.12em;
+  margin: 0;
+}
+
+.mushak-title p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.mushak-ids {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin: 0 0 18px;
+  font-size: 13px;
+}
+
+.mushak-ids div {
+  display: flex;
+  gap: 10px;
+}
+
+.mushak-ids dt {
+  color: var(--muted);
+}
+
+.mushak-ids dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+.mushak-parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.mushak-parties h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+
+.mushak-parties p {
+  margin: 0 0 3px;
+  font-size: 13px;
+}
+
+.mushak-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.mushak-lines {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.mushak-lines th {
+  border: 1px solid var(--line-strong);
+  background: #f8fafc;
+  padding: 8px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+}
+
+.mushak-lines th.numeric {
+  text-align: right;
+}
+
+.mushak-lines td {
+  border: 1px solid var(--line);
+  padding: 9px 10px;
+  vertical-align: top;
+}
+
+.mushak-totals {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.mushak-totals dl {
+  min-width: 300px;
+  margin: 0 0 0 auto;
+  border: 1px solid var(--line-strong);
+  font-size: 13px;
+}
+
+.mushak-totals dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 8px 14px;
+}
+
+.mushak-totals dl div + div {
+  border-top: 1px solid var(--line);
+}
+
+.mushak-totals dl dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.mushak-totals dl dt {
+  color: var(--ink-soft);
+}
+
+.mushak-payable {
+  font-weight: 700;
+  font-size: 14px;
+  border-top: 2px solid var(--ink);
+}
+
+.mushak-words {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  flex: 1 1 320px;
+}
+
+@media (max-width: 560px) {
+  .mushak-parties {
+    grid-template-columns: 1fr;
+  }
+
+  .mushak-totals dl {
+    margin: 0;
+    width: 100%;
+  }
+}
+
 /* Printing gives the customer the document and nothing else: no sidebar, no
    date pickers, no toolbar, and no card border standing in for the page edge. */
 @media print {

@@ -444,6 +444,8 @@ export interface Sale extends Reversible {
   order_no: string;
   sale_date: string;
   customer: string;
+  /** The customer as a record, when one was chosen. Blank for a walk-in. */
+  party_code: string | null;
   revenue: string;
   vat_total: string;
   cogs: string;
@@ -466,6 +468,8 @@ export interface SaleLine {
   sale_price: string;
   line_revenue: string;
   vat_amount: string;
+  /** The rate this line was taxed at, recorded at posting. Blank for older lines. */
+  vat_rate_pct: string | null;
 }
 
 /** A posted sale with its lines. */
