@@ -6,17 +6,18 @@
 #   * the database is a real Postgres on the box, not SQLite in a volume, because
 #     this holds the client's books and SQLite in a container is a file that dies
 #     with the container;
-#   * TLS is handled by Caddy, which fetches and renews a certificate on its own.
+#   * the public face is a Cloudflare Tunnel, so the box publishes no port at all.
 #
 # Usage, from the repository root on the server:
 #
 #     cp deploy/.env.production.example .env.production
-#     # edit .env.production — the database password and the JWT secret
+#     # edit .env.production — the database password, JWT secret and tunnel token
 #     docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 #
-# The database is never published to the host: only Caddy is reachable, on 80/443.
-# The application port is bound to localhost so it can be curled for a health check
-# without being exposed to the internet.
+# Nothing is published to the host: the database is only on the compose network,
+# the application is bound to localhost for health checks, and Caddy is reached
+# over the compose network by the cloudflared tunnel, which opens no port either.
+# Cloudflare serves the public TLS certificate.
 
 services:
   db:
@@ -73,7 +74,7 @@ services:
       RPCI_ACCESS_TOKEN_MINUTES: "720"
       RPCI_UTC_OFFSET_HOURS: "6"
       # Caddy terminates TLS and proxies, so the browser only ever talks to one
-      # origin. Set this to the real site address.
+      # origin. With the Cloudflare Tunnel this is the public hostname.
       RPCI_CORS_ORIGINS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env.production}
       # The interactive API docs advertise every endpoint. Not on a box holding
       # real books.
@@ -85,8 +86,8 @@ services:
       RPCI_LOGIN_MAX_ATTEMPTS: "5"
       RPCI_LOGIN_LOCKOUT_MINUTES: "15"
     ports:
-      # Bound to localhost: reachable from the box (health checks, an SSH tunnel)
-      # but never from the internet. Caddy reaches it over the compose network.
+      # Localhost only: the tunnel and Caddy reach the app over the compose
+      # network; the box accepts it only for health checks and an SSH tunnel.
       - "127.0.0.1:8000:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
@@ -100,20 +101,31 @@ services:
     restart: unless-stopped
     depends_on:
       - app
-    ports:
-      # Caddy is internal-only behind nginx on this box, so both of its ports
-      # are remapped to high ports: 8443 for HTTPS, 8080 for HTTP. Revert to
-      # "80:80"/"443:443" once nginx is moved. The ACME HTTP challenge still
-      # works because nginx proxies HTTP traffic to Caddy, and a site with
-      # :8443 in its address is served through a TLS-ALPN challenge.
-      - "8080:80"
-      - "8443:443"
+    # No ports. Reached only from inside the compose network, by the tunnel.
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env.production}
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    depends_on:
+      - caddy
+    # The token alone is the configuration: the tunnel is created in the
+    # Cloudflare dashboard with this hostname and forwarded to Caddy's HTTP
+    # port on the compose network, so the box opens no inbound port at all.
+    command: >-
+      tunnel --no-autoupdate --metrics 127.0.0.1:2000
+      run --token ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in .env.production}
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "ready", "--metrics", "127.0.0.1:2000"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
 volumes:
   pgdata:

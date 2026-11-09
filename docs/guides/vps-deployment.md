@@ -1,9 +1,9 @@
 # Deploying on your own VPS
 
-For the internal deployment: one Ubuntu 24.04 server, Postgres on the same box,
-Caddy for TLS. This is the setup that suits a handful of employees better than any
-free public host — no cold start, no deploy queue, real cron, and the database never
-touches the internet.
+For the internal deployment: one Ubuntu 24.04 server, Postgres and the
+application on the same box, and nothing published to the internet — the
+public face is a Cloudflare Tunnel, so the site is reachable from anywhere
+while the box itself opens no inbound port.
 
 Sized for: 4 cores, 8 GB RAM, 80 GB NVMe. That is comfortably more than this
 system needs; the headroom is yours for OS updates, logs and dumps.
@@ -14,7 +14,8 @@ system needs; the headroom is yours for OS updates, logs and dumps.
 
 | Container | Purpose | Reachable from |
 |---|---|---|
-| `caddy` | TLS + reverse proxy | the internet, on 80/443 only |
+| `cloudflared` | Cloudflare Tunnel client, outbound only | **nothing** — it connects out to Cloudflare |
+| `caddy` | Reverse proxy to the application | the tunnel only, over the compose network |
 | `app` | FastAPI + the built SPA | localhost only (`127.0.0.1:8000`) |
 | `db` | PostgreSQL 17 | **nothing** — compose network only |
 
@@ -45,20 +46,37 @@ chmod 600 .env.production
 
 Fill in `.env.production`:
 
-- **`SITE_ADDRESS`** — the domain you will point at this box.
+- **`SITE_ADDRESS`** — the public hostname that resolves to Cloudflare (the
+  tunnel hostname you create in step 3b).
 - **`POSTGRES_PASSWORD`** — `openssl rand -base64 24`
 - **`RPCI_JWT_SECRET`** — `python3 -c "import secrets; print(secrets.token_urlsafe(48))"`
+- **`CLOUDFLARE_TUNNEL_TOKEN`** — the token Cloudflare prints when you create
+  the tunnel (step 3b). Empty on a box that has no tunnel yet is a startup
+  error, not a silent miss.
 
-### Point DNS
+### Create the Cloudflare Tunnel
 
-An `A` record for the domain at the server's public IP. **Ports 80 and 443 must both
-be open** — Let's Encrypt's challenge arrives on 80:
+The tunnel is created in the Cloudflare dashboard; the box never opens a port,
+it connects out to Cloudflare.
 
-```bash
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-# Do NOT open 5432. Nothing outside the box needs it.
-```
+1. In the Cloudflare dashboard, go to **Zero Trust → Networks → Tunnels →
+   Create a tunnel**.
+2. Name it, choose the **Cloudflare Tunnel** type, and on the next screen
+   choose **Docker**. It prints a token — copy it into
+   `CLOUDFLARE_TUNNEL_TOKEN` in `.env.production`.
+3. Add a **public hostname**: the hostname you set as `SITE_ADDRESS`, service:
+   `HTTP`, URL: `caddy:80`.
+4. Add that hostname to DNS as a **CNAME** pointing at the tunnel's
+   `*.cfargotunnel.com` target. Cloudflare then serves the public HTTPS
+   certificate on that name.
+5. Leave the firewall closed — no inbound port is needed for the tunnel, and the
+   application is only ever reached through it.
+
+> **A tunnel still advertises a public URL.** It is a public address, but the
+> box behind it opens nothing: TLS is served by Cloudflare, the ACME challenge
+> is handled by Cloudflare, and no certificate or port 80/443 is owed to this
+> machine. If the site must be reachable only by enrolled devices, use
+> Tailscale or WireGuard instead (see §8).
 
 ---
 
@@ -85,8 +103,8 @@ the client's real figures go in.
 
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
-docker compose -f docker-compose.prod.yml ps        # all three should be healthy
-docker compose -f docker-compose.prod.yml logs -f app | head -40
+docker compose -f docker-compose.prod.yml --env-file .env.production ps        # all four should be healthy
+docker compose -f docker-compose.prod.yml --env-file .env.production logs -f app | head -40
 ```
 
 The app log prints which database it is using on boot:
@@ -95,8 +113,15 @@ The app log prints which database it is using on boot:
 [db] using postgresql database rpci on db (not pooled)
 ```
 
-Caddy fetches the certificate on first request. Visit the site; the sign-in screen
-should appear over HTTPS.
+The cloudflared log should show the tunnel registered:
+
+```
+[cloudflared] Registered tunnel connection
+```
+
+Then visit the site over HTTPS. Cloudflare serves the certificate; Caddy
+forwards the request to the application over plain HTTP on the compose
+network.
 
 ### The first administrator
 
@@ -183,24 +208,20 @@ between a bad deploy and a lost quarter.
 
 ## 7. Operating notes
 
-- **Logs:** `docker compose -f docker-compose.prod.yml --env-file .env.production logs -f app`
+- **Logs:** `docker compose -f docker-compose.prod.yml --env-file .env.production logs -f app` (and `... logs -f cloudflared` for the tunnel)
 - **Restart:** `docker compose -f docker-compose.prod.yml --env-file .env.production restart app`
 - **Shell in the app:** `docker compose -f docker-compose.prod.yml --env-file .env.production exec app sh`
 - **Database shell:** `docker compose -f docker-compose.prod.yml --env-file .env.production exec db psql -U rpci -d rpci`
 - **Disk:** the NVMe holds the OS, images, dumps and the database. `df -h` and
   `docker system prune -af` occasionally; dumps are pruned automatically.
-- **Reboot:** all three containers are `restart: unless-stopped`, so the stack comes
+- **Reboot:** all four containers are `restart: unless-stopped`, so the stack comes
   back on its own. Nothing needs starting by hand.
 - **Machine time:** containers run UTC and the app converts to +06:00 for display,
   so the host's timezone does not affect the books.
+- **Ports:** none are published. The tunnel connects out, and the application is
+  only ever reached through it.
 
-## 8. If you do not want it on the public internet
-
-Two options, both better than a public URL for payroll and financials:
-
-**Cloudflare Tunnel** — no open ports, no public IP needed. Add a `cloudflared`
-container and point it at `app:8000`; set `SITE_ADDRESS` to the tunnel hostname and
-drop the `caddy` service entirely.
+## 8. If you do not want a public URL at all
 
 **Tailscale or WireGuard** — staff join a private network and reach the box
 directly. Simplest is Tailscale on the host with Caddy serving on the tailnet

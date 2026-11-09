@@ -24,6 +24,36 @@
 
 	# Financial data and payroll behind a login should not be cached by anything
 	# between the browser and this box.
+header {
+		Cache-Control "no-store"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+
+	log {
+		output stderr
+		format console
+	}
+}
+
+# Reached as plain HTTP where the tunnel fronts it, so the public face of the
+# system presents on a single port and holds no certificate of its own.
+:80 {
+	# The application. Everything goes to it: the API under /api, the SPA and its
+	# assets everywhere else, because FastAPI serves the built frontend itself.
+	reverse_proxy app:8000
+
+	# Uploads: the workbook import is the only large request. A generous ceiling
+	# avoids a confusing 413 if the client's real workbook is bigger than the
+	# sample one.
+	request_body {
+		max_size 64MB
+	}
+
+	# Financial data and payroll behind a login should not be cached by anything
+	# between the browser and this box.
 	header {
 		Cache-Control "no-store"
 		X-Content-Type-Options "nosniff"
