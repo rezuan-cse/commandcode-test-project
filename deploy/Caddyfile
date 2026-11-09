@@ -1,46 +1,23 @@
 # Caddy configuration.
 #
-# Caddy obtains and renews a Let's Encrypt certificate automatically, provided the
-# domain's DNS A record points at this server and ports 80 and 443 are both open —
-# the challenge comes in on 80, so it cannot be firewalled off.
+# The public face is a Cloudflare Tunnel, so Caddy is not a public TLS server:
+# Cloudflare serves the public certificate, and the tunnel terminates TLS at
+# the edge. Caddy listens only on plain HTTP, and only on the compose network.
 #
-# SITE_ADDRESS comes from .env.production. It can be:
-#   rpci.example.com            a real domain  → automatic public certificate
-#   erp.company.local           an internal name → Caddy uses its own local CA, and
-#                               staff must trust that certificate once
+# One site block is enough. It matches the public hostname the tunnel forwards
+# by, and it answers on port 80 only. No ACME challenge ever happens here, so
+# no port 80/443 need be open on this box.
+#
+# SITE_ADDRESS is the public hostname the tunnel forwards for:
+#   erp.company.example.com     a real domain  → Cloudflare serves TLS on it
 #   :80                         no TLS at all — only sensible behind a tunnel
+# The :80 suffix is explicit: without it, Caddy would treat a bare hostname as
+# an HTTPS site, try to obtain a public certificate itself, and force a
+# redirect on port 80 — which, served by Cloudflare, is what produces the
+# "page isn't redirecting properly" loop. Cloudflare terminates TLS at the
+# edge, so nothing here needs a certificate.
 
-{$SITE_ADDRESS} {
-	# The application. Everything goes to it: the API under /api, the SPA and its
-	# assets everywhere else, because FastAPI serves the built frontend itself.
-	reverse_proxy app:8000
-
-	# Uploads: the workbook import is the only large request. A generous ceiling
-	# avoids a confusing 413 if the client's real workbook is bigger than the
-	# sample one.
-	request_body {
-		max_size 64MB
-	}
-
-	# Financial data and payroll behind a login should not be cached by anything
-	# between the browser and this box.
-header {
-		Cache-Control "no-store"
-		X-Content-Type-Options "nosniff"
-		X-Frame-Options "DENY"
-		Referrer-Policy "same-origin"
-		-Server
-	}
-
-	log {
-		output stderr
-		format console
-	}
-}
-
-# Reached as plain HTTP where the tunnel fronts it, so the public face of the
-# system presents on a single port and holds no certificate of its own.
-:80 {
+{$SITE_ADDRESS}:80 {
 	# The application. Everything goes to it: the API under /api, the SPA and its
 	# assets everywhere else, because FastAPI serves the built frontend itself.
 	reverse_proxy app:8000
