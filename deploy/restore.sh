@@ -26,8 +26,11 @@ if [ -z "$ARCHIVE" ] || [ ! -f "$ARCHIVE" ]; then
     exit 1
 fi
 
-COMPOSE="docker compose -f docker-compose.prod.yml"
 ENV_FILE="${ENV_FILE:-.env.production}"
+# --env-file is required: compose does not read .env.production on its own, so
+# interpolating the required POSTGRES_PASSWORD/RPCI_JWT_SECRET failed before the
+# restore even started.
+COMPOSE="docker compose -f docker-compose.prod.yml --env-file $ENV_FILE"
 
 if [ ! -f "$ENV_FILE" ]; then
     echo "No $ENV_FILE; run this from the repository root on the server." >&2

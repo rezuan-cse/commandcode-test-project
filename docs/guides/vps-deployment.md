@@ -104,7 +104,7 @@ should appear over HTTPS.
 nothing can sign in yet. Make one:
 
 ```bash
-docker compose -f docker-compose.prod.yml exec app \
+docker compose -f docker-compose.prod.yml --env-file .env.production exec app \
   python /app/scripts/create_user.py --email you@example.com \
   --name "Your Name" --role admin
 ```
@@ -152,9 +152,9 @@ database — the server's own disk failing takes both. Mount a second volume, or
 **Restore one, once, now** — a backup that has never been restored is a guess:
 
 ```bash
-docker compose -f docker-compose.prod.yml stop app
+docker compose -f docker-compose.prod.yml --env-file .env.production stop app
 ./deploy/restore.sh backups/rpci-YYYYMMDD-HHMM.dump --yes
-docker compose -f docker-compose.prod.yml start app
+docker compose -f docker-compose.prod.yml --env-file .env.production start app
 ```
 
 Then sign in and check the Dashboard: **trial-balance difference must read 0.0000**.
@@ -183,10 +183,10 @@ between a bad deploy and a lost quarter.
 
 ## 7. Operating notes
 
-- **Logs:** `docker compose -f docker-compose.prod.yml logs -f app`
-- **Restart:** `docker compose -f docker-compose.prod.yml restart app`
-- **Shell in the app:** `docker compose -f docker-compose.prod.yml exec app sh`
-- **Database shell:** `docker compose -f docker-compose.prod.yml exec db psql -U rpci -d rpci`
+- **Logs:** `docker compose -f docker-compose.prod.yml --env-file .env.production logs -f app`
+- **Restart:** `docker compose -f docker-compose.prod.yml --env-file .env.production restart app`
+- **Shell in the app:** `docker compose -f docker-compose.prod.yml --env-file .env.production exec app sh`
+- **Database shell:** `docker compose -f docker-compose.prod.yml --env-file .env.production exec db psql -U rpci -d rpci`
 - **Disk:** the NVMe holds the OS, images, dumps and the database. `df -h` and
   `docker system prune -af` occasionally; dumps are pruned automatically.
 - **Reboot:** all three containers are `restart: unless-stopped`, so the stack comes
