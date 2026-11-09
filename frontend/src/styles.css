@@ -1447,10 +1447,14 @@ button:disabled {
 
    A statutory document, so the treatment is deliberately plainer than the rest
    of the interface: it looks like something a VAT office would accept, not like
-   a web page. Black on white, ruled table, totals boxed at the right, and the
-   seller/buyer pair side by side the way the sample lays them out. */
+   a web page. The typeface and sizes follow the sample Mushak 6.3 the client
+   supplied — a serif (FreeSerif) at invoice sizes, not the interface's sans.
+   The interface keeps its own font; only this document borrows the sample's. */
 .mushak {
-  max-width: 900px;
+  max-width: 960px;
+  font-family: "FreeSerif", Georgia, "Times New Roman", serif;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .mushak-title {
@@ -1461,7 +1465,7 @@ button:disabled {
 }
 
 .mushak-title h1 {
-  font-size: 24px;
+  font-size: 26px;
   letter-spacing: 0.12em;
   margin: 0;
 }
@@ -1491,8 +1495,8 @@ button:disabled {
 
 .mushak-ids dd {
   margin: 0;
-  font-family: var(--mono);
-  font-weight: 600;
+  font-family: inherit;
+  font-weight: 700;
 }
 
 .mushak-parties {
@@ -1503,7 +1507,7 @@ button:disabled {
 }
 
 .mushak-parties h3 {
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
@@ -1512,25 +1516,25 @@ button:disabled {
 
 .mushak-parties p {
   margin: 0 0 3px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .mushak-name {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .mushak-lines {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .mushak-lines th {
   border: 1px solid var(--line-strong);
   background: #f8fafc;
-  padding: 8px 10px;
-  font-size: 11px;
+  padding: 9px 10px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: left;
@@ -1546,6 +1550,10 @@ button:disabled {
   vertical-align: top;
 }
 
+.mushak-lines td.numeric {
+  font-variant-numeric: tabular-nums;
+}
+
 .mushak-totals {
   margin-top: 16px;
 }
@@ -1555,7 +1563,7 @@ button:disabled {
   max-width: 360px;
   margin: 0 0 0 auto;
   border: 1px solid var(--line-strong);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .mushak-totals dl div {
@@ -1571,7 +1579,6 @@ button:disabled {
 
 .mushak-totals dl dd {
   margin: 0;
-  font-family: var(--mono);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1581,13 +1588,13 @@ button:disabled {
 
 .mushak-payable {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
   border-top: 2px solid var(--ink);
 }
 
 .mushak-words {
   margin: 12px 0 0;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink-soft);
 }
 
