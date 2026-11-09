@@ -1551,6 +1551,7 @@ button:disabled {
 }
 
 .mushak-lines td.numeric {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1579,6 +1580,7 @@ button:disabled {
 
 .mushak-totals dl dd {
   margin: 0;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   font-variant-numeric: tabular-nums;
 }
 
