@@ -95,6 +95,39 @@ Still in Configuration → *VAT*.
 **You should see:** the badges still read **pending client** on the rate — the value
 is live, the confidence is not.
 
+## A4b. The Mushak documents
+
+Mushak 6.3 (the tax invoice) is built. It needs a customer record with a BIN, which
+A8 already gives you. The Mushak 9.1 summary report is not built yet.
+
+Still in Configuration → *VAT*: set `Input VAT account` to `1130`, `Output VAT
+account` to `2200`. Then Configuration → *Sales documents*: set `Receipt style` to
+`tax_invoice`, **Save** (leave the badge *pending client* — the accountant has not
+confirmed it).
+
+Wait until after **A13** (the sale) before expecting to see the invoice.
+
+**You should see, on the posted sale's Receipt button:**
+
+| Element | Expected |
+|---|---|
+| Heading | `TAX INVOICE` / `Mushak - 6.3` |
+| Invoice No. | the sale's order number (e.g. `SALE-001`) |
+| Bill From | `Resinova Bangladesh`, the address and phone from A3, and **BIN Number: 002016027-0208** |
+| Billed To | `NovaCrete Trading`, `Ms. Farida`, `01811-000222`, `Gulshan, Dhaka`, and **BIN Number: 002016027-0208** from A8 |
+| Line `TRD-016` | qty `5`, MRP `5,000.00`, **VAT Rate 15%**, amount `25,000.00` |
+| Totals | Subtotal `25,000.00`; VAT (15%) `3,750.00`; **Amount Payable `28,750.00`** |
+| In words | `Taka Twenty Eight Thousand Seven Hundred Fifty Only` |
+| Footer | "This is a computer generated invoice, does not require any signature." |
+
+Note what is deliberately **not** on it: no Discount, Coupon, Rounding or Delivery
+Charge rows. RPCI's sales carry none of those fields, so a permanent zero row
+would misrepresent the document.
+
+**If Billed To shows "to be confirmed"** instead of an address and BIN, the sale was
+posted without choosing the customer — it carries only the name. Recreate the
+customer in A8 and select them on the Sales Entry form.
+
 ## A5. Add an account (optional, but it tests the new screen)
 
 Chart of Accounts → **Add account**.
@@ -488,6 +521,7 @@ are hidden rather than shown and failing.
 | Production has no components | The item has no **Recipe** |
 | Sale refuses with *insufficient stock* | You are selling more than was produced |
 | VAT is 0 on a sale | `vat.charge_vat` is off, or the sale date is outside the period shown |
+| Mushak shows "BIN to be confirmed" under Billed To | The sale was posted without choosing a customer — it carries only a name. Recreate the customer (A8) and pick them on the sale |
 | Integrity check flags inventory | Stock was recorded without a matching journal entry — a workbook import, not a posting |
 | Balance sheet does not balance | Check the Trial Balance difference; if that is 0, compare the period dates between screens |
 | Checklist stuck at 8 of 8 but visible | It hides itself when complete; reload the page |
