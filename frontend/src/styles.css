@@ -1452,7 +1452,7 @@ button:disabled {
    The interface keeps its own font; only this document borrows the sample's. */
 .mushak {
   max-width: 960px;
-  font-family: "FreeSerif", Georgia, "Times New Roman", serif;
+  font-family: "FreeSerif", "Times New Roman", Georgia, serif;
   font-size: 14px;
   line-height: 1.45;
 }
@@ -1468,6 +1468,7 @@ button:disabled {
   font-size: 26px;
   letter-spacing: 0.12em;
   margin: 0;
+  font-family: inherit;
 }
 
 .mushak-title p {
@@ -1537,6 +1538,7 @@ button:disabled {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: left;
+  font-family: inherit;
 }
 
 .mushak-lines th.numeric {
