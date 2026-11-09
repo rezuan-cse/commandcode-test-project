@@ -1537,6 +1537,11 @@ button:disabled {
   font-size: 15px;
 }
 
+.mushak-bin {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .mushak-lines {
   width: 100%;
   border-collapse: collapse;

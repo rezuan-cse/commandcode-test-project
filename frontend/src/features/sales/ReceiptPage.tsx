@@ -231,7 +231,7 @@ function TaxInvoice({
           <p>
             BIN Number:{" "}
             {company.vatRegNo ? (
-              <u>{company.vatRegNo}</u>
+              <span className="mushak-bin">{company.vatRegNo}</span>
             ) : (
               <span className="receipt-pending">to be confirmed</span>
             )}
@@ -250,7 +250,7 @@ function TaxInvoice({
           <p>
             BIN Number:{" "}
             {buyer?.vat_reg_no ? (
-              <u>{buyer.vat_reg_no}</u>
+              <span className="mushak-bin">{buyer.vat_reg_no}</span>
             ) : (
               <span className="receipt-pending">to be confirmed</span>
             )}
