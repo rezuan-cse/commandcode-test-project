@@ -1459,7 +1459,7 @@ button:disabled {
 
 .mushak-title {
   text-align: center;
-  border-bottom: 2px solid var(--ink);
+  border-bottom: 2px solid var(--line-strong);
   padding-bottom: 12px;
   margin-bottom: 16px;
 }
@@ -1524,7 +1524,7 @@ button:disabled {
    replaces the grid gap so the rule sits in the middle of the space between
    them. */
 .mushak-parties > div:first-child {
-  border-right: 1px solid var(--line-strong);
+  border-right: 1px solid var(--line);
   padding-right: 20px;
 }
 
@@ -1538,7 +1538,6 @@ button:disabled {
 }
 
 .mushak-bin {
-  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1549,7 +1548,7 @@ button:disabled {
 }
 
 .mushak-lines th {
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line);
   background: #f8fafc;
   padding: 9px 10px;
   font-size: 12px;
@@ -1581,7 +1580,7 @@ button:disabled {
   min-width: 300px;
   max-width: 360px;
   margin: 0 0 0 auto;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line);
   font-size: 14px;
 }
 
@@ -1608,7 +1607,7 @@ button:disabled {
 .mushak-payable {
   font-weight: 700;
   font-size: 15px;
-  border-top: 2px solid var(--ink);
+  border-top: 2px solid var(--line-strong);
 }
 
 .mushak-words {
