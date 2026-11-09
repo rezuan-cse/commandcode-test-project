@@ -39,7 +39,7 @@ cd frontend && npm test
 | `shared/format.test.ts` | Money, quantity, and percentage formatting, including the rounding cases from the worked example |
 | `shared/csv.test.ts` | CSV escaping: commas and quotes in a customer name stay in one cell, a stored amount is written unformatted so it still sums in Excel, and an empty export still has headings |
 | `features/sales/SalesPage.test.tsx` | The sale price follows the chosen item, a typed price is never overwritten, and a view-only role sees no form |
-| `features/sales/ReceiptPage.test.tsx` | The receipt itemises the posted lines and totals and does not claim to be a VAT invoice |
+| `features/sales/ReceiptPage.test.tsx` | The receipt itemises the posted lines and totals; the Mushak 6.3 tax invoice prints the seller's and buyer's BIN, a per-line VAT rate, and the amount in words, and says the buyer's details are unconfirmed when there is no customer record |
 | `shared/deploymentMeta.test.tsx` | What the deployment offers matches what the interface shows: demo accounts only where they exist, both starting points on the Data screen, no "empty everything", and the first-administrator form only while no account exists |
 
 ## Verifying the numbers
@@ -48,7 +48,7 @@ The import is checked against the workbook, both by the test suite and by a
 standalone script:
 
 ```bash
-cd backend && .venv/bin/python -m pytest tests -q          # 293 tests
+cd backend && .venv/bin/python -m pytest tests -q          # 295 tests
 cd .. && backend/.venv/bin/python scripts/seed_from_excel.py --check
 ```
 

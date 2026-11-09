@@ -35,6 +35,15 @@ represented by working stubs and deployment configuration.
 - VAT/tax on transactions, computed from the settings table: output VAT on sales,
   input VAT on purchases, and a VAT summary report. Off until the rules are
   confirmed.
+- A Mushak 6.3 tax invoice, behind the `sales.receipt_style` setting
+  (`Administration → Configuration → Sales documents`). It prints the seller's
+  BIN and the buyer's address and BIN from the customer record, a per-line VAT
+  rate, and the amount in words — all from the stored posting, never
+  recalculated, so a later rate change does not rewrite an issued invoice. Set
+  it to `tax_invoice` for a VAT-compliant document, or leave it at the default
+  `plain` for a simple sales receipt. The Mushak 9.1 summary report (output VAT
+  by rate slab, input VAT, net payable) is not built; the data the return needs
+  is already recorded on every posting.
 - Payroll: employees, a run that splits gross into its components, applies
   deductions, and posts one balanced entry; printable payslips
 - A configurable approval gate, off by default: a covered action is held for a

@@ -92,12 +92,14 @@ a future change cannot hide it.
 
 Known "still to do" behaviours:
 
-- **The VAT summary and the Mushak documents.** VAT is captured on every posting and
-  a customer's BIN is stored, but two things are not built: the **Mushak 6.3 tax
-  invoice** (a compliant receipt layout) and the **Mushak 9.1 summary** (output VAT
-  by rate slab, input VAT, net payable). Both need the client's BIN and the rate
-  slabs confirmed by their accountant before the layout can be finished, which is
-  why they are waiting rather than forgotten.
+- **The Mushak 9.1 summary.** VAT is captured on every posting, a customer's BIN
+  is stored, and the Mushak 6.3 tax invoice is built (it prints the buyer's
+  address and BIN, a per-line VAT rate, and the amount in words). The Mushak 9.1
+  summary — output VAT by rate slab, input VAT, net payable — is not built. The
+  rate is recorded on each sale line at posting precisely so the return can be
+  grouped by slab afterwards, so this is a screen and a report rather than a
+  data gap. It needs the client's BIN and the rate slabs confirmed by their
+  accountant before the layout can be finished.
 - An administrator-issued password is not a forced change; the user can keep using
   it. Requiring a change at next sign-in needs a small extra flow.
 - **The sample workbook import stays in the build but must not be offered at
