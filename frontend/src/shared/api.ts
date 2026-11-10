@@ -56,8 +56,8 @@ import type {
 } from "./types";
 
 // When the interface and the API are served from the same origin, "/api" is
-// correct. When the interface is hosted separately (for example on Vercel or
-// Netlify) with the API elsewhere, set VITE_API_BASE to the API's full URL.
+// correct. If the interface is hosted separately from the API, set
+// VITE_API_BASE to the API's full URL (including the /api suffix).
 const BASE = (import.meta.env.VITE_API_BASE ?? "/api").replace(/\/$/, "");
 
 const TOKEN_KEY = "rpci.session";

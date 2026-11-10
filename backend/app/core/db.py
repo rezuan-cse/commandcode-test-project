@@ -1,9 +1,8 @@
 """Database engine, session factory, and declarative base.
 
-SQLite is the zero-setup default locally; a hosted Postgres (Neon and similar) is
-what makes data survive on a host with no persistent disk. Money columns are
-SQLAlchemy ``Numeric`` values and are read back as :class:`decimal.Decimal` so no
-float math ever touches the ledger.
+SQLite is the zero-setup default locally; hosted Postgres is used in production
+deployments. Money columns are SQLAlchemy ``Numeric`` values and are read back
+as :class:`decimal.Decimal` so no float math ever touches the ledger.
 """
 
 from __future__ import annotations
@@ -23,10 +22,10 @@ if _is_sqlite:
     _connect_args = {"check_same_thread": False}
 else:
     # psycopg 3 prepares a statement on the server after it has been run a few
-    # times. A transaction-mode connection pooler (Neon's "-pooler" host, or
-    # pgbouncer) hands each statement to whichever backend is free, so it cannot
-    # follow a statement prepared on a different one — the symptom is an
-    # intermittent "prepared statement ... already exists". Disabling prepared
+    # times. A transaction-mode connection pooler (pgbouncer or a host's
+    # "-pooler" endpoint) hands each statement to whichever backend is free, so
+    # it cannot follow a statement prepared on a different one — the symptom is
+    # an intermittent "prepared statement ... already exists". Disabling prepared
     # statements keeps a pooled connection string working, and costs almost
     # nothing next to the network round trip.
     #
@@ -40,10 +39,10 @@ engine = create_engine(
     settings.database_url,
     connect_args=_connect_args,
     future=True,
-    # A hosted Postgres (Neon and similar) drops idle connections when its compute
-    # scales to zero. Pre-ping checks the connection before handing it out and
-    # quietly reconnects, instead of failing the first request after a quiet
-    # spell. Recycling caps how long a connection is reused.
+    # A managed Postgres may drop idle connections when it scales down or times
+    # them out. Pre-ping checks the connection before handing it out and quietly
+    # reconnects, instead of failing the first request after a quiet spell.
+    # Recycling caps how long a connection is reused.
     pool_pre_ping=True,
     pool_recycle=-1 if _is_sqlite else 300,
 )
@@ -69,10 +68,9 @@ def describe_timezone() -> str:
     """Report the database session's timezone, and say so if it is not UTC.
 
     Column timestamps are written by the database's own now(), so the interface
-    can only present them on the client's clock if that now() is UTC — which is
-    the norm (Neon runs UTC). The session cannot be pinned here because a pooled
-    connection does not support session settings, so the assumption is reported
-    instead of being silently relied on.
+    can only present them on the client's clock if that now() is UTC. The session
+    cannot be pinned here because a pooled connection does not support session
+    settings, so the assumption is reported instead of being silently relied on.
     """
     if _is_sqlite:
         return "UTC (sqlite stores timestamps in UTC)"

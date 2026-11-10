@@ -52,10 +52,9 @@ represented by working stubs and deployment configuration.
   Administration → Configuration, with the client's confirmed answers pre-filled
 
 **Phase 5 — Deployment and data (complete)**
-- Dockerfile, docker-compose, and a Render blueprint for a public HTTPS URL, with
-  a starter chart of accounts so a fresh deployment is usable immediately
-- Import the client's own workbook, or start the books over, from
-  Administration → Data
+- Dockerfile and docker-compose for local and VPS deployment, with a starter chart of accounts so a fresh deployment is usable immediately
+- Import the client's own workbook, or start the books over, from Administration → Data
+- VPS deployment (Postgres, Caddy, Cloudflare Tunnel) documented in [vps-deployment.md](vps-deployment.md)
 
 ---
 

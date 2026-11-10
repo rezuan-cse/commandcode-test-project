@@ -14,21 +14,24 @@
 | Verify the workbook figures | `backend/.venv/bin/python scripts/seed_from_excel.py --check` | Prints the reconciliation table. |
 | Generate demo activity | `backend/.venv/bin/python scripts/generate_demo_data.py --months 18` | Posts 18 months of purchases, production, sales, payments and payroll through the service layer. Refuses a non-empty database unless `--force`; `--wipe-first` empties the books (fresh chart, accounts kept) and generates in one step. Testing phase only — wipe before go-live. |
 | CI | *(none)* | There is no build or test CI. Run the checks below by hand before deploying. |
-| Keeping the service awake | **cron-job.org** (external account) | Pings `https://rpci.onrender.com/healthz` every 5 min. Render's free tier sleeps after ~15 min. Deliberately **not** in this repository: GitHub's scheduler dropped most runs. See [../guides/deployment.md](../guides/deployment.md). |
 | Health probe | `GET /healthz` | Returns `{"status":"ok"}`. |
-| Deploy (public HTTPS) | Apply `render.yaml` on Render | See [../guides/deployment.md](../guides/deployment.md) and `DEPLOYMENT.md`. |
-| Production hardening | Why the production blueprint is stricter than dev defaults | [../guides/production-hardening.md](../guides/production-hardening.md), incl. the go-live checklist. |
-| Rollback | Redeploy the previous image / re-apply the blueprint | Data lives in Postgres when `RPCI_DATABASE_URL` is set. |
+| Deploy (VPS) | `docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build` | See [../guides/vps-deployment.md](../guides/vps-deployment.md). |
+| Rollback | Redeploy the previous image/commit | Data lives in Postgres (`RPCI_DATABASE_URL`). |
 
 ## Configuration (env var names)
 
-All are prefixed `RPCI_`. Full table with defaults: [../guides/deployment.md](../guides/deployment.md).
+All are prefixed `RPCI_`. Common ones:
 
 `RPCI_DATABASE_URL`, `RPCI_JWT_SECRET`, `RPCI_ACCESS_TOKEN_MINUTES`,
 `RPCI_UTC_OFFSET_HOURS`, `RPCI_DEMO_PASSWORD`, `RPCI_SEED_DEMO_USERS`,
 `RPCI_LOGIN_MAX_ATTEMPTS`, `RPCI_LOGIN_LOCKOUT_MINUTES`, `RPCI_SEED_MODE`,
 `RPCI_SEED_FROM_EXCEL_PATH`, `RPCI_CORS_ORIGINS`, `RPCI_ALLOW_DATA_RESET`,
-`RPCI_DOCS_ENABLED`, `RPCI_DEFAULT_SEGMENT`.
+`RPCI_DOCS_ENABLED`, `RPCI_DEFAULT_SEGMENT`, `RPCI_ENVIRONMENT`.
+
+- `RPCI_DATABASE_URL`: SQLite path/URL for local dev, or a `postgresql://…` connection string for production. The app rewrites `postgres://` / `postgresql://` to the installed `psycopg` driver, so a plain Postgres URL works unchanged.
+- `RPCI_JWT_SECRET`: required in production (`RPCI_ENVIRONMENT=production`) so sessions survive restarts.
+- `RPCI_SEED_DEMO_USERS=false` for real books; create the first admin with `scripts/create_user.py` or the first-run setup flow.
+- `RPCI_ALLOW_DATA_RESET=false` and `RPCI_DOCS_ENABLED=false` on production deployments.
 
 ## Accounts and backups
 
@@ -43,5 +46,4 @@ A data reset and a workbook import both keep the **user accounts** — only the
 books are replaced — so neither can lock everybody out.
 
 Rules the configuration follows: no secret or real value in a router; the app reads only
-`RPCI_`-prefixed variables; a Supabase/Neon URL is pasted unchanged (the app rewrites
-`postgres://` → `postgresql+psycopg://`).
+`RPCI_`-prefixed variables.

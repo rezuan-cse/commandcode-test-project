@@ -50,5 +50,5 @@ WORKDIR /app/backend
 
 EXPOSE 8000
 
-# Render and most PaaS hosts inject $PORT; fall back to 8000 locally.
+# Many hosts inject $PORT; fall back to 8000 locally.
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

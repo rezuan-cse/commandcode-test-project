@@ -277,7 +277,7 @@ A phase is **not done** until every row above is green and every acceptance bull
 |---|---|---|
 | Database | PostgreSQL + NUMERIC + triggers | **SQLite** (single file, zero ops) + `Decimal` enforced in Python |
 | Auth | JWT + RBAC matrix | Single shared password via env var; no user table |
-| Deploy | Lightsail + Cloudflare | **Render free tier** (web service + persistent disk) |
+| Deploy | Own VPS / container host | Dockerized app + Postgres |
 | Money type | `NUMERIC(18,4)` + DB trigger | `Decimal` in Python + a `Decimal` column in SQLAlchemy |
 | Frontend | Full PWA | React + Vite, mobile-responsive, no PWA install needed for demo |
 
@@ -328,10 +328,8 @@ Idempotent: if the DB already has rows, the seeder skips. Re-runnable by deletin
 - [ ] Mobile responsive: every screen usable at 360 px width.
 
 ### 10.6 Demo deployment
-- **Render free tier** (or Railway/Fly.io): one web service, persistent disk for SQLite file.
-- Environment: `SECRET_KEY`, `DEMO_PASSWORD`, `SEED_FROM_EXCEL_PATH` (defaults to bundled file).
-- URL pattern: `https://rpci-demo.onrender.com` (or similar). Demo data resets on every deploy; documented in the README.
-- Deploy script: `render.yaml` at project root, blueprint-deployable.
+- Deploy on a VPS using Docker/`docker compose` with Postgres for persistent data (see `docs/guides/vps-deployment.md`).
+- Environment: set `RPCI_*` variables (database URL, JWT secret, seed mode, etc.) per the deployment guide. Demo/sample data can be imported from Administration → Data.
 
 ### 10.7 Out of demo scope (deferred to full Phase 1+)
 - Real RBAC (Admin/Accountant/Store/Sales/Viewer) — demo uses single password
@@ -339,6 +337,6 @@ Idempotent: if the DB already has rows, the seeder skips. Re-runnable by deletin
 - Manual journal entry from UI (only production + sales posting in demo)
 - Payroll, VAT/Tax, multi-stage BOM recursion UI
 - PostgreSQL + DB triggers (SQLite + Python checks instead)
-- Backup / disaster recovery (Render keeps the disk; good enough for a demo)
+- Automated off-host backups / disaster recovery drills (configure per VPS deployment)
 
 After the client approves the demo, the demo codebase becomes the starting point for **Phase 1** of the full plan, with the demo-scope items promoted into the production build per their original acceptance criteria.

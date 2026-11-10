@@ -47,9 +47,9 @@ class Settings(BaseSettings):
     # Timestamps are stored in UTC and shown at this offset from it. Bangladesh is
     # a fixed +06:00 with no daylight saving, so an offset is exact here.
     utc_offset_hours: int = 6
-    # When the interface is hosted on a different origin (Vercel, Netlify) the
-    # browser needs permission to call this API. "*" is fine for a public demo
-    # because no cookies are used; narrow it to the exact site if preferred.
+    # When the interface is hosted on a different origin, the browser needs
+    # permission to call this API. "*" is acceptable for a demo because no
+    # cookies are used; narrow it to the exact site in production if preferred.
     cors_origins: str = "*"
     # Allow an administrator to empty the books and start over from
     # Administration → Data. Disable this on a deployment where the data must

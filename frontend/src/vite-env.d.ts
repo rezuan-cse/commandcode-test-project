@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** Full URL of the API when the interface is hosted separately, e.g.
-   *  "https://rpci.onrender.com/api". Defaults to "/api". */
+  /** Full URL of the API when the interface is hosted separately (including the
+   *  /api suffix). Defaults to "/api". */
   readonly VITE_API_BASE?: string;
 }
 

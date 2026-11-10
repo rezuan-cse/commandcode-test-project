@@ -1839,12 +1839,7 @@ recipes straight into the database, so it never touches the forms that create th
 
 **Step 1 — get a blank system.** Choose one:
 
-- **Hosted (Render/Neon):** in the Render dashboard, delete and recreate the
-  database, or point `RPCI_DATABASE_URL` at a new Neon database. The next boot seeds
-  the starter chart of accounts.
-- **Your own VPS:** `docker compose -f docker-compose.prod.yml down -v` removes the
-  database volume, then `up -d --build` starts clean. **`-v` deletes the data** —
-  only do this on a test deployment.
+- **Your own VPS:** stop the app, drop/recreate the Postgres database (or `docker compose -f docker-compose.prod.yml down -v` to remove the database volume) and start the stack again. **`-v` deletes the data** — only do this on a test deployment.
 - **In the interface:** Administration → **Data** → **Start over** → *Start fresh*.
   This is hidden while `RPCI_ALLOW_DATA_RESET=false`, which is how production ships.
   It empties the books and re-creates the starter chart of accounts, keeping the

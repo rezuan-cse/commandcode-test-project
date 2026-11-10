@@ -11,14 +11,14 @@ def test_it_names_a_hosted_postgres_without_the_password(monkeypatch) -> None:
     monkeypatch.setattr(
         settings,
         "database_url",
-        "postgresql+psycopg://books_user:sup3r-secret@ep-example-1.neon.tech/books?sslmode=require",
+        "postgresql+psycopg://books_user:sup3r-secret@db.example.internal/books?sslmode=require",
     )
     described = describe_database()
 
     assert "sup3r-secret" not in described
     assert "postgresql" in described
     assert "books" in described
-    assert "ep-example-1.neon.tech" in described
+    assert "db.example.internal" in described
 
 
 def test_it_names_a_sqlite_file(monkeypatch) -> None:
@@ -32,7 +32,7 @@ def test_it_marks_a_pooled_host(monkeypatch) -> None:
     monkeypatch.setattr(
         settings,
         "database_url",
-        "postgresql+psycopg://u:p@ep-x-pooler.c-11.us-east-1.aws.neon.tech/db?sslmode=require",
+        "postgresql+psycopg://u:p@db-pooler.example.internal/db?sslmode=require",
     )
     assert describe_database().endswith("(pooled)")
 
