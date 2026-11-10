@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../../shared/api";
 import { fmt, fmtPct, fmtQty } from "../../shared/format";
@@ -31,6 +32,18 @@ export default function ReceiptPage() {
   // Only needed for the tax invoice, where the buyer is a record with an
   // address and a BIN — but the fetch is cheap and keeps the page to one flow.
   const parties = useAsync(() => api.parties(), []);
+
+  // Browsers use the document title as the default "Save as PDF" filename when
+  // printing. Name it after the invoice/receipt so the downloaded file is
+  // identifiable (e.g. Invoice-SALE-002.pdf) instead of the app's HTML title.
+  useEffect(() => {
+    if (!sale.data) return;
+    const previousTitle = document.title;
+    document.title = `Invoice-${sale.data.order_no}`;
+    return () => {
+      document.title = previousTitle;
+    };
+  }, [sale.data]);
 
   if (sale.loading || settings.loading) return <Spinner label="Preparing the document…" />;
   if (sale.error) return <ErrorBox message={sale.error} />;
